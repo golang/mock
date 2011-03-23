@@ -164,6 +164,9 @@ func packagesOfType(t ast.Expr) []string {
 	case *ast.Ident:
 		// raw identifier
 		return []string{}
+	case *ast.Ellipsis:
+		// a "..." type
+		return packagesOfType(v.Elt)
 	case *ast.InterfaceType:
 		// TODO: Handle more than just interface{}
 		return []string{}
@@ -354,6 +357,8 @@ func (g *generator) GenerateMockInterface(typeName *ast.Ident, it *ast.Interface
 
 func typeString(f ast.Expr) string {
 	switch v := f.(type) {
+	case *ast.Ellipsis:
+		return "..." + typeString(v.Elt)
 	case *ast.Ident:
 		return v.Name
 	case *ast.InterfaceType:

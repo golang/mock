@@ -41,6 +41,9 @@ type Index interface {
 
 	// A method that returns a nillable type.
 	NillableRet() os.Error
+
+	// A method with an ellipsis argument.
+	Ellip(fmt string, args ...interface{})
 }
 
 // some random use of another package that isn't needed by the interface.
