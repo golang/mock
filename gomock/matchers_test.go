@@ -16,6 +16,7 @@ package matchers_test
 
 import (
 	"testing"
+
 	"gomock.googlecode.com/hg/gomock"
 	mock_matcher "gomock.googlecode.com/hg/mock_matcher"
 )

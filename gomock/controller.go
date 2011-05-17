@@ -39,17 +39,23 @@ import (
 	"container/list"
 	"fmt"
 	"reflect"
-	"testing"
 )
+
+// A TestReporter is something that can be used to report test failures.
+// It is satisfied by the standard library's *testing.T.
+type TestReporter interface {
+	Errorf(format string, args ...interface{})
+	Fatalf(format string, args ...interface{})
+}
 
 // A Controller represents the top-level control of a mock ecosystem.
 // It defines the scope and lifetime of mock objects, as well as their expectations.
 type Controller struct {
-	t             *testing.T
+	t             TestReporter
 	expectedCalls *list.List
 }
 
-func NewController(t *testing.T) *Controller {
+func NewController(t TestReporter) *Controller {
 	return &Controller{
 		t:             t,
 		expectedCalls: list.New(),
@@ -99,7 +105,7 @@ func (ctrl *Controller) Call(receiver interface{}, method string, args ...interf
 		mustMatch := expected.numCalls < expected.minCalls
 		if ok, msg := matches(expected, receiver, method, args...); !ok {
 			if mustMatch {
-				ctrl.t.Fatal(msg)
+				ctrl.t.Fatalf("%s", msg)
 			}
 			// discard and advance
 			ne := e.Next()
@@ -161,6 +167,6 @@ func (ctrl *Controller) Finish() {
 		}
 	}
 	if failures {
-		ctrl.t.FailNow()
+		ctrl.t.Fatalf("aborting test due to missing call(s)")
 	}
 }
