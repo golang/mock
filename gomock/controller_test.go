@@ -76,6 +76,23 @@ func (e *ErrorReporter) assertFatal(fn func()) {
 	fn()
 }
 
+// recoverUnexpectedFatal can be used as a deferred call in test cases to
+// recover from and display a call to ErrorReporter.Fatalf().
+func (e *ErrorReporter) recoverUnexpectedFatal() {
+	err := recover()
+	if err == nil {
+		// No panic.
+	} else if token, ok := err.(*struct{}); ok && token == &e.fatalToken {
+		// Unexpected fatal error happened.
+		e.t.Error("Got unexpected fatal error(s). All errors up to this point:")
+		e.reportLog()
+		return
+	} else {
+		// Some other panic.
+		panic(err)
+	}
+}
+
 func (e *ErrorReporter) Logf(format string, args ...interface{}) {
 	e.log = append(e.log, fmt.Sprintf(format, args...))
 }
@@ -95,6 +112,10 @@ func (e *ErrorReporter) Fatalf(format string, args ...interface{}) {
 type Subject struct{}
 
 func (s *Subject) FooMethod(arg string) int {
+	return 0
+}
+
+func (s *Subject) BarMethod(arg string) int {
 	return 0
 }
 
@@ -157,6 +178,26 @@ func TestRepeatedCall(t *testing.T) {
 	reporter.assertFail("After calling one too many times.")
 }
 
+func TestUnexpectedArgCount(t *testing.T) {
+	reporter, ctrl := createFixtures(t)
+	defer reporter.recoverUnexpectedFatal()
+	subject := new(Subject)
+
+	ctrl.RecordCall(subject, "FooMethod", "argument")
+	reporter.assertFatal(func() {
+		// This call is made with the wrong number of arguments...
+		ctrl.Call(subject, "FooMethod", "argument", "extra_argument")
+	})
+	reporter.assertFatal(func() {
+		// ... so is this.
+		ctrl.Call(subject, "FooMethod")
+	})
+	reporter.assertFatal(func() {
+		// The expected call wasn't made.
+		ctrl.Finish()
+	})
+}
+
 func TestAnyTimes(t *testing.T) {
 	reporter, ctrl := createFixtures(t)
 	subject := new(Subject)
@@ -214,4 +255,28 @@ func TestReturn(t *testing.T) {
 		[]interface{}{5},
 		ctrl.Call(subject, "FooMethod", "five"))
 	ctrl.Finish()
+}
+
+func TestUnorderedCalls(t *testing.T) {
+	reporter, ctrl := createFixtures(t)
+	defer reporter.recoverUnexpectedFatal()
+	subjectTwo := new(Subject)
+	subjectOne := new(Subject)
+
+	ctrl.RecordCall(subjectOne, "FooMethod", "1")
+	ctrl.RecordCall(subjectOne, "BarMethod", "2")
+	ctrl.RecordCall(subjectTwo, "FooMethod", "3")
+	ctrl.RecordCall(subjectTwo, "BarMethod", "4")
+
+	// Make the calls in a different order, which should be fine.
+	ctrl.Call(subjectOne, "BarMethod", "2")
+	ctrl.Call(subjectTwo, "FooMethod", "3")
+	ctrl.Call(subjectTwo, "BarMethod", "4")
+	ctrl.Call(subjectOne, "FooMethod", "1")
+
+	reporter.assertPass("After making all calls in different order")
+
+	ctrl.Finish()
+
+	reporter.assertPass("After finish")
 }

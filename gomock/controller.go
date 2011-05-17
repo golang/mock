@@ -31,13 +31,9 @@
 //         }
 //
 // TODO:
-//	- Support loose mocks (calls in any order).
+//	- Support strict mocks (calls in a particular order).
 //	- Handle different argument/return types (e.g. ..., chan, map, interface).
 package gomock
-
-import (
-	"container/list"
-)
 
 // A TestReporter is something that can be used to report test failures.
 // It is satisfied by the standard library's *testing.T.
@@ -50,13 +46,13 @@ type TestReporter interface {
 // It defines the scope and lifetime of mock objects, as well as their expectations.
 type Controller struct {
 	t             TestReporter
-	expectedCalls *list.List
+	expectedCalls callSet
 }
 
 func NewController(t TestReporter) *Controller {
 	return &Controller{
 		t:             t,
-		expectedCalls: list.New(),
+		expectedCalls: make(callSet),
 	}
 }
 
@@ -71,36 +67,20 @@ func (ctrl *Controller) RecordCall(receiver interface{}, method string, args ...
 	}
 
 	call := &Call{receiver: receiver, method: method, args: margs, minCalls: 1, maxCalls: 1}
-	ctrl.expectedCalls.PushBack(call)
+
+	ctrl.expectedCalls.Add(call)
 	return call
 }
 
 func (ctrl *Controller) Call(receiver interface{}, method string, args ...interface{}) []interface{} {
-	var expected *Call
-
-	e := ctrl.expectedCalls.Front()
-	for e != nil {
-		expected = e.Value.(*Call)
-		if ok, msg := expected.matches(receiver, method, args...); !ok {
-			if !expected.satisfied() {
-				ctrl.t.Fatalf("%s", msg)
-			}
-			// discard and advance
-			ne := e.Next()
-			ctrl.expectedCalls.Remove(e)
-			e = ne
-			continue
-		}
-		// match!
-		break
-	}
-	if e == nil {
-		ctrl.t.Fatalf("unexpected %T.%v method call; no more expected", receiver, method)
+	expected := ctrl.expectedCalls.FindMatch(receiver, method, args)
+	if expected == nil {
+		ctrl.t.Fatalf("no matching expected call: %T.%v", receiver, method)
 	}
 
-	rets := expected.call(args...)
+	rets := expected.call(args)
 	if expected.exhausted() {
-		ctrl.expectedCalls.Remove(ctrl.expectedCalls.Front())
+		ctrl.expectedCalls.Remove(expected)
 	}
 
 	return rets
@@ -109,11 +89,14 @@ func (ctrl *Controller) Call(receiver interface{}, method string, args ...interf
 func (ctrl *Controller) Finish() {
 	// Check that all remaining expected calls are satisfied.
 	failures := false
-	for e := ctrl.expectedCalls.Front(); e != nil; e = e.Next() {
-		exp := e.Value.(*Call)
-		if !exp.satisfied() {
-			ctrl.t.Errorf("missing call(s) to %T.%v", exp.receiver, exp.method)
-			failures = true
+	for _, methodMap := range ctrl.expectedCalls {
+		for _, calls := range methodMap {
+			for _, call := range calls {
+				if !call.satisfied() {
+					ctrl.t.Errorf("missing call(s) to %v", call)
+					failures = true
+				}
+			}
 		}
 	}
 	if failures {

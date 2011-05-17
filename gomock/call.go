@@ -74,24 +74,20 @@ func (c *Call) String() string {
 }
 
 // Tests if the given call matches the expected call.
-func (c *Call) matches(receiver interface{}, method string, args ...interface{}) (match bool, failure string) {
-	if receiver != c.receiver || method != c.method {
-		return false, fmt.Sprintf("got a %T.%v method call, expected %v", receiver, method, c)
-	}
+func (c *Call) matches(args []interface{}) bool {
 	if len(args) != len(c.args) {
-		return false, fmt.Sprintf("got %d args to %v, expected %d args", len(args), c, len(c.args))
+		return false
 	}
 	for i, m := range c.args {
 		if !m.Matches(args[i]) {
-			// TODO: Tune this error message.
-			return false, fmt.Sprintf("arg #%d to %v was %v, expected: %v", i, c, args[i], m)
+			return false
 		}
 	}
 
-	return true, ""
+	return true
 }
 
-func (c *Call) call(args ...interface{}) []interface{} {
+func (c *Call) call(args []interface{}) []interface{} {
 	c.numCalls++
 
 	// Actions
