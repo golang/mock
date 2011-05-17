@@ -15,6 +15,7 @@
 package gomock
 
 import (
+	"fmt"
 	"reflect"
 )
 
@@ -31,7 +32,7 @@ type Call struct {
 	numCalls int // actual number made
 
 	// Actions
-	doFunc *reflect.FuncValue
+	doFunc reflect.Value
 }
 
 func (c *Call) AnyTimes() *Call {
@@ -43,7 +44,7 @@ func (c *Call) AnyTimes() *Call {
 // It takes an interface{} argument to support n-arity functions.
 func (c *Call) Do(f interface{}) *Call {
 	// TODO: Check arity and types here, rather than dying badly elsewhere.
-	c.doFunc = reflect.NewValue(f).(*reflect.FuncValue)
+	c.doFunc = reflect.ValueOf(f)
 	return c
 }
 
@@ -56,4 +57,69 @@ func (c *Call) Return(rets ...interface{}) *Call {
 func (c *Call) Times(n int) *Call {
 	c.minCalls, c.maxCalls = n, n
 	return c
+}
+
+// Returns true iff the minimum number of calls have been made.
+func (c *Call) satisfied() bool {
+	return c.numCalls >= c.minCalls
+}
+
+// Returns true iff the maximum number of calls have been made.
+func (c *Call) exhausted() bool {
+	return c.numCalls >= c.maxCalls
+}
+
+func (c *Call) String() string {
+	return fmt.Sprintf("%T.%v", c.receiver, c.method)
+}
+
+// Tests if the given call matches the expected call.
+func (c *Call) matches(receiver interface{}, method string, args ...interface{}) (match bool, failure string) {
+	if receiver != c.receiver || method != c.method {
+		return false, fmt.Sprintf("got a %T.%v method call, expected %v", receiver, method, c)
+	}
+	if len(args) != len(c.args) {
+		return false, fmt.Sprintf("got %d args to %v, expected %d args", len(args), c, len(c.args))
+	}
+	for i, m := range c.args {
+		if !m.Matches(args[i]) {
+			// TODO: Tune this error message.
+			return false, fmt.Sprintf("arg #%d to %v was %v, expected: %v", i, c, args[i], m)
+		}
+	}
+
+	return true, ""
+}
+
+func (c *Call) call(args ...interface{}) []interface{} {
+	c.numCalls++
+
+	// Actions
+	if c.doFunc.IsValid() {
+		doArgs := make([]reflect.Value, len(args))
+		ft := c.doFunc.Type()
+		for i := 0; i < ft.NumIn(); i++ {
+			doArgs[i] = reflect.ValueOf(args[i])
+		}
+		c.doFunc.Call(doArgs)
+	}
+
+	rets := c.rets
+	if rets == nil {
+		// Synthesize the zero value for each of the return args' types.
+		recv := reflect.ValueOf(c.receiver)
+		var mt reflect.Type
+		for i := 0; i < recv.Type().NumMethod(); i++ {
+			if recv.Type().Method(i).Name == c.method {
+				mt = recv.Method(i).Type()
+				break
+			}
+		}
+		rets = make([]interface{}, mt.NumOut())
+		for i := 0; i < mt.NumOut(); i++ {
+			rets[i] = reflect.Zero(mt.Out(i)).Interface()
+		}
+	}
+
+	return rets
 }

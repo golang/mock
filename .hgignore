@@ -1,0 +1,4 @@
+syntax:glob
+*.6
+*.a
+mockgen/mockgen
