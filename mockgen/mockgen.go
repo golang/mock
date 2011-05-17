@@ -52,7 +52,7 @@ func main() {
 
 	dst := os.Stdout
 	if len(*destination) > 0 {
-		f, err := os.Open(*destination, os.O_WRONLY|os.O_CREATE, 0644)
+		f, err := os.Create(*destination)
 		if err != nil {
 			log.Fatalf("Failed opening destination file: %v", err)
 		}
