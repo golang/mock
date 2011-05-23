@@ -30,8 +30,28 @@
 //           // pass mockObj to a real object and play with it.
 //         }
 //
+// By default, expected calls are not enforced to run in any particular order.
+// Call order dependency can be enforced by use of InOrder and/or Call.After.
+// Call.After can create more varied call order dependencies, but InOrder is
+// often more convenient.
+//
+// The following examples create equivalent call order dependencies.
+//
+// Example of using Call.After to chain expected call order:
+//
+//     firstCall := mockObj.EXPECT().SomeMethod(1, "first")
+//     secondCall := mockObj.EXPECT().SomeMethod(2, "second").After(firstCall)
+//     mockObj.EXPECT().SomeMethod(3, "third").After(secondCall)
+//
+// Example of using InOrder to declare expected call order:
+//
+//     gomock.InOrder(
+//         mockObj.EXPECT().SomeMethod(1, "first"),
+//         mockObj.EXPECT().SomeMethod(2, "second"),
+//         mockObj.EXPECT().SomeMethod(3, "third"),
+//     )
+//
 // TODO:
-//	- Support strict mocks (calls in a particular order).
 //	- Handle different argument/return types (e.g. ..., chan, map, interface).
 package gomock
 
@@ -76,6 +96,14 @@ func (ctrl *Controller) Call(receiver interface{}, method string, args ...interf
 	expected := ctrl.expectedCalls.FindMatch(receiver, method, args)
 	if expected == nil {
 		ctrl.t.Fatalf("no matching expected call: %T.%v", receiver, method)
+	}
+
+	// Two things happen here:
+	// * the matching call no longer needs to check prerequite calls,
+	// * and the prerequite calls are no longer expected, so remove them.
+	preReqCalls := expected.dropPrereqs()
+	for _, preReqCall := range preReqCalls {
+		ctrl.expectedCalls.Remove(preReqCall)
 	}
 
 	rets := expected.call(args)

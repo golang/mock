@@ -17,6 +17,7 @@ package gomock
 import (
 	"fmt"
 	"reflect"
+	"strings"
 )
 
 // Call represents an expected call to a mock.
@@ -25,6 +26,8 @@ type Call struct {
 	method   string        // the name of the method
 	args     []Matcher     // the args
 	rets     []interface{} // the return values (if any)
+
+	preReqs []*Call // prerequisite calls
 
 	// Expectations
 	minCalls, maxCalls int
@@ -59,6 +62,30 @@ func (c *Call) Times(n int) *Call {
 	return c
 }
 
+// isPreReq returns true if other is a direct or indirect prerequisite to c.
+func (c *Call) isPreReq(other *Call) bool {
+	for _, preReq := range c.preReqs {
+		if other == preReq || preReq.isPreReq(other) {
+			return true
+		}
+	}
+	return false
+}
+
+// After declares that the call may only match after preReq has been exhausted.
+func (c *Call) After(preReq *Call) *Call {
+	if preReq.isPreReq(c) {
+		msg := fmt.Sprintf(
+			"Loop in call order: %v is a prerequisite to %v (possibly indirectly).",
+			c, preReq,
+		)
+		panic(msg)
+	}
+
+	c.preReqs = append(c.preReqs, preReq)
+	return c
+}
+
 // Returns true iff the minimum number of calls have been made.
 func (c *Call) satisfied() bool {
 	return c.numCalls >= c.minCalls
@@ -70,7 +97,12 @@ func (c *Call) exhausted() bool {
 }
 
 func (c *Call) String() string {
-	return fmt.Sprintf("%T.%v", c.receiver, c.method)
+	args := make([]string, len(c.args))
+	for i, arg := range c.args {
+		args[i] = arg.String()
+	}
+	arguments := strings.Join(args, ", ")
+	return fmt.Sprintf("%T.%v(%s)", c.receiver, c.method, arguments)
 }
 
 // Tests if the given call matches the expected call.
@@ -84,7 +116,22 @@ func (c *Call) matches(args []interface{}) bool {
 		}
 	}
 
+	// Check that all prerequisite calls have been satisfied.
+	for _, preReqCall := range c.preReqs {
+		if !preReqCall.satisfied() {
+			return false
+		}
+	}
+
 	return true
+}
+
+// dropPrereqs tells the expected Call to not re-check prerequite calls any
+// longer, and to return its current set.
+func (c *Call) dropPrereqs() (preReqs []*Call) {
+	preReqs = c.preReqs
+	c.preReqs = nil
+	return
 }
 
 func (c *Call) call(args []interface{}) []interface{} {
@@ -118,4 +165,11 @@ func (c *Call) call(args []interface{}) []interface{} {
 	}
 
 	return rets
+}
+
+// InOrder declares that the given calls should occur in order.
+func InOrder(calls ...*Call) {
+	for i := 1; i < len(calls); i++ {
+		calls[i].After(calls[i-1])
+	}
 }

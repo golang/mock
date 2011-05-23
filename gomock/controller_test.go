@@ -280,3 +280,83 @@ func TestUnorderedCalls(t *testing.T) {
 
 	reporter.assertPass("After finish")
 }
+
+func commonTestOrderedCalls(t *testing.T) (reporter *ErrorReporter, ctrl *gomock.Controller, subjectOne, subjectTwo *Subject) {
+	reporter, ctrl = createFixtures(t)
+
+	subjectOne = new(Subject)
+	subjectTwo = new(Subject)
+
+	gomock.InOrder(
+		ctrl.RecordCall(subjectOne, "FooMethod", "1").AnyTimes(),
+		ctrl.RecordCall(subjectTwo, "FooMethod", "2"),
+		ctrl.RecordCall(subjectTwo, "BarMethod", "3"),
+	)
+
+	return
+}
+
+func TestOrderedCallsCorrect(t *testing.T) {
+	reporter, ctrl, subjectOne, subjectTwo := commonTestOrderedCalls(t)
+
+	ctrl.Call(subjectOne, "FooMethod", "1")
+	ctrl.Call(subjectTwo, "FooMethod", "2")
+	ctrl.Call(subjectTwo, "BarMethod", "3")
+
+	ctrl.Finish()
+
+	reporter.assertPass("After finish")
+}
+
+func TestOrderedCallsInCorrect(t *testing.T) {
+	reporter, ctrl, subjectOne, subjectTwo := commonTestOrderedCalls(t)
+
+	ctrl.Call(subjectOne, "FooMethod", "1")
+	reporter.assertFatal(func() {
+		ctrl.Call(subjectTwo, "BarMethod", "3")
+	})
+}
+
+
+// Test that calls that are prerequites to other calls but have maxCalls >
+// minCalls are removed from the expected call set.
+func TestOrderedCallsWithPreReqMaxUnbounded(t *testing.T) {
+	reporter, ctrl, subjectOne, subjectTwo := commonTestOrderedCalls(t)
+
+	// Initially we should be able to call FooMethod("1") as many times as we
+	// want.
+	ctrl.Call(subjectOne, "FooMethod", "1")
+	ctrl.Call(subjectOne, "FooMethod", "1")
+
+	// But calling something that has it as a prerequite should remove it from
+	// the expected call set. This allows tests to ensure that FooMethod("1") is
+	// *not* called after FooMethod("2").
+	ctrl.Call(subjectTwo, "FooMethod", "2")
+
+	// Therefore this call should fail:
+	reporter.assertFatal(func() {
+		ctrl.Call(subjectOne, "FooMethod", "1")
+	})
+}
+
+func TestCallAfterLoopPanic(t *testing.T) {
+	_, ctrl := createFixtures(t)
+
+	subject := new(Subject)
+
+	firstCall := ctrl.RecordCall(subject, "Foo", "1")
+	secondCall := ctrl.RecordCall(subject, "Foo", "2")
+	thirdCall := ctrl.RecordCall(subject, "Foo", "3")
+
+	gomock.InOrder(firstCall, secondCall, thirdCall)
+
+	defer func() {
+		err := recover()
+		if err == nil {
+			t.Error("Call.After creation of dependency loop did not panic.")
+		}
+	}()
+
+	// This should panic due to dependency loop.
+	firstCall.After(thirdCall)
+}
