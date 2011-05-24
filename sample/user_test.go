@@ -2,7 +2,6 @@
 package user_test
 
 import (
-	"log"
 	"testing"
 
 	"gomock.googlecode.com/hg/gomock"
@@ -31,6 +30,19 @@ func TestRemember(t *testing.T) {
 	mockIndex.EXPECT().NillableRet()
 	user.Remember(mockIndex, []string{"blah"}, []interface{}{7})
 	if calledString != "blah" {
-		log.Fatalf(`Uh oh. %q != "blah"`, calledString)
+		t.Fatalf(`Uh oh. %q != "blah"`, calledString)
+	}
+}
+
+func TestGrabPointer(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockIndex := mock_user.NewMockIndex(ctrl)
+	mockIndex.EXPECT().Ptr(gomock.Any()).SetArg(0, 7) // set first argument to 7
+
+	i := user.GrabPointer(mockIndex)
+	if i != 7 {
+		t.Errorf("Expected 7, got %d", i)
 	}
 }

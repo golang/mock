@@ -44,6 +44,9 @@ type Index interface {
 
 	// A method with an ellipsis argument.
 	Ellip(fmt string, args ...interface{})
+
+	// A method with a pointer argument that we will set.
+	Ptr(arg *int)
 }
 
 // some random use of another package that isn't needed by the interface.
@@ -59,4 +62,10 @@ func Remember(index Index, keys []string, values []interface{}) {
 	if err != nil {
 		log.Fatalf("Woah! %v", err)
 	}
+}
+
+func GrabPointer(index Index) int {
+	var a int
+	index.Ptr(&a)
+	return a
 }

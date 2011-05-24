@@ -35,7 +35,8 @@ type Call struct {
 	numCalls int // actual number made
 
 	// Actions
-	doFunc reflect.Value
+	doFunc  reflect.Value
+	setArgs map[int]reflect.Value
 }
 
 func (c *Call) AnyTimes() *Call {
@@ -59,6 +60,17 @@ func (c *Call) Return(rets ...interface{}) *Call {
 
 func (c *Call) Times(n int) *Call {
 	c.minCalls, c.maxCalls = n, n
+	return c
+}
+
+// SetArg declares an action that will set the nth argument's value,
+// indirected through a pointer.
+func (c *Call) SetArg(n int, value interface{}) *Call {
+	if c.setArgs == nil {
+		c.setArgs = make(map[int]reflect.Value)
+	}
+	// TODO: Check func arity and value type.
+	c.setArgs[n] = reflect.ValueOf(value)
 	return c
 }
 
@@ -145,6 +157,9 @@ func (c *Call) call(args []interface{}) []interface{} {
 			doArgs[i] = reflect.ValueOf(args[i])
 		}
 		c.doFunc.Call(doArgs)
+	}
+	for n, v := range c.setArgs {
+		reflect.ValueOf(args[n]).Elem().Set(v)
 	}
 
 	rets := c.rets
