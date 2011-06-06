@@ -47,6 +47,9 @@ type Index interface {
 
 	// A method with a pointer argument that we will set.
 	Ptr(arg *int)
+
+	// A method with a slice argument and an array return.
+	Slice(a []int) [3]int
 }
 
 // some random use of another package that isn't needed by the interface.

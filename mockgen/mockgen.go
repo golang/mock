@@ -161,12 +161,15 @@ func removeDot(s string) string {
 // Return the list of packages needed by this type. Not guaranteed to be unique.
 func packagesOfType(t ast.Expr) []string {
 	switch v := t.(type) {
-	case *ast.Ident:
-		// raw identifier
-		return []string{}
+	case *ast.ArrayType:
+		// slice or array
+		return packagesOfType(v.Elt)
 	case *ast.Ellipsis:
 		// a "..." type
 		return packagesOfType(v.Elt)
+	case *ast.Ident:
+		// raw identifier
+		return []string{}
 	case *ast.InterfaceType:
 		// TODO: Handle more than just interface{}
 		return []string{}
@@ -357,6 +360,17 @@ func (g *generator) GenerateMockInterface(typeName *ast.Ident, it *ast.Interface
 
 func typeString(f ast.Expr) string {
 	switch v := f.(type) {
+	case *ast.ArrayType:
+		// slice or array
+		if v.Len == nil {
+			// slice
+			return "[]" + typeString(v.Elt)
+		}
+		if bl, ok := v.Len.(*ast.BasicLit); ok && bl.Kind == token.INT {
+			// array
+			return fmt.Sprintf("[%v]%s", bl.Value, typeString(v.Elt))
+		}
+		log.Printf("WARNING: odd *ast.ArrayType: %v", v)
 	case *ast.Ellipsis:
 		return "..." + typeString(v.Elt)
 	case *ast.Ident:
@@ -371,6 +385,7 @@ func typeString(f ast.Expr) string {
 		// pointer
 		return "*" + typeString(v.X)
 	}
+	log.Printf("WARNING: failed to generate type string for %T", f)
 	return fmt.Sprintf("<%T>", f)
 }
 
