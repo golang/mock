@@ -183,7 +183,7 @@ func packagesOfType(t ast.Expr) []string {
 }
 
 func (g *generator) SetImports(imps string) {
-	for _, kv := range strings.Split(imps, ",", -1) {
+	for _, kv := range strings.Split(imps, ",") {
 		eq := strings.Index(kv, "=")
 		k, v := kv[:eq], kv[eq+1:]
 		if k == "." {
@@ -220,7 +220,7 @@ func (g *generator) ScanImports(file *ast.File) {
 				pkg = removeDot(is.Name.Name)
 			} else {
 				_, last := path.Split(importPath)
-				pkg = strings.Split(last, ".", 2)[0]
+				pkg = strings.SplitN(last, ".", 2)[0]
 			}
 			if _, ok := allImports[pkg]; ok {
 				log.Fatalf("imported package collision: %q imported twice", pkg)
