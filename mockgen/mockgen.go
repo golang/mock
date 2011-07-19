@@ -484,9 +484,21 @@ func (g *generator) GenerateMockMethod(mockType, methodName string, f *ast.FuncT
 	return nil
 }
 
+// isVariadic returns whether the function is variadic.
+func isVariadic(f *ast.FuncType) bool {
+	nargs := len(f.Params.List)
+	if nargs == 0 {
+		return false
+	}
+	_, ok := f.Params.List[nargs-1].Type.(*ast.Ellipsis)
+	return ok
+}
+
 func (g *generator) GenerateMockRecorderMethod(mockType, methodName string, f *ast.FuncType) os.Error {
-	// real stuff:
-	nargs := f.Params.NumFields()
+	nargs, variadic := f.Params.NumFields(), isVariadic(f)
+	if variadic {
+		nargs--
+	}
 	args := make([]string, nargs)
 	for i := 0; i < nargs; i++ {
 		args[i] = "arg" + strconv.Itoa(i)
@@ -495,6 +507,9 @@ func (g *generator) GenerateMockRecorderMethod(mockType, methodName string, f *a
 	if nargs > 0 {
 		argString += " interface{}"
 	}
+	if variadic {
+		argString += fmt.Sprintf(", arg%d ...interface{}", nargs)
+	}
 
 	g.p("func (mr *_%vRecorder) %v(%v) *gomock.Call {", mockType, methodName, argString)
 	g.in()
@@ -502,6 +517,9 @@ func (g *generator) GenerateMockRecorderMethod(mockType, methodName string, f *a
 	callArgs := strings.Join(args, ", ")
 	if nargs > 0 {
 		callArgs = ", " + callArgs
+	}
+	if variadic {
+		callArgs += fmt.Sprintf(", arg%d", nargs)
 	}
 	g.p(`return mr.mock.ctrl.RecordCall(mr.mock, "%v"%v)`, methodName, callArgs)
 

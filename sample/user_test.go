@@ -20,6 +20,11 @@ func TestRemember(t *testing.T) {
 	// NillableRet returns os.Error. Not declaring it should result in a nil return.
 	mockIndex.EXPECT().NillableRet()
 
+	// Should be able to place expectations on variadic methods.
+	mockIndex.EXPECT().Ellip("%d", 0, 1, 1, 2, 3) // direct args
+	tri := []interface{}{1, 3, 6, 10, 15}
+	mockIndex.EXPECT().Ellip("%d", tri...) // args from slice
+
 	user.Remember(mockIndex, []string{"a", "b"}, []interface{}{1, 2})
 
 	// Try one with an action.

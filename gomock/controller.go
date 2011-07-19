@@ -95,7 +95,7 @@ func (ctrl *Controller) RecordCall(receiver interface{}, method string, args ...
 func (ctrl *Controller) Call(receiver interface{}, method string, args ...interface{}) []interface{} {
 	expected := ctrl.expectedCalls.FindMatch(receiver, method, args)
 	if expected == nil {
-		ctrl.t.Fatalf("no matching expected call: %T.%v", receiver, method)
+		ctrl.t.Fatalf("no matching expected call: %T.%v(%v)", receiver, method, args)
 	}
 
 	// Two things happen here:

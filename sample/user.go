@@ -65,6 +65,10 @@ func Remember(index Index, keys []string, values []interface{}) {
 	if err != nil {
 		log.Fatalf("Woah! %v", err)
 	}
+	if len(keys) > 0 && keys[0] == "a" {
+		index.Ellip("%d", 0, 1, 1, 2, 3)
+		index.Ellip("%d", 1, 3, 6, 10, 15)
+	}
 }
 
 func GrabPointer(index Index) int {
