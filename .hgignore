@@ -1,4 +1,17 @@
-syntax:glob
-*.6
-*.a
+# Object files and binaries from go.
+.*\.[568]$
+
+# Library files.
+.*\.a$
+
+# Any file prefixed by an underscore.
+.*\/_.*
+
+# Any .orig files left over by mercurial.
+.*\.orig$
+
+# The mockgen binary.
 mockgen/mockgen
+
+# A binary produced by gotest.
+gomock/[568]\.out
