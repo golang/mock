@@ -1,5 +1,5 @@
 # This is the official list of people who can contribute (and typically
-# have contributed) code to the appengine-go-backports repository.
+# have contributed) code to the gomock repository.
 # The AUTHORS file lists the copyright holders; this file
 # lists people.  For example, Google employees are listed here
 # but not in AUTHORS, because Google holds the copyright.
@@ -31,5 +31,4 @@
 
 # Please keep the list sorted.
 
-Andrew Gerrand <adg@golang.org>
 David Symonds <dsymonds@golang.org>
