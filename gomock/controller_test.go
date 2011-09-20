@@ -317,7 +317,6 @@ func TestOrderedCallsInCorrect(t *testing.T) {
 	})
 }
 
-
 // Test that calls that are prerequites to other calls but have maxCalls >
 // minCalls are removed from the expected call set.
 func TestOrderedCallsWithPreReqMaxUnbounded(t *testing.T) {

@@ -7,6 +7,7 @@ import (
 	btz "bytes"
 	"hash"
 	"log"
+	"net"
 	"os"
 )
 
@@ -50,10 +51,21 @@ type Index interface {
 
 	// A method with a slice argument and an array return.
 	Slice(a []int) [3]int
+
+	// A method with channel arguments.
+	Chan(a chan int, b chan<- hash.Hash)
+}
+
+// An interface with an embedded interface.
+// We can't currently construct a mock for this type of interface,
+// so it should be skipped.
+type Embed interface {
+	os.Error
+	Method() string
 }
 
 // some random use of another package that isn't needed by the interface.
-var _ os.Errno
+var _ net.Addr
 
 // A function that we will test that uses the above interface.
 // It takes a list of keys and values, and puts them in the index.

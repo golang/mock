@@ -134,6 +134,7 @@ func iterInterfaces(file *ast.File) <-chan namedInterface {
 			if !ok || gd.Tok != token.TYPE {
 				continue
 			}
+		specLoop:
 			for _, spec := range gd.Specs {
 				ts, ok := spec.(*ast.TypeSpec)
 				if !ok {
@@ -143,6 +144,17 @@ func iterInterfaces(file *ast.File) <-chan namedInterface {
 				if !ok {
 					continue
 				}
+
+				// We ignore an interface X that has an embedded interface Y,
+				// because there is not yet a way to find out the method set of Y,
+				// and thus we can't construct a valid mock implementation of X.
+				for _, f := range it.Methods.List {
+					if len(f.Names) == 0 {
+						log.Printf("Interface %v has an embedded interface; skipping it", ts.Name)
+						continue specLoop
+					}
+				}
+
 				ch <- namedInterface{ts.Name, it}
 			}
 		}
@@ -164,6 +176,8 @@ func packagesOfType(t ast.Expr) []string {
 	case *ast.ArrayType:
 		// slice or array
 		return packagesOfType(v.Elt)
+	case *ast.ChanType:
+		return packagesOfType(v.Value)
 	case *ast.Ellipsis:
 		// a "..." type
 		return packagesOfType(v.Elt)
@@ -216,7 +230,11 @@ func (g *generator) ScanImports(file *ast.File) {
 			}
 			pkg, importPath := "", string(is.Path.Value)
 			importPath = importPath[1 : len(importPath)-1] // remove quotes
+
 			if is.Name != nil {
+				if is.Name.Name == "_" {
+					continue
+				}
 				pkg = removeDot(is.Name.Name)
 			} else {
 				_, last := path.Split(importPath)
@@ -371,6 +389,17 @@ func typeString(f ast.Expr) string {
 			return fmt.Sprintf("[%v]%s", bl.Value, typeString(v.Elt))
 		}
 		log.Printf("WARNING: odd *ast.ArrayType: %v", v)
+	case *ast.ChanType:
+		var s string
+		switch v.Dir {
+		case ast.SEND:
+			s = "chan<-"
+		case ast.RECV:
+			s = "<-chan"
+		default:
+			s = "chan"
+		}
+		return s + " " + typeString(v.Value)
 	case *ast.Ellipsis:
 		return "..." + typeString(v.Elt)
 	case *ast.Ident:
