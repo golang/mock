@@ -51,6 +51,27 @@ func (e eqMatcher) String() string {
 	return fmt.Sprintf("is equal to %v", e.x)
 }
 
+type nilMatcher struct{}
+
+func (nilMatcher) Matches(x interface{}) bool {
+	if x == nil {
+		return true
+	}
+
+	v := reflect.ValueOf(x)
+	switch v.Kind() {
+	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map,
+		reflect.Ptr, reflect.Slice:
+		return v.IsNil()
+	}
+
+	return false
+}
+
+func (nilMatcher) String() string {
+	return "is nil"
+}
+
 type notMatcher struct {
 	m Matcher
 }
@@ -67,6 +88,7 @@ func (n notMatcher) String() string {
 // Constructors
 func Any() Matcher             { return anyMatcher{} }
 func Eq(x interface{}) Matcher { return eqMatcher{x} }
+func Nil() Matcher             { return nilMatcher{} }
 func Not(x interface{}) Matcher {
 	if m, ok := x.(Matcher); ok {
 		return notMatcher{m}
