@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"gomock.googlecode.com/hg/gomock"
+	"gomock.googlecode.com/hg/sample/imp1"
 	"gomock.googlecode.com/hg/sample/mock_user"
 	"gomock.googlecode.com/hg/sample/user"
 )
@@ -50,4 +51,19 @@ func TestGrabPointer(t *testing.T) {
 	if i != 7 {
 		t.Errorf("Expected 7, got %d", i)
 	}
+}
+
+func TestEmbeddedInterface(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockEmbed := mock_user.NewMockEmbed(ctrl)
+	mockEmbed.EXPECT().RegularMethod()
+	mockEmbed.EXPECT().EmbeddedMethod()
+	mockEmbed.EXPECT().ForeignEmbeddedMethod()
+
+	mockEmbed.RegularMethod()
+	mockEmbed.EmbeddedMethod()
+	var emb imp1.ForeignEmbedded = mockEmbed // also does interface check
+	emb.ForeignEmbeddedMethod()
 }

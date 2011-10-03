@@ -57,11 +57,14 @@ type Index interface {
 }
 
 // An interface with an embedded interface.
-// We can't currently construct a mock for this type of interface,
-// so it should be skipped.
 type Embed interface {
-	os.Error
-	Method() string
+	RegularMethod()
+	Embedded
+	imp1.ForeignEmbedded
+}
+
+type Embedded interface {
+	EmbeddedMethod()
 }
 
 // some random use of another package that isn't needed by the interface.

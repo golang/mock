@@ -41,6 +41,7 @@ var (
 	destination = flag.String("destination", "", "Output file; defaults to stdout.")
 	packageOut  = flag.String("package", "", "Package of the generated code; defaults to the package of the input file with a 'mock_' prefix.")
 	imports     = flag.String("imports", "", "Comma-separated name=path pairs of explicit imports to use.")
+	auxFiles    = flag.String("aux_files", "", "Comma-separated pkg=path pairs of auxilliary Go source files.")
 )
 
 func main() {
@@ -60,10 +61,15 @@ func main() {
 		dst = f
 	}
 
+	if err := parseAuxFiles(*auxFiles); err != nil {
+		log.Fatalf("Failed parsing auxilliary files: %v", err)
+	}
+
 	file, err := parser.ParseFile(token.NewFileSet(), *source, nil, 0)
 	if err != nil {
 		log.Fatalf("Failed parsing source file: %v", err)
 	}
+	addAuxInterfacesFromFile(".", file)
 
 	pkg := *packageOut
 	if pkg == "" {
@@ -82,6 +88,38 @@ func main() {
 	g.ScanImports(file)
 	if err := g.Generate(file, pkg); err != nil {
 		log.Fatalf("Failed generating mock: %v", err)
+	}
+}
+
+var (
+	auxInterfaces = make(map[string]map[string]*ast.InterfaceType)
+)
+
+func parseAuxFiles(auxFiles string) os.Error {
+	auxFiles = strings.TrimSpace(auxFiles)
+	if auxFiles == "" {
+		return nil
+	}
+	for _, kv := range strings.Split(auxFiles, ",") {
+		parts := strings.SplitN(kv, "=", 2)
+		if len(parts) != 2 {
+			return fmt.Errorf("bad aux file spec: %v", kv)
+		}
+		file, err := parser.ParseFile(token.NewFileSet(), parts[1], nil, 0)
+		if err != nil {
+			return err
+		}
+		addAuxInterfacesFromFile(parts[0], file)
+	}
+	return nil
+}
+
+func addAuxInterfacesFromFile(pkg string, file *ast.File) {
+	if _, ok := auxInterfaces[pkg]; !ok {
+		auxInterfaces[pkg] = make(map[string]*ast.InterfaceType)
+	}
+	for ni := range iterInterfaces(file) {
+		auxInterfaces[pkg][ni.name.Name] = ni.it
 	}
 }
 
@@ -134,7 +172,6 @@ func iterInterfaces(file *ast.File) <-chan namedInterface {
 			if !ok || gd.Tok != token.TYPE {
 				continue
 			}
-		specLoop:
 			for _, spec := range gd.Specs {
 				ts, ok := spec.(*ast.TypeSpec)
 				if !ok {
@@ -143,16 +180,6 @@ func iterInterfaces(file *ast.File) <-chan namedInterface {
 				it, ok := ts.Type.(*ast.InterfaceType)
 				if !ok {
 					continue
-				}
-
-				// We ignore an interface X that has an embedded interface Y,
-				// because there is not yet a way to find out the method set of Y,
-				// and thus we can't construct a valid mock implementation of X.
-				for _, f := range it.Methods.List {
-					if len(f.Names) == 0 {
-						log.Printf("Interface %v has an embedded interface; skipping it", ts.Name)
-						continue specLoop
-					}
 				}
 
 				ch <- namedInterface{ts.Name, it}
@@ -252,7 +279,13 @@ func (g *generator) ScanImports(file *ast.File) {
 	usedPackages := make(map[string]int)
 	for ni := range iterInterfaces(file) {
 		for _, method := range ni.it.Methods.List {
-			ft := method.Type.(*ast.FuncType)
+			ft, ok := method.Type.(*ast.FuncType)
+			if !ok {
+				// Probably an *ast.SelectorExpr for an embedded interface.
+				// This doesn't count as a use of that package because we
+				// flatten the embedding when we generate the mock.
+				continue
+			}
 			if ft.Params != nil {
 				for _, f := range ft.Params.List {
 					for _, pkg := range packagesOfType(f.Type) {
@@ -306,7 +339,6 @@ func (g *generator) Generate(file *ast.File, pkg string) os.Error {
 	}
 	g.out()
 	g.p(")")
-	g.p("")
 
 	for ni := range iterInterfaces(file) {
 		if err := g.GenerateMockInterface(ni.name, ni.it); err != nil {
@@ -325,6 +357,7 @@ func mockName(typeName *ast.Ident) string {
 func (g *generator) GenerateMockInterface(typeName *ast.Ident, it *ast.InterfaceType) os.Error {
 	mockType := mockName(typeName)
 
+	g.p("")
 	g.p("// Mock of %v interface", typeName)
 	g.p("type %v struct {", mockType)
 	g.in()
@@ -363,17 +396,51 @@ func (g *generator) GenerateMockInterface(typeName *ast.Ident, it *ast.Interface
 	g.out()
 	g.p("}")
 
-	for _, field := range it.Methods.List {
-		if len(field.Names) != 1 {
-			log.Fatal("unexpected case: there should be exactly one Ident for a method in an interface")
-		}
-		g.p("")
-		g.GenerateMockMethod(mockType, field.Names[0].String(), field.Type.(*ast.FuncType))
-		g.p("")
-		g.GenerateMockRecorderMethod(mockType, field.Names[0].String(), field.Type.(*ast.FuncType))
-	}
+	g.GenerateMockMethods(mockType, it)
 
 	return nil
+}
+
+func (g *generator) GenerateMockMethods(mockType string, it *ast.InterfaceType) {
+	for _, field := range it.Methods.List {
+		switch ft := field.Type.(type) {
+		case *ast.FuncType:
+			if len(field.Names) != 1 {
+				log.Fatal("unexpected case: there should be exactly one Ident for a method in an interface")
+			}
+			g.p("")
+			g.GenerateMockMethod(mockType, field.Names[0].String(), field.Type.(*ast.FuncType))
+			g.p("")
+			g.GenerateMockRecorderMethod(mockType, field.Names[0].String(), field.Type.(*ast.FuncType))
+		case *ast.Ident:
+			// Embedded interface in this package.
+			g.GenerateMockMethodsForEmbedded(mockType, ".", ft.Name)
+		case *ast.SelectorExpr:
+			// Embedded interface in another package.
+			g.GenerateMockMethodsForEmbedded(mockType, ft.X.(*ast.Ident).Name, ft.Sel.Name)
+		default:
+			log.Fatalf("Don't know how to mock method of type %T", field.Type)
+		}
+	}
+}
+
+func (g *generator) GenerateMockMethodsForEmbedded(mockType, pkg, name string) {
+	m, ok := auxInterfaces[pkg]
+	if !ok {
+		log.Fatalf("Don't have any auxilliary interfaces for package %q", pkg)
+	}
+	it, ok := m[name]
+	if !ok {
+		log.Fatalf("Don't have an auxilliary interface %q in package %q", name, pkg)
+	}
+
+	nicePkg := pkg + "."
+	if nicePkg == ".." {
+		nicePkg = ""
+	}
+	g.p("")
+	g.p("// Methods for embedded interface %s%s", nicePkg, name)
+	g.GenerateMockMethods(mockType, it)
 }
 
 func typeString(f ast.Expr) string {
