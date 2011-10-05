@@ -14,6 +14,9 @@
 
 // MockGen generates mock implementations of Go interfaces.
 
+// TODO: This does not support recursive embedded interfaces.
+// TODO: This does not support embedding package-local interfaces in a separate file.
+
 package main
 
 import (
@@ -92,6 +95,7 @@ func main() {
 }
 
 var (
+	auxFileList   []*ast.File
 	auxInterfaces = make(map[string]map[string]*ast.InterfaceType)
 )
 
@@ -109,6 +113,7 @@ func parseAuxFiles(auxFiles string) os.Error {
 		if err != nil {
 			return err
 		}
+		auxFileList = append(auxFileList, file)
 		addAuxInterfacesFromFile(parts[0], file)
 	}
 	return nil
@@ -121,6 +126,18 @@ func addAuxInterfacesFromFile(pkg string, file *ast.File) {
 	for ni := range iterInterfaces(file) {
 		auxInterfaces[pkg][ni.name.Name] = ni.it
 	}
+}
+
+func auxInterface(pkg, name string) *ast.InterfaceType {
+	m, ok := auxInterfaces[pkg]
+	if !ok {
+		log.Fatalf("Don't have any auxilliary interfaces for package %q", pkg)
+	}
+	it, ok := m[name]
+	if !ok {
+		log.Fatalf("Don't have an auxilliary interface %q in package %q", name, pkg)
+	}
+	return it
 }
 
 func printAst(node interface{}) string {
@@ -237,14 +254,16 @@ func (g *generator) SetImports(imps string) {
 	}
 }
 
-func (g *generator) ScanImports(file *ast.File) {
+// importsOfFile returns a map of package name to import path
+// of the imports in file.
+func importsOfFile(file *ast.File) map[string]string {
 	/* We have to make guesses about some imports, because imports are not required
 	 * to have names. Named imports are always certain. Unnamed imports are guessed
 	 * to have a name of the last path component; if the last path component has dots,
 	 * the first dot-delimited field is used as the name.
 	 */
 
-	allImports := make(map[string]string)
+	m := make(map[string]string)
 	for _, decl := range file.Decls {
 		gd, ok := decl.(*ast.GenDecl)
 		if !ok || gd.Tok != token.IMPORT {
@@ -267,10 +286,62 @@ func (g *generator) ScanImports(file *ast.File) {
 				_, last := path.Split(importPath)
 				pkg = strings.SplitN(last, ".", 2)[0]
 			}
-			if _, ok := allImports[pkg]; ok {
+			if _, ok := m[pkg]; ok {
 				log.Fatalf("imported package collision: %q imported twice", pkg)
 			}
-			allImports[pkg] = importPath
+			m[pkg] = importPath
+		}
+	}
+	return m
+}
+
+// packagesUsedByInterface returns the package names used by an interface.
+func packagesUsedByInterface(it *ast.InterfaceType) map[string]int {
+	m := make(map[string]int)
+	for _, method := range it.Methods.List {
+		switch t := method.Type.(type) {
+		case *ast.FuncType:
+			if t.Params != nil {
+				for _, f := range t.Params.List {
+					for _, pkg := range packagesOfType(f.Type) {
+						m[pkg] = 1
+					}
+				}
+			}
+			if t.Results != nil {
+				for _, f := range t.Results.List {
+					for _, pkg := range packagesOfType(f.Type) {
+						m[pkg] = 1
+					}
+				}
+			}
+		case *ast.Ident:
+			// Embedded interface in this package.
+			for pkg := range packagesUsedByInterface(auxInterface(".", t.Name)) {
+				m[pkg] = 1
+			}
+		case *ast.SelectorExpr:
+			// Embedded interface in another package.
+			for pkg := range packagesUsedByInterface(auxInterface(t.X.(*ast.Ident).Name, t.Sel.Name)) {
+				m[pkg] = 1
+			}
+		default:
+			log.Fatalf("Don't know how to find packages used by a %T inside an interface", t)
+		}
+	}
+	return m
+}
+
+func (g *generator) ScanImports(file *ast.File) {
+	allImports := importsOfFile(file)
+
+	// Include imports from auxilliary files, because we might need them for embedded interfaces.
+	// Give the current file precedence over any conflicts.
+	for _, f := range auxFileList {
+		for pkg, path := range importsOfFile(f) {
+			if _, ok := allImports[pkg]; !ok {
+				allImports[pkg] = path
+			}
 		}
 	}
 
@@ -278,33 +349,13 @@ func (g *generator) ScanImports(file *ast.File) {
 
 	usedPackages := make(map[string]int)
 	for ni := range iterInterfaces(file) {
-		for _, method := range ni.it.Methods.List {
-			ft, ok := method.Type.(*ast.FuncType)
-			if !ok {
-				// Probably an *ast.SelectorExpr for an embedded interface.
-				// This doesn't count as a use of that package because we
-				// flatten the embedding when we generate the mock.
-				continue
-			}
-			if ft.Params != nil {
-				for _, f := range ft.Params.List {
-					for _, pkg := range packagesOfType(f.Type) {
-						usedPackages[pkg] = 1
-					}
-				}
-			}
-			if ft.Results != nil {
-				for _, f := range ft.Results.List {
-					for _, pkg := range packagesOfType(f.Type) {
-						usedPackages[pkg] = 1
-					}
-				}
-			}
+		for pkg := range packagesUsedByInterface(ni.it) {
+			usedPackages[pkg] = 1
 		}
 	}
 
 	/* Finally, gather the imports that are actually used */
-	for pkg, _ := range usedPackages {
+	for pkg := range usedPackages {
 		// Explicit named imports take precedence.
 		importPath, ok := g.explicitNamedImports[pkg]
 		if !ok {
@@ -425,14 +476,7 @@ func (g *generator) GenerateMockMethods(mockType string, it *ast.InterfaceType) 
 }
 
 func (g *generator) GenerateMockMethodsForEmbedded(mockType, pkg, name string) {
-	m, ok := auxInterfaces[pkg]
-	if !ok {
-		log.Fatalf("Don't have any auxilliary interfaces for package %q", pkg)
-	}
-	it, ok := m[name]
-	if !ok {
-		log.Fatalf("Don't have an auxilliary interface %q in package %q", name, pkg)
-	}
+	it := auxInterface(pkg, name)
 
 	nicePkg := pkg + "."
 	if nicePkg == ".." {
