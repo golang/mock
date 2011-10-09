@@ -225,6 +225,19 @@ func packagesOfType(t ast.Expr) []string {
 	case *ast.Ellipsis:
 		// a "..." type
 		return packagesOfType(v.Elt)
+	case *ast.FuncType:
+		var pkgs []string
+		if v.Params != nil {
+			for _, f := range v.Params.List {
+				pkgs = append(pkgs, packagesOfType(f.Type)...)
+			}
+		}
+		if v.Results != nil {
+			for _, f := range v.Results.List {
+				pkgs = append(pkgs, packagesOfType(f.Type)...)
+			}
+		}
+		return pkgs
 	case *ast.Ident:
 		// raw identifier
 		return []string{}
@@ -301,19 +314,8 @@ func packagesUsedByInterface(it *ast.InterfaceType) map[string]int {
 	for _, method := range it.Methods.List {
 		switch t := method.Type.(type) {
 		case *ast.FuncType:
-			if t.Params != nil {
-				for _, f := range t.Params.List {
-					for _, pkg := range packagesOfType(f.Type) {
-						m[pkg] = 1
-					}
-				}
-			}
-			if t.Results != nil {
-				for _, f := range t.Results.List {
-					for _, pkg := range packagesOfType(f.Type) {
-						m[pkg] = 1
-					}
-				}
+			for _, pkg := range packagesOfType(t) {
+				m[pkg] = 1
 			}
 		case *ast.Ident:
 			// Embedded interface in this package.
@@ -513,6 +515,16 @@ func typeString(f ast.Expr) string {
 		return s + " " + typeString(v.Value)
 	case *ast.Ellipsis:
 		return "..." + typeString(v.Elt)
+	case *ast.FuncType:
+		inStr, outStr := flattenFieldList(v.Params).typeString(), ""
+		out := flattenFieldList(v.Results)
+		switch nOut := len(out.t); {
+		case nOut == 1:
+			outStr = " " + out.typeString()
+		case nOut > 1:
+			outStr = " (" + out.typeString() + ")"
+		}
+		return "func (" + inStr + ")" + outStr
 	case *ast.Ident:
 		return v.Name
 	case *ast.InterfaceType:

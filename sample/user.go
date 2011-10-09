@@ -6,6 +6,7 @@ import "io"
 import (
 	btz "bytes"
 	"hash"
+	"http"
 	"log"
 	"net"
 	"os"
@@ -54,6 +55,9 @@ type Index interface {
 
 	// A method with channel arguments.
 	Chan(a chan int, b chan<- hash.Hash)
+
+	// A method with a function argument.
+	Func(f func(http.Request) (int, bool))
 }
 
 // An interface with an embedded interface.
