@@ -6,10 +6,9 @@ import "io"
 import (
 	btz "bytes"
 	"hash"
-	"http"
 	"log"
 	"net"
-	"os"
+	"net/http"
 )
 
 // Dependencies outside the standard library.
@@ -42,7 +41,7 @@ type Index interface {
 	ForeignFour(imp_four.Imp4)
 
 	// A method that returns a nillable type.
-	NillableRet() os.Error
+	NillableRet() error
 
 	// A method with an ellipsis argument.
 	Ellip(fmt string, args ...interface{})

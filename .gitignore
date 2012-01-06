@@ -1,14 +1,14 @@
 # Object files and binaries from go.
-.*\.[568]$
+*.[568]
 
 # Library files.
-.*\.a$
+*.a
 
 # Any file prefixed by an underscore.
-.*\/_.*
+*/_*
 
 # The mockgen binary.
 mockgen/mockgen
 
 # A binary produced by gotest.
-gomock/[568]\.out
+#gomock/[568]\.out

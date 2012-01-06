@@ -15,7 +15,7 @@
 package gomock_test
 
 import (
-	"os"
+	"errors"
 	"testing"
 
 	"github.com/dsymonds/gomock/gomock"
@@ -32,8 +32,8 @@ func TestMatchers(t *testing.T) {
 		testCase{gomock.Any(), []e{3, nil, "foo"}, nil},
 		testCase{gomock.Eq(4), []e{4}, []e{3, "blah", nil, int64(4)}},
 		testCase{gomock.Nil(),
-			[]e{nil, (os.Error)(nil), (chan bool)(nil), (*int)(nil)},
-			[]e{"", 0, make(chan bool), os.NewError("err"), new(int)}},
+			[]e{nil, (error)(nil), (chan bool)(nil), (*int)(nil)},
+			[]e{"", 0, make(chan bool), errors.New("err"), new(int)}},
 		testCase{gomock.Not(gomock.Eq(4)), []e{3, "blah", nil, int64(4)}, []e{4}},
 	}
 	for i, test := range tests {
