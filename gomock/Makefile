@@ -1,6 +1,6 @@
 include $(GOROOT)/src/Make.inc
 
-TARG=gomock.googlecode.com/hg/gomock
+TARG=github.com/dsymonds/gomock/gomock
 GOFILES=\
 	call.go\
 	callset.go\

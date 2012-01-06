@@ -4,10 +4,10 @@ package user_test
 import (
 	"testing"
 
-	"gomock.googlecode.com/hg/gomock"
-	"gomock.googlecode.com/hg/sample/imp1"
-	"gomock.googlecode.com/hg/sample/mock_user"
-	"gomock.googlecode.com/hg/sample/user"
+	"github.com/dsymonds/gomock/gomock"
+	"github.com/dsymonds/gomock/sample/imp1"
+	"github.com/dsymonds/gomock/sample/mock_user"
+	"github.com/dsymonds/gomock/sample/user"
 )
 
 func TestRemember(t *testing.T) {

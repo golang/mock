@@ -7,9 +7,6 @@
 # Any file prefixed by an underscore.
 .*\/_.*
 
-# Any .orig files left over by mercurial.
-.*\.orig$
-
 # The mockgen binary.
 mockgen/mockgen
 

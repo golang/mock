@@ -18,8 +18,8 @@ import (
 	"os"
 	"testing"
 
-	"gomock.googlecode.com/hg/gomock"
-	mock_matcher "gomock.googlecode.com/hg/mock_matcher"
+	"github.com/dsymonds/gomock/gomock"
+	mock_matcher "github.com/dsymonds/gomock/mock_matcher"
 )
 
 func TestMatchers(t *testing.T) {
