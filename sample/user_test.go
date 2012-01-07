@@ -7,7 +7,7 @@ import (
 	"github.com/dsymonds/gomock/gomock"
 	"github.com/dsymonds/gomock/sample/imp1"
 	"github.com/dsymonds/gomock/sample/mock_user"
-	"github.com/dsymonds/gomock/sample/user"
+	"github.com/dsymonds/gomock/sample"
 )
 
 func TestRemember(t *testing.T) {
