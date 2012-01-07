@@ -18,7 +18,7 @@ func TestRemember(t *testing.T) {
 	mockIndex.EXPECT().Put("a", 1)            // literals work
 	mockIndex.EXPECT().Put("b", gomock.Eq(2)) // matchers work too
 
-	// NillableRet returns os.Error. Not declaring it should result in a nil return.
+	// NillableRet returns error. Not declaring it should result in a nil return.
 	mockIndex.EXPECT().NillableRet()
 
 	// Should be able to place expectations on variadic methods.
