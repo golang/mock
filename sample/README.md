@@ -8,11 +8,10 @@ interface that can be mocked with GoMock. The interesting files are:
     interfaces from `user.go` are used. This demonstrates how to create mock
     objects, set up expectations, and so on.
 
-If you want to build the sample and run the test, it's best to clone the GoMock
-git repository into your `$GOPATH` directory so that the `go` command can deal
-with its dependencies:
+Use `goinstall` to get a clone of the GoMock repository into your `$GOPATH`
+directory:
 
-    git clone https://github.com/dsymonds/gomock.git $GOPATH/src/github.com/dsymonds/gomock
+    goinstall github.com/dsymonds/gomock
 
 You can build the sample package as follows:
 
