@@ -244,6 +244,8 @@ func packagesOfType(t ast.Expr) []string {
 	case *ast.InterfaceType:
 		// TODO: Handle more than just interface{}
 		return []string{}
+	case *ast.MapType:
+		return append(packagesOfType(v.Key), packagesOfType(v.Value)...)
 	case *ast.SelectorExpr:
 		return []string{v.X.(*ast.Ident).Name}
 	case *ast.StarExpr:
@@ -537,6 +539,8 @@ func typeString(f ast.Expr, pkgOverride string) string {
 	case *ast.InterfaceType:
 		// TODO: Support more than just interface{}
 		return "interface{}"
+	case *ast.MapType:
+		return fmt.Sprintf("map[%s]%s", typeString(v.Key, pkgOverride), typeString(v.Value, pkgOverride))
 	case *ast.SelectorExpr:
 		// a foreign type.
 		return fmt.Sprintf("%v.%v", v.X.(*ast.Ident), v.Sel)

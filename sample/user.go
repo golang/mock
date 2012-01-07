@@ -57,6 +57,9 @@ type Index interface {
 
 	// A method with a function argument.
 	Func(f func(http.Request) (int, bool))
+
+	// A method with a map argument.
+	Map(a map[int]hash.Hash)
 }
 
 // An interface with an embedded interface.
