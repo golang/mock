@@ -673,7 +673,10 @@ func (g *generator) GenerateMockRecorderMethod(mockType, methodName string, f *a
 		argString += " interface{}"
 	}
 	if variadic {
-		argString += fmt.Sprintf(", arg%d ...interface{}", nargs)
+		if nargs > 0 {
+			argString += ", "
+		}
+		argString += fmt.Sprintf("arg%d ...interface{}", nargs)
 	}
 
 	g.p("func (_mr *_%vRecorder) %v(%v) *gomock.Call {", mockType, methodName, argString)

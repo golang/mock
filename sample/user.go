@@ -43,8 +43,9 @@ type Index interface {
 	// A method that returns a nillable type.
 	NillableRet() error
 
-	// A method with an ellipsis argument.
+	// Methods with an ellipsis argument.
 	Ellip(fmt string, args ...interface{})
+	EllipOnly(...interface{})
 
 	// A method with a pointer argument that we will set.
 	Ptr(arg *int)
