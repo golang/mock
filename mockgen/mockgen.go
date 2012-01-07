@@ -445,9 +445,9 @@ func (g *generator) GenerateMockInterface(typeName *ast.Ident, it *ast.Interface
 	g.p("")
 
 	// XXX: possible name collision here if someone has EXPECT in their interface.
-	g.p("func (m *%v) EXPECT() *_%vRecorder {", mockType, mockType)
+	g.p("func (_m *%v) EXPECT() *_%vRecorder {", mockType, mockType)
 	g.in()
-	g.p("return m.recorder")
+	g.p("return _m.recorder")
 	g.out()
 	g.p("}")
 
@@ -618,7 +618,7 @@ func (g *generator) GenerateMockMethod(mockType, methodName string, f *ast.FuncT
 		retString = " " + retString
 	}
 
-	g.p("func (m *%v) %v(%v)%v {", mockType, methodName, args.argumentString(), retString)
+	g.p("func (_m *%v) %v(%v)%v {", mockType, methodName, args.argumentString(), retString)
 	g.in()
 
 	callArgs := strings.Join(args.name, ", ")
@@ -626,9 +626,9 @@ func (g *generator) GenerateMockMethod(mockType, methodName string, f *ast.FuncT
 		callArgs = ", " + callArgs
 	}
 	if f.Results == nil || len(f.Results.List) == 0 {
-		g.p(`m.ctrl.Call(m, "%v"%v)`, methodName, callArgs)
+		g.p(`_m.ctrl.Call(_m, "%v"%v)`, methodName, callArgs)
 	} else {
-		g.p(`ret := m.ctrl.Call(m, "%v"%v)`, methodName, callArgs)
+		g.p(`ret := _m.ctrl.Call(_m, "%v"%v)`, methodName, callArgs)
 
 		// Go does not allow "naked" type assertions on nil values, so we use the two-value form here.
 		// The value of that is either (x.(T), true) or (Z, false), where Z is the zero value for T.
@@ -676,7 +676,7 @@ func (g *generator) GenerateMockRecorderMethod(mockType, methodName string, f *a
 		argString += fmt.Sprintf(", arg%d ...interface{}", nargs)
 	}
 
-	g.p("func (mr *_%vRecorder) %v(%v) *gomock.Call {", mockType, methodName, argString)
+	g.p("func (_mr *_%vRecorder) %v(%v) *gomock.Call {", mockType, methodName, argString)
 	g.in()
 
 	callArgs := strings.Join(args, ", ")
@@ -686,7 +686,7 @@ func (g *generator) GenerateMockRecorderMethod(mockType, methodName string, f *a
 	if variadic {
 		callArgs += fmt.Sprintf(", arg%d", nargs)
 	}
-	g.p(`return mr.mock.ctrl.RecordCall(mr.mock, "%v"%v)`, methodName, callArgs)
+	g.p(`return _mr.mock.ctrl.RecordCall(_mr.mock, "%v"%v)`, methodName, callArgs)
 
 	g.out()
 	g.p("}")
