@@ -23,8 +23,12 @@ package used by the test:
 
     cd $GOPATH/src/github.com/dsymonds/gomock/sample
     mkdir -p mock_user
-    mockgen --source=user.go --aux_files=imp1=imp1/imp1.go --imports=imp_four=github.com/dsymonds/gomock/sample/imp4 > mock_user/mock_user.go
+    mockgen --source=user.go --aux_files=imp1=imp1/imp1.go --imports=.=github.com/dsymonds/gomock/sample/imp3,imp_four=github.com/dsymonds/gomock/sample/imp4 > mock_user/mock_user.go
 
-Now you can invoke the following command to run the test:
+You can now verify that the mock package builds:
+
+    go build github.com/dsymonds/gomock/sample/mock_user
+
+You can invoke the following command to run the tests in `user_test`.go:
 
     go test
