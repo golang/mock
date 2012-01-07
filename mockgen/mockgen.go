@@ -72,7 +72,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed parsing source file: %v", err)
 	}
-	addAuxInterfacesFromFile(".", file)
+	addAuxInterfacesFromFile("", file)
 
 	pkg := *packageOut
 	if pkg == "" {
@@ -319,7 +319,7 @@ func packagesUsedByInterface(it *ast.InterfaceType) map[string]int {
 			}
 		case *ast.Ident:
 			// Embedded interface in this package.
-			for pkg := range packagesUsedByInterface(auxInterface(".", t.Name)) {
+			for pkg := range packagesUsedByInterface(auxInterface("", t.Name)) {
 				m[pkg] = 1
 			}
 		case *ast.SelectorExpr:
@@ -467,7 +467,7 @@ func (g *generator) GenerateMockMethods(mockType string, it *ast.InterfaceType, 
 			g.GenerateMockRecorderMethod(mockType, field.Names[0].String(), field.Type.(*ast.FuncType))
 		case *ast.Ident:
 			// Embedded interface in this package.
-			g.GenerateMockMethodsForEmbedded(mockType, ".", ft.Name)
+			g.GenerateMockMethodsForEmbedded(mockType, "", ft.Name)
 		case *ast.SelectorExpr:
 			// Embedded interface in another package.
 			g.GenerateMockMethodsForEmbedded(mockType, ft.X.(*ast.Ident).Name, ft.Sel.Name)
@@ -480,26 +480,26 @@ func (g *generator) GenerateMockMethods(mockType string, it *ast.InterfaceType, 
 func (g *generator) GenerateMockMethodsForEmbedded(mockType, pkg, name string) {
 	it := auxInterface(pkg, name)
 
-	nicePkg := pkg + "."
-	if nicePkg == ".." {
-		nicePkg = ""
+	nicePkg := ""
+	if pkg != "" {
+		nicePkg = pkg + "."
 	}
 	g.p("")
 	g.p("// Methods for embedded interface %s%s", nicePkg, name)
 	g.GenerateMockMethods(mockType, it, pkg)
 }
 
-func typeString(f ast.Expr) string {
+func typeString(f ast.Expr, pkgOverride string) string {
 	switch v := f.(type) {
 	case *ast.ArrayType:
 		// slice or array
 		if v.Len == nil {
 			// slice
-			return "[]" + typeString(v.Elt)
+			return "[]" + typeString(v.Elt, pkgOverride)
 		}
 		if bl, ok := v.Len.(*ast.BasicLit); ok && bl.Kind == token.INT {
 			// array
-			return fmt.Sprintf("[%v]%s", bl.Value, typeString(v.Elt))
+			return fmt.Sprintf("[%v]%s", bl.Value, typeString(v.Elt, pkgOverride))
 		}
 		log.Printf("WARNING: odd *ast.ArrayType: %v", v)
 	case *ast.ChanType:
@@ -512,12 +512,12 @@ func typeString(f ast.Expr) string {
 		default:
 			s = "chan"
 		}
-		return s + " " + typeString(v.Value)
+		return s + " " + typeString(v.Value, pkgOverride)
 	case *ast.Ellipsis:
-		return "..." + typeString(v.Elt)
+		return "..." + typeString(v.Elt, pkgOverride)
 	case *ast.FuncType:
-		inStr, outStr := flattenFieldList(v.Params).typeString(), ""
-		out := flattenFieldList(v.Results)
+		inStr, outStr := flattenFieldList(v.Params, pkgOverride).typeString(), ""
+		out := flattenFieldList(v.Results, pkgOverride)
 		switch nOut := len(out.t); {
 		case nOut == 1:
 			outStr = " " + out.typeString()
@@ -526,6 +526,13 @@ func typeString(f ast.Expr) string {
 		}
 		return "func (" + inStr + ")" + outStr
 	case *ast.Ident:
+		// NOTE(dsymonds): This is an approximation, but a reasonable one.
+		// It breaks if the foreign interface being embedded refers to a type T
+		// that it knows about through a dot import. Dot imports are discouraged
+		// anyway, so this is a reasonable heuristic.
+		if pkgOverride != "" && ast.IsExported(v.Name) {
+			return pkgOverride + "." + v.Name
+		}
 		return v.Name
 	case *ast.InterfaceType:
 		// TODO: Support more than just interface{}
@@ -535,7 +542,7 @@ func typeString(f ast.Expr) string {
 		return fmt.Sprintf("%v.%v", v.X.(*ast.Ident), v.Sel)
 	case *ast.StarExpr:
 		// pointer
-		return "*" + typeString(v.X)
+		return "*" + typeString(v.X, pkgOverride)
 	}
 	log.Printf("WARNING: failed to generate type string for %T", f)
 	return fmt.Sprintf("<%T>", f)
@@ -546,7 +553,7 @@ type parameterList struct {
 	name, t []string // name and type of each arg (name may be empty)
 }
 
-func flattenFieldList(fields *ast.FieldList) *parameterList {
+func flattenFieldList(fields *ast.FieldList, pkgOverride string) *parameterList {
 	n := 0
 	if fields != nil && fields.List != nil {
 		n = fields.NumFields()
@@ -560,7 +567,7 @@ func flattenFieldList(fields *ast.FieldList) *parameterList {
 	}
 	i := 0 // destination index
 	for _, f := range fields.List {
-		ts := typeString(f.Type)
+		ts := typeString(f.Type, pkgOverride)
 		switch len(f.Names) {
 		case 0:
 			// anonymous arg; allocate a fake name
@@ -593,32 +600,11 @@ func (p *parameterList) typeString() string {
 	return strings.Join(p.t, ", ")
 }
 
-// qualifyTypes qualifies all unqualified exported types in p with pkg.
-func qualifyTypes(p *parameterList, pkg string) {
-	for i, typ := range p.t {
-		if strings.Contains(typ, ".") {
-			// Type is already qualified.
-			continue
-		}
-		if ast.IsExported(typ) {
-			p.t[i] = pkg + "." + typ
-		}
-	}
-}
-
 // GenerateMockMethod generates a mock method implementation.
 // If non-empty, pkgOverride is the package in which unqualified types reside.
 func (g *generator) GenerateMockMethod(mockType, methodName string, f *ast.FuncType, pkgOverride string) error {
-	args := flattenFieldList(f.Params)
-	rets := flattenFieldList(f.Results)
-	if pkgOverride != "" {
-		// NOTE(dsymonds): This is an approximation, but a reasonable one.
-		// It breaks if the foreign interface being embedded refers to a type T
-		// that it knows about through a dot import. Dot imports are discouraged
-		// anyway, so this is a reasonable heuristic.
-		qualifyTypes(args, pkgOverride)
-		qualifyTypes(rets, pkgOverride)
-	}
+	args := flattenFieldList(f.Params, pkgOverride)
+	rets := flattenFieldList(f.Results, pkgOverride)
 
 	retString := strings.Join(rets.t, ", ")
 	if len(rets.t) > 1 {

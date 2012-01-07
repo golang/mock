@@ -13,5 +13,5 @@ type ForeignEmbedded interface {
 
 	// This method uses a type in this package,
 	// which should be qualified when this interface is embedded.
-	ImplicitPackage(s string, t ImpT)
+	ImplicitPackage(s string, t ImpT, st []ImpT, pt *ImpT, ct chan ImpT)
 }
