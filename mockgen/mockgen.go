@@ -449,12 +449,12 @@ func (g *generator) GenerateMockInterface(typeName *ast.Ident, it *ast.Interface
 	g.out()
 	g.p("}")
 
-	g.GenerateMockMethods(mockType, it)
+	g.GenerateMockMethods(mockType, it, "")
 
 	return nil
 }
 
-func (g *generator) GenerateMockMethods(mockType string, it *ast.InterfaceType) {
+func (g *generator) GenerateMockMethods(mockType string, it *ast.InterfaceType, pkgOverride string) {
 	for _, field := range it.Methods.List {
 		switch ft := field.Type.(type) {
 		case *ast.FuncType:
@@ -462,7 +462,7 @@ func (g *generator) GenerateMockMethods(mockType string, it *ast.InterfaceType) 
 				log.Fatal("unexpected case: there should be exactly one Ident for a method in an interface")
 			}
 			g.p("")
-			g.GenerateMockMethod(mockType, field.Names[0].String(), field.Type.(*ast.FuncType))
+			g.GenerateMockMethod(mockType, field.Names[0].String(), field.Type.(*ast.FuncType), pkgOverride)
 			g.p("")
 			g.GenerateMockRecorderMethod(mockType, field.Names[0].String(), field.Type.(*ast.FuncType))
 		case *ast.Ident:
@@ -486,7 +486,7 @@ func (g *generator) GenerateMockMethodsForEmbedded(mockType, pkg, name string) {
 	}
 	g.p("")
 	g.p("// Methods for embedded interface %s%s", nicePkg, name)
-	g.GenerateMockMethods(mockType, it)
+	g.GenerateMockMethods(mockType, it, pkg)
 }
 
 func typeString(f ast.Expr) string {
@@ -593,9 +593,32 @@ func (p *parameterList) typeString() string {
 	return strings.Join(p.t, ", ")
 }
 
-func (g *generator) GenerateMockMethod(mockType, methodName string, f *ast.FuncType) error {
+// qualifyTypes qualifies all unqualified exported types in p with pkg.
+func qualifyTypes(p *parameterList, pkg string) {
+	for i, typ := range p.t {
+		if strings.Contains(typ, ".") {
+			// Type is already qualified.
+			continue
+		}
+		if ast.IsExported(typ) {
+			p.t[i] = pkg + "." + typ
+		}
+	}
+}
+
+// GenerateMockMethod generates a mock method implementation.
+// If non-empty, pkgOverride is the package in which unqualified types reside.
+func (g *generator) GenerateMockMethod(mockType, methodName string, f *ast.FuncType, pkgOverride string) error {
 	args := flattenFieldList(f.Params)
 	rets := flattenFieldList(f.Results)
+	if pkgOverride != "" {
+		// NOTE(dsymonds): This is an approximation, but a reasonable one.
+		// It breaks if the foreign interface being embedded refers to a type T
+		// that it knows about through a dot import. Dot imports are discouraged
+		// anyway, so this is a reasonable heuristic.
+		qualifyTypes(args, pkgOverride)
+		qualifyTypes(rets, pkgOverride)
+	}
 
 	retString := strings.Join(rets.t, ", ")
 	if len(rets.t) > 1 {
