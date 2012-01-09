@@ -56,8 +56,8 @@ For an example of the use of `mockgen`, see the `sample/` directory. In simple
 cases, you will need only the `--source` flag.
 
 
-TODO: Brief overview of how to create mock objects and set up expectations,
-links to documentation, and an example.
+TODO: Brief overview of how to create mock objects and set up expectations, and
+an example.
 
 [golang]: http://golang.org/
 [golang-install]: http://golang.org/doc/install.html#releases
