@@ -19,7 +19,7 @@
 //         type MyInterface interface {
 //           SomeMethod(x int64, y string)
 //         }
-//   (2) Use mockgen to automatically generate a mock from the interface.
+//   (2) Use mockgen to generate a mock from the interface.
 //   (3) Use the mock in a test:
 //         func TestMyThing(t *testing.T) {
 //           mockCtrl := gomock.NewController(t)
