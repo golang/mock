@@ -19,7 +19,7 @@ import (
 	"testing"
 
 	"github.com/dsymonds/gomock/gomock"
-	mock_matcher "github.com/dsymonds/gomock/mock_matcher"
+	mock_matcher "github.com/dsymonds/gomock/gomock/mock_matcher"
 )
 
 func TestMatchers(t *testing.T) {
