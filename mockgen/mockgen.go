@@ -51,7 +51,7 @@ func main() {
 	flag.Parse()
 
 	if *source == "" {
-		log.Fatalf("No source passed in --source flag")
+		log.Fatalf("No source passed in -source flag")
 	}
 
 	dst := os.Stdout
@@ -155,9 +155,9 @@ type generator struct {
 
 	imports map[string]string // map from package name to import path
 
-	// Named imports passed via --imports; map from package name to import path
+	// Named imports passed via -imports; map from package name to import path
 	explicitNamedImports map[string]string
-	// "Dot" imports passed via --imports (i.e. 'import . "..."')
+	// "Dot" imports passed via -imports (i.e. 'import . "..."')
 	explicitDotImports []string
 }
 
