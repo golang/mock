@@ -8,26 +8,9 @@ interface that can be mocked with GoMock. The interesting files are:
     interfaces from `user.go` are used. This demonstrates how to create mock
     objects, set up expectations, and so on.
 
-Use `goinstall` to get a clone of the GoMock repository into your `$GOPATH`
-directory:
+ *  `mock_user/mock_user.go`: The generated mock code. See ../update_mocks.sh
+    for the command used to generate it.
 
-    goinstall github.com/dsymonds/gomock
+To run the test,
 
-You can build the sample package as follows:
-
-    go build github.com/dsymonds/gomock/sample
-
-To run the test, you'll need to first use MockGen to generate the `mock_user`
-package used by the test:
-
-    cd $GOPATH/src/github.com/dsymonds/gomock/sample
-    mkdir -p mock_user
-    mockgen --source=user.go --aux_files=imp1=imp1/imp1.go --imports=.=github.com/dsymonds/gomock/sample/imp3,imp_four=github.com/dsymonds/gomock/sample/imp4 > mock_user/mock_user.go
-
-You can now verify that the mock package builds:
-
-    go build github.com/dsymonds/gomock/sample/mock_user
-
-You can invoke the following command to run the tests in `user_test`.go:
-
-    go test
+    go test github.com/dsymonds/gomock/sample
