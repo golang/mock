@@ -526,7 +526,7 @@ func typeString(f ast.Expr, pkgOverride string) string {
 		case nOut > 1:
 			outStr = " (" + out.typeString() + ")"
 		}
-		return "func (" + inStr + ")" + outStr
+		return "func(" + inStr + ")" + outStr
 	case *ast.Ident:
 		// NOTE(dsymonds): This is an approximation, but a reasonable one.
 		// It breaks if the foreign interface being embedded refers to a type T

@@ -6,14 +6,14 @@ package mock_user
 import (
 	bufio "bufio"
 	btz "bytes"
-	io "io"
-	imp1 "github.com/dsymonds/gomock/sample/imp1"
-	hash "hash"
-	http "net/http"
-	imp_four "github.com/dsymonds/gomock/sample/imp4"
-	renamed2 "github.com/dsymonds/gomock/sample/imp2"
 	gomock "github.com/dsymonds/gomock/gomock"
+	imp1 "github.com/dsymonds/gomock/sample/imp1"
+	renamed2 "github.com/dsymonds/gomock/sample/imp2"
 	. "github.com/dsymonds/gomock/sample/imp3"
+	imp_four "github.com/dsymonds/gomock/sample/imp4"
+	hash "hash"
+	io "io"
+	http "net/http"
 )
 
 // Mock of Index interface
@@ -178,7 +178,7 @@ func (_mr *_MockIndexRecorder) Chan(arg0, arg1 interface{}) *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "Chan", arg0, arg1)
 }
 
-func (_m *MockIndex) Func(f func (http.Request) (int, bool)) {
+func (_m *MockIndex) Func(f func(http.Request) (int, bool)) {
 	_m.ctrl.Call(_m, "Func", f)
 }
 
