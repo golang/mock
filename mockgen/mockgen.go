@@ -626,16 +626,15 @@ func (g *generator) GenerateMockMethod(mockType, methodName string, f *ast.FuncT
 		callArgs = ", " + callArgs
 	}
 	if isVariadic(f) {
-		if len(args.name) == 1 {
-			// Easy: just use ... to push the arguments through.
-			callArgs += "..."
-		} else {
-			// Hard: create a temporary slice.
-			g.p("_s := append([]interface{}{%s}, %s...)",
-				strings.Join(args.name[:len(args.name)-1], ", "),
-				args.name[len(args.name)-1])
-			callArgs = ", _s..."
-		}
+		// Non-trivial. The generated code must build a []interface{},
+		// but the variadic argument may be any type.
+		g.p("_s := []interface{}{%s}", strings.Join(args.name[:len(args.name)-1], ", "))
+		g.p("for _, _x := range %s {", args.name[len(args.name)-1])
+		g.in()
+		g.p("_s = append(_s, _x)")
+		g.out()
+		g.p("}")
+		callArgs = ", _s..."
 	}
 	if f.Results == nil || len(f.Results.List) == 0 {
 		g.p(`_m.ctrl.Call(_m, "%v"%v)`, methodName, callArgs)

@@ -45,7 +45,7 @@ type Index interface {
 
 	// Methods with an ellipsis argument.
 	Ellip(fmt string, args ...interface{})
-	EllipOnly(...interface{})
+	EllipOnly(...string)
 
 	// A method with a pointer argument that we will set.
 	Ptr(arg *int)

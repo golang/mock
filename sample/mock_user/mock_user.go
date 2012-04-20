@@ -135,7 +135,10 @@ func (_mr *_MockIndexRecorder) NillableRet() *gomock.Call {
 }
 
 func (_m *MockIndex) Ellip(fmt string, args ...interface{}) {
-	_s := append([]interface{}{fmt}, args...)
+	_s := []interface{}{fmt}
+	for _, _x := range args {
+		_s = append(_s, _x)
+	}
 	_m.ctrl.Call(_m, "Ellip", _s...)
 }
 
@@ -144,8 +147,12 @@ func (_mr *_MockIndexRecorder) Ellip(arg0 interface{}, arg1 ...interface{}) *gom
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "Ellip", _s...)
 }
 
-func (_m *MockIndex) EllipOnly(_param0 ...interface{}) {
-	_m.ctrl.Call(_m, "EllipOnly", _param0...)
+func (_m *MockIndex) EllipOnly(_param0 ...string) {
+	_s := []interface{}{}
+	for _, _x := range _param0 {
+		_s = append(_s, _x)
+	}
+	_m.ctrl.Call(_m, "EllipOnly", _s...)
 }
 
 func (_mr *_MockIndexRecorder) EllipOnly(arg0 ...interface{}) *gomock.Call {
