@@ -25,6 +25,7 @@ func TestRemember(t *testing.T) {
 	mockIndex.EXPECT().Ellip("%d", 0, 1, 1, 2, 3) // direct args
 	tri := []interface{}{1, 3, 6, 10, 15}
 	mockIndex.EXPECT().Ellip("%d", tri...) // args from slice
+	mockIndex.EXPECT().EllipOnly(gomock.Eq("arg"))
 
 	user.Remember(mockIndex, []string{"a", "b"}, []interface{}{1, 2})
 

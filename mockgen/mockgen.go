@@ -625,6 +625,18 @@ func (g *generator) GenerateMockMethod(mockType, methodName string, f *ast.FuncT
 	if callArgs != "" {
 		callArgs = ", " + callArgs
 	}
+	if isVariadic(f) {
+		if len(args.name) == 1 {
+			// Easy: just use ... to push the arguments through.
+			callArgs += "..."
+		} else {
+			// Hard: create a temporary slice.
+			g.p("_s := append([]interface{}{%s}, %s...)",
+				strings.Join(args.name[:len(args.name)-1], ", "),
+				args.name[len(args.name)-1])
+			callArgs = ", _s..."
+		}
+	}
 	if f.Results == nil || len(f.Results.List) == 0 {
 		g.p(`_m.ctrl.Call(_m, "%v"%v)`, methodName, callArgs)
 	} else {
@@ -687,7 +699,14 @@ func (g *generator) GenerateMockRecorderMethod(mockType, methodName string, f *a
 		callArgs = ", " + callArgs
 	}
 	if variadic {
-		callArgs += fmt.Sprintf(", arg%d", nargs)
+		if nargs == 0 {
+			// Easy: just use ... to push the arguments through.
+			callArgs = ", arg0..."
+		} else {
+			// Hard: create a temporary slice.
+			g.p("_s := append([]interface{}{%s}, arg%d...)", strings.Join(args, ", "), nargs)
+			callArgs = ", _s..."
+		}
 	}
 	g.p(`return _mr.mock.ctrl.RecordCall(_mr.mock, "%v"%v)`, methodName, callArgs)
 

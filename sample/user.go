@@ -90,6 +90,7 @@ func Remember(index Index, keys []string, values []interface{}) {
 	if len(keys) > 0 && keys[0] == "a" {
 		index.Ellip("%d", 0, 1, 1, 2, 3)
 		index.Ellip("%d", 1, 3, 6, 10, 15)
+		index.EllipOnly("arg")
 	}
 }
 
