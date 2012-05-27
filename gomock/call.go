@@ -22,6 +22,8 @@ import (
 
 // Call represents an expected call to a mock.
 type Call struct {
+	t TestReporter // for triggering test failures on invalid call setup
+
 	receiver interface{}   // the receiver of the method call
 	method   string        // the name of the method
 	args     []Matcher     // the args
@@ -53,7 +55,20 @@ func (c *Call) Do(f interface{}) *Call {
 }
 
 func (c *Call) Return(rets ...interface{}) *Call {
-	// TODO: Check return-arity and types here, rather than dying badly elsewhere.
+	mt := c.methodType()
+	if len(rets) != mt.NumOut() {
+		c.t.Fatalf("wrong number of arguments to Return for %T.%v: got %d, want %d",
+			c.receiver, c.method, len(rets), mt.NumOut())
+	}
+	for i, ret := range rets {
+		// TODO: Relax this to permit assignable types. That will require changes to the
+		// generated code, too, because the type assertions there enforce type identity.
+		if got, want := reflect.TypeOf(ret), mt.Out(i); got != want {
+			c.t.Fatalf("wrong type of argument %d to Return for %T.%v: got %v, want %v",
+				i, c.receiver, c.method, got, want)
+		}
+	}
+
 	c.rets = rets
 	return c
 }
@@ -165,14 +180,7 @@ func (c *Call) call(args []interface{}) []interface{} {
 	rets := c.rets
 	if rets == nil {
 		// Synthesize the zero value for each of the return args' types.
-		recv := reflect.ValueOf(c.receiver)
-		var mt reflect.Type
-		for i := 0; i < recv.Type().NumMethod(); i++ {
-			if recv.Type().Method(i).Name == c.method {
-				mt = recv.Method(i).Type()
-				break
-			}
-		}
+		mt := c.methodType()
 		rets = make([]interface{}, mt.NumOut())
 		for i := 0; i < mt.NumOut(); i++ {
 			rets[i] = reflect.Zero(mt.Out(i)).Interface()
@@ -180,6 +188,16 @@ func (c *Call) call(args []interface{}) []interface{} {
 	}
 
 	return rets
+}
+
+func (c *Call) methodType() reflect.Type {
+	recv := reflect.ValueOf(c.receiver)
+	for i := 0; i < recv.Type().NumMethod(); i++ {
+		if recv.Type().Method(i).Name == c.method {
+			return recv.Method(i).Type()
+		}
+	}
+	panic(fmt.Sprintf("gomock: failed finding method %s on %T", c.method, c.receiver))
 }
 
 // InOrder declares that the given calls should occur in order.

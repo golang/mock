@@ -77,6 +77,7 @@ func NewController(t TestReporter) *Controller {
 }
 
 func (ctrl *Controller) RecordCall(receiver interface{}, method string, args ...interface{}) *Call {
+	// TODO: check arity, types.
 	margs := make([]Matcher, len(args))
 	for i, arg := range args {
 		if m, ok := arg.(Matcher); ok {
@@ -86,7 +87,7 @@ func (ctrl *Controller) RecordCall(receiver interface{}, method string, args ...
 		}
 	}
 
-	call := &Call{receiver: receiver, method: method, args: margs, minCalls: 1, maxCalls: 1}
+	call := &Call{t: ctrl.t, receiver: receiver, method: method, args: margs, minCalls: 1, maxCalls: 1}
 
 	ctrl.expectedCalls.Add(call)
 	return call
