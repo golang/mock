@@ -134,6 +134,16 @@ func (_mr *_MockIndexRecorder) NillableRet() *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "NillableRet")
 }
 
+func (_m *MockIndex) ConcreteRet() chan<- bool {
+	ret := _m.ctrl.Call(_m, "ConcreteRet")
+	ret0, _ := ret[0].(chan<- bool)
+	return ret0
+}
+
+func (_mr *_MockIndexRecorder) ConcreteRet() *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "ConcreteRet")
+}
+
 func (_m *MockIndex) Ellip(fmt string, args ...interface{}) {
 	_s := []interface{}{fmt}
 	for _, _x := range args {

@@ -42,6 +42,8 @@ type Index interface {
 
 	// A method that returns a nillable type.
 	NillableRet() error
+	// A method that returns a non-interface type.
+	ConcreteRet() chan<- bool
 
 	// Methods with an ellipsis argument.
 	Ellip(fmt string, args ...interface{})

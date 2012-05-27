@@ -61,10 +61,16 @@ func (c *Call) Return(rets ...interface{}) *Call {
 			c.receiver, c.method, len(rets), mt.NumOut())
 	}
 	for i, ret := range rets {
-		// TODO: Relax this to permit assignable types. That will require changes to the
-		// generated code, too, because the type assertions there enforce type identity.
-		if got, want := reflect.TypeOf(ret), mt.Out(i); got != want {
-			c.t.Fatalf("wrong type of argument %d to Return for %T.%v: got %v, want %v",
+		if got, want := reflect.TypeOf(ret), mt.Out(i); got == want {
+			// Identical types; nothing to do.
+		} else if got.AssignableTo(want) {
+			// Assignable type relation. Make the assignment now so that the generated code
+			// can return the values with a type assertion.
+			v := reflect.New(want).Elem()
+			v.Set(reflect.ValueOf(ret))
+			rets[i] = v.Interface()
+		} else {
+			c.t.Fatalf("wrong type of argument %d to Return for %T.%v: %v is not assignable to %v",
 				i, c.receiver, c.method, got, want)
 		}
 	}
