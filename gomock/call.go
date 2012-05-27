@@ -63,6 +63,15 @@ func (c *Call) Return(rets ...interface{}) *Call {
 	for i, ret := range rets {
 		if got, want := reflect.TypeOf(ret), mt.Out(i); got == want {
 			// Identical types; nothing to do.
+		} else if got == nil {
+			// Nil needs special handling.
+			switch want.Kind() {
+			case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Ptr, reflect.Slice:
+				// ok
+			default:
+				c.t.Fatalf("argument %d to Return for %T.%v is nil, but %v is not nillable",
+					i, c.receiver, c.method, want)
+			}
 		} else if got.AssignableTo(want) {
 			// Assignable type relation. Make the assignment now so that the generated code
 			// can return the values with a type assertion.

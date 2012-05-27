@@ -20,10 +20,12 @@ func TestRemember(t *testing.T) {
 
 	// NillableRet returns error. Not declaring it should result in a nil return.
 	mockIndex.EXPECT().NillableRet()
-	// A call that returns something assignable to the return type.
-	// In this case, "chan bool" is assignable to "chan<- bool".
+	// Calls that returns something assignable to the return type.
 	boolc := make(chan bool)
+	// In this case, "chan bool" is assignable to "chan<- bool".
 	mockIndex.EXPECT().ConcreteRet().Return(boolc)
+	// In this case, nil is assignable to "chan<- bool".
+	mockIndex.EXPECT().ConcreteRet().Return(nil)
 
 	// Should be able to place expectations on variadic methods.
 	mockIndex.EXPECT().Ellip("%d", 0, 1, 1, 2, 3) // direct args
@@ -32,9 +34,12 @@ func TestRemember(t *testing.T) {
 	mockIndex.EXPECT().EllipOnly(gomock.Eq("arg"))
 
 	user.Remember(mockIndex, []string{"a", "b"}, []interface{}{1, 2})
-	// Force checking of the second NillableRet.
+	// Check the ConcreteRet calls.
 	if c := mockIndex.ConcreteRet(); c != boolc {
 		t.Errorf("ConcreteRet: got %v, want %v", c, boolc)
+	}
+	if c := mockIndex.ConcreteRet(); c != nil {
+		t.Errorf("ConcreteRet: got %v, want nil", c)
 	}
 
 	// Try one with an action.
