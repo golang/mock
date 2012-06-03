@@ -7,6 +7,9 @@
 # Any file prefixed by an underscore.
 */_*
 
+# Vim temporary files.
+.*.swp
+
 # The mockgen binary.
 mockgen/mockgen
 

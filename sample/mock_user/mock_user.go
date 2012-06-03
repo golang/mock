@@ -5,12 +5,12 @@ package mock_user
 
 import (
 	bufio "bufio"
-	btz "bytes"
+	bytes "bytes"
 	gomock "github.com/dsymonds/gomock/gomock"
 	imp1 "github.com/dsymonds/gomock/sample/imp1"
-	renamed2 "github.com/dsymonds/gomock/sample/imp2"
+	imp2 "github.com/dsymonds/gomock/sample/imp2"
 	. "github.com/dsymonds/gomock/sample/imp3"
-	imp_four "github.com/dsymonds/gomock/sample/imp4"
+	imp4 "github.com/dsymonds/gomock/sample/imp4"
 	hash "hash"
 	io "io"
 	http "net/http"
@@ -66,7 +66,7 @@ func (_mr *_MockIndexRecorder) Put(arg0, arg1 interface{}) *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "Put", arg0, arg1)
 }
 
-func (_m *MockIndex) Summary(buf *btz.Buffer, w io.Writer) {
+func (_m *MockIndex) Summary(buf *bytes.Buffer, w io.Writer) {
 	_m.ctrl.Call(_m, "Summary", buf, w)
 }
 
@@ -100,7 +100,7 @@ func (_mr *_MockIndexRecorder) ForeignOne(arg0 interface{}) *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "ForeignOne", arg0)
 }
 
-func (_m *MockIndex) ForeignTwo(_param0 renamed2.Imp2) {
+func (_m *MockIndex) ForeignTwo(_param0 imp2.Imp2) {
 	_m.ctrl.Call(_m, "ForeignTwo", _param0)
 }
 
@@ -116,7 +116,7 @@ func (_mr *_MockIndexRecorder) ForeignThree(arg0 interface{}) *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "ForeignThree", arg0)
 }
 
-func (_m *MockIndex) ForeignFour(_param0 imp_four.Imp4) {
+func (_m *MockIndex) ForeignFour(_param0 imp4.Imp4) {
 	_m.ctrl.Call(_m, "ForeignFour", _param0)
 }
 
@@ -240,8 +240,6 @@ func (_mr *_MockEmbedRecorder) RegularMethod() *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "RegularMethod")
 }
 
-// Methods for embedded interface Embedded
-
 func (_m *MockEmbed) EmbeddedMethod() {
 	_m.ctrl.Call(_m, "EmbeddedMethod")
 }
@@ -249,8 +247,6 @@ func (_m *MockEmbed) EmbeddedMethod() {
 func (_mr *_MockEmbedRecorder) EmbeddedMethod() *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "EmbeddedMethod")
 }
-
-// Methods for embedded interface imp1.ForeignEmbedded
 
 func (_m *MockEmbed) ForeignEmbeddedMethod() *bufio.Reader {
 	ret := _m.ctrl.Call(_m, "ForeignEmbeddedMethod")
