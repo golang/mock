@@ -86,15 +86,26 @@ var reflectProgram = template.Must(template.New("program").Parse(`
 package main
 
 import (
-	//"encoding/json"
+	"encoding/json"
 	"fmt"
+	"os"
 	"reflect"
 
-	gomock_ {{printf "%q" .ImportPath}}
+	"github.com/dsymonds/gomock/mockgen/model"
+
+	pkg_ {{printf "%q" .ImportPath}}
 )
 
 func main() {
-	sym := reflect.TypeOf((*gomock_.{{.Symbol}})(nil)).Elem()
-	fmt.Printf("sym: %v\n", sym)
+	it := reflect.TypeOf((*pkg_.{{.Symbol}})(nil)).Elem()
+	pkg, err := model.PackageFromInterfaceType(it)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Reflection: %v\n", err)
+		os.Exit(1)
+	}
+	if err := json.NewEncoder(os.Stdout).Encode(pkg); err != nil {
+		fmt.Fprintf(os.Stderr, "JSON encode: %v\n", err)
+		os.Exit(1)
+	}
 }
 `))
