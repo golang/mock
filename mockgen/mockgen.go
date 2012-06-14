@@ -37,23 +37,26 @@ const (
 )
 
 var (
-	source      = flag.String("source", "", "Input Go source file.")
+	source      = flag.String("source", "", "(source mode) Input Go source file; enables source mode.")
 	destination = flag.String("destination", "", "Output file; defaults to stdout.")
-	packageOut  = flag.String("package", "", "Package of the generated code; defaults to the package of the input file with a 'mock_' prefix.")
+	packageOut  = flag.String("package", "", "Package of the generated code; defaults to the package of the input with a 'mock_' prefix.")
 
 	debugParser = flag.Bool("debug_parser", false, "Print out parser results only.")
 )
 
 func main() {
+	flag.Usage = usage
 	flag.Parse()
 
-	if *source == "" {
-		log.Fatalf("No source passed in -source flag")
-	}
-
-	pkg, err := ParseFile(*source)
-	if err != nil {
-		log.Fatalf("Parse failed: %v", err)
+	var pkg *model.Package
+	var err error
+	if *source != "" {
+		pkg, err = ParseFile(*source)
+		if err != nil {
+			log.Fatalf("Parse failed: %v", err)
+		}
+	} else {
+		log.Fatal("reflect mode NYI")
 	}
 
 	if *debugParser {
@@ -84,6 +87,27 @@ func main() {
 		log.Fatalf("Failed generating mock: %v", err)
 	}
 }
+
+func usage() {
+	io.WriteString(os.Stderr, usageText)
+	flag.PrintDefaults()
+}
+
+const usageText = `mockgen has two modes of operation: source and reflect.
+
+Source mode generates mock interfaces from a source file.
+It is enabled by using the -source flag. Other flags that
+may be useful in this mode are -imports and -aux_files.
+Example:
+	mockgen -source=foo.go [other options]
+
+Reflect mode generates mock interfaces by building a program
+that uses reflection to understand an interface. It is enabled
+by passing two non-flag arguments: an import path, and a symbol.
+Example:
+	mockgen database/sql/driver Driver
+
+`
 
 type generator struct {
 	w        io.Writer

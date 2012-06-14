@@ -31,8 +31,8 @@ import (
 )
 
 var (
-	imports  = flag.String("imports", "", "Comma-separated name=path pairs of explicit imports to use.")
-	auxFiles = flag.String("aux_files", "", "Comma-separated pkg=path pairs of auxiliary Go source files.")
+	imports  = flag.String("imports", "", "(source mode) Comma-separated name=path pairs of explicit imports to use.")
+	auxFiles = flag.String("aux_files", "", "(source mode) Comma-separated pkg=path pairs of auxiliary Go source files.")
 )
 
 // TODO: simplify error reporting
