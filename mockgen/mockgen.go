@@ -52,11 +52,14 @@ func main() {
 	var err error
 	if *source != "" {
 		pkg, err = ParseFile(*source)
-		if err != nil {
-			log.Fatalf("Parse failed: %v", err)
-		}
 	} else {
-		log.Fatal("reflect mode NYI")
+		if flag.NArg() != 2 {
+			log.Fatal("Expected exactly two arguments")
+		}
+		pkg, err = Reflect(flag.Arg(0), flag.Arg(1))
+	}
+	if err != nil {
+		log.Fatalf("Loading input failed: %v", err)
 	}
 
 	if *debugParser {
