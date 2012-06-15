@@ -28,7 +28,7 @@ import (
 	"github.com/dsymonds/gomock/mockgen/model"
 )
 
-func Reflect(importPath, symbol string) (*model.Package, error) {
+func Reflect(importPath string, symbols []string) (*model.Package, error) {
 	// TODO: sanity check arguments
 
 	// We use TempDir instead of TempFile so we can control the filename.
@@ -43,7 +43,7 @@ func Reflect(importPath, symbol string) (*model.Package, error) {
 	var program bytes.Buffer
 	data := reflectData{
 		ImportPath: importPath,
-		Symbol:     symbol,
+		Symbols:    symbols,
 	}
 	if err := reflectProgram.Execute(&program, &data); err != nil {
 		return nil, err
@@ -72,7 +72,7 @@ func Reflect(importPath, symbol string) (*model.Package, error) {
 
 type reflectData struct {
 	ImportPath string
-	Symbol     string
+	Symbols    []string
 }
 
 // This program reflects on an interface value, and prints the
@@ -85,6 +85,7 @@ import (
 	"encoding/gob"
 	"fmt"
 	"os"
+	"path"
 	"reflect"
 
 	"github.com/dsymonds/gomock/mockgen/model"
@@ -93,11 +94,27 @@ import (
 )
 
 func main() {
-	it := reflect.TypeOf((*pkg_.{{.Symbol}})(nil)).Elem()
-	pkg, err := model.PackageFromInterfaceType(it)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Reflection: %v\n", err)
-		os.Exit(1)
+	its := []struct{
+		sym string
+		typ reflect.Type
+	}{
+		{{range .Symbols}}
+		{ {{printf "%q" .}}, reflect.TypeOf((*pkg_.{{.}})(nil)).Elem()},
+		{{end}}
+	}
+	pkg := &model.Package{
+		// TODO: how reliable is this?
+		Name: path.Base({{printf "%q" .ImportPath}}),
+	}
+
+	for _, it := range its {
+		intf, err := model.InterfaceFromInterfaceType(it.typ)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Reflection: %v\n", err)
+			os.Exit(1)
+		}
+		intf.Name = it.sym
+		pkg.Interfaces = append(pkg.Interfaces, intf)
 	}
 	if err := gob.NewEncoder(os.Stdout).Encode(pkg); err != nil {
 		fmt.Fprintf(os.Stderr, "gob encode: %v\n", err)

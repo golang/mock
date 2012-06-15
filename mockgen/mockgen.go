@@ -56,7 +56,7 @@ func main() {
 		if flag.NArg() != 2 {
 			log.Fatal("Expected exactly two arguments")
 		}
-		pkg, err = Reflect(flag.Arg(0), flag.Arg(1))
+		pkg, err = Reflect(flag.Arg(0), strings.Split(flag.Arg(1), ","))
 	}
 	if err != nil {
 		log.Fatalf("Loading input failed: %v", err)
@@ -89,7 +89,7 @@ func main() {
 		g.filename = *source
 	} else {
 		g.srcPackage = flag.Arg(0)
-		g.srcInterface = flag.Arg(1)
+		g.srcInterfaces = flag.Arg(1)
 	}
 	if err := g.Generate(pkg, packageName); err != nil {
 		log.Fatalf("Failed generating mock: %v", err)
@@ -110,10 +110,11 @@ Example:
 	mockgen -source=foo.go [other options]
 
 Reflect mode generates mock interfaces by building a program
-that uses reflection to understand an interface. It is enabled
-by passing two non-flag arguments: an import path, and a symbol.
+that uses reflection to understand interfaces. It is enabled
+by passing two non-flag arguments: an import path, and a
+comma-separated list of symbols.
 Example:
-	mockgen database/sql/driver Driver
+	mockgen database/sql/driver Conn,Driver
 
 `
 
@@ -121,8 +122,8 @@ type generator struct {
 	w      io.Writer
 	indent string
 
-	filename                 string // may be empty
-	srcPackage, srcInterface string // may be empty
+	filename                  string // may be empty
+	srcPackage, srcInterfaces string // may be empty
 
 	packageMap map[string]string // map from import path to package name
 }
@@ -176,7 +177,7 @@ func (g *generator) Generate(pkg *model.Package, pkgName string) error {
 	if g.filename != "" {
 		g.p("// Source: %v", g.filename)
 	} else {
-		g.p("// Source: %v (interface %v)", g.srcPackage, g.srcInterface)
+		g.p("// Source: %v (interfaces: %v)", g.srcPackage, g.srcInterfaces)
 	}
 	g.p("")
 
