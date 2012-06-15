@@ -16,6 +16,7 @@
 package model
 
 import (
+	"encoding/gob"
 	"fmt"
 	"io"
 	"reflect"
@@ -121,6 +122,16 @@ func (p *Parameter) Print(w io.Writer) {
 type Type interface {
 	String(pm map[string]string, pkgOverride string) string
 	addImports(im map[string]bool)
+}
+
+func init() {
+	gob.Register(&ArrayType{})
+	gob.Register(&ChanType{})
+	gob.Register(&FuncType{})
+	gob.Register(&MapType{})
+	gob.Register(&NamedType{})
+	gob.Register(&PointerType{})
+	gob.Register(PredeclaredType(""))
 }
 
 // ArrayType is an array or slice type.

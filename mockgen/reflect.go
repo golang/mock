@@ -18,8 +18,7 @@ package main
 
 import (
 	"bytes"
-	"flag"
-	"fmt"
+	"encoding/gob"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -27,10 +26,6 @@ import (
 	"text/template"
 
 	"github.com/dsymonds/gomock/mockgen/model"
-)
-
-var (
-	debugReflect = flag.Bool("debug_reflect", false, "Whether to debug reflect mode.")
 )
 
 func Reflect(importPath, symbol string) (*model.Package, error) {
@@ -68,11 +63,11 @@ func Reflect(importPath, symbol string) (*model.Package, error) {
 	}
 
 	// Process output.
-	if *debugReflect {
-		fmt.Printf("Stdout:\n%s\n", stdout.String())
+	var pkg model.Package
+	if err := gob.NewDecoder(&stdout).Decode(&pkg); err != nil {
+		return nil, err
 	}
-
-	return nil, fmt.Errorf("reflect mode not working yet")
+	return &pkg, nil
 }
 
 type reflectData struct {
@@ -80,13 +75,14 @@ type reflectData struct {
 	Symbol     string
 }
 
-// This program reflects on an interface value,
-// and prints the model.Package to standard output.
+// This program reflects on an interface value, and prints the
+// gob encoding of a model.Package to standard output.
+// JSON doesn't work because of the model.Type interface.
 var reflectProgram = template.Must(template.New("program").Parse(`
 package main
 
 import (
-	"encoding/json"
+	"encoding/gob"
 	"fmt"
 	"os"
 	"reflect"
@@ -103,8 +99,8 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Reflection: %v\n", err)
 		os.Exit(1)
 	}
-	if err := json.NewEncoder(os.Stdout).Encode(pkg); err != nil {
-		fmt.Fprintf(os.Stderr, "JSON encode: %v\n", err)
+	if err := gob.NewEncoder(os.Stdout).Encode(pkg); err != nil {
+		fmt.Fprintf(os.Stderr, "gob encode: %v\n", err)
 		os.Exit(1)
 	}
 }
