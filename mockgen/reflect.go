@@ -25,7 +25,7 @@ import (
 	"path/filepath"
 	"text/template"
 
-	"github.com/dsymonds/gomock/mockgen/model"
+	"code.google.com/p/gomock/mockgen/model"
 )
 
 func Reflect(importPath string, symbols []string) (*model.Package, error) {
@@ -88,7 +88,7 @@ import (
 	"path"
 	"reflect"
 
-	"github.com/dsymonds/gomock/mockgen/model"
+	"code.google.com/p/gomock/mockgen/model"
 
 	pkg_ {{printf "%q" .ImportPath}}
 )
