@@ -9,8 +9,8 @@ Installation
 Once you have [installed Go][golang-install], run these commands
 to install the `gomock` package and the `mockgen` tool:
 
-    go install github.com/dsymonds/gomock/gomock
-    go install github.com/dsymonds/gomock/mockgen
+    go install code.google.com/p/gomock/gomock
+    go install code.google.com/p/gomock/mockgen
 
 
 Documentation
@@ -18,7 +18,7 @@ Documentation
 
 After installing, you can use `go doc` to get documentation:
 
-    go doc github.com/dsymonds/gomock/gomock
+    go doc code.google.com/p/gomock/gomock
 
 Alternatively, there is an online reference for the package hosted on GoPkgDoc
 [here][gomock-ref].
@@ -61,4 +61,4 @@ an example.
 
 [golang]: http://golang.org/
 [golang-install]: http://golang.org/doc/install.html#releases
-[gomock-ref]: http://gopkgdoc.appspot.com/pkg/github.com/dsymonds/gomock/gomock
+[gomock-ref]: http://gopkgdoc.appspot.com/pkg/code.google.com/p/gomock/gomock

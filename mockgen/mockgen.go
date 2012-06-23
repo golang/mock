@@ -29,11 +29,11 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/dsymonds/gomock/mockgen/model"
+	"code.google.com/p/gomock/mockgen/model"
 )
 
 const (
-	gomockImportPath = "github.com/dsymonds/gomock/gomock"
+	gomockImportPath = "code.google.com/p/gomock/gomock"
 )
 
 var (
