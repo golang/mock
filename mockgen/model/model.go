@@ -307,7 +307,7 @@ func funcArgsFromType(t reflect.Type) (in []*Parameter, variadic *Parameter, out
 		in = append(in, p)
 	}
 	if t.IsVariadic() {
-		p, err = parameterFromType(t.In(nin))
+		p, err = parameterFromType(t.In(nin).Elem())
 		if err != nil {
 			return
 		}

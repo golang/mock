@@ -63,7 +63,7 @@ func (_mr *_MockIndexRecorder) ConcreteRet() *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "ConcreteRet")
 }
 
-func (_m *MockIndex) Ellip(_param0 string, _param1 ...[]interface{}) {
+func (_m *MockIndex) Ellip(_param0 string, _param1 ...interface{}) {
 	_s := []interface{}{_param0}
 	for _, _x := range _param1 {
 		_s = append(_s, _x)
@@ -76,7 +76,7 @@ func (_mr *_MockIndexRecorder) Ellip(arg0 interface{}, arg1 ...interface{}) *gom
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "Ellip", _s...)
 }
 
-func (_m *MockIndex) EllipOnly(_param0 ...[]string) {
+func (_m *MockIndex) EllipOnly(_param0 ...string) {
 	_s := []interface{}{}
 	for _, _x := range _param0 {
 		_s = append(_s, _x)
