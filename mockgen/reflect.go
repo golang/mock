@@ -38,6 +38,7 @@ func Reflect(importPath string, symbols []string) (*model.Package, error) {
 	}
 	defer func() { os.RemoveAll(tmpDir) }()
 	const progSource = "prog.go"
+	const progBinary = "prog.bin"
 
 	// Generate program.
 	var program bytes.Buffer
@@ -52,9 +53,17 @@ func Reflect(importPath string, symbols []string) (*model.Package, error) {
 		return nil, err
 	}
 
-	// Run it.
-	cmd := exec.Command("go", "run", progSource)
+	// Build the program.
+	cmd := exec.Command("go", "build", "-o", progBinary, progSource)
 	cmd.Dir = tmpDir
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		return nil, err
+	}
+
+	// Run it.
+	cmd = exec.Command(filepath.Join(tmpDir, progBinary))
 	var stdout bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = os.Stderr
