@@ -19,6 +19,8 @@ package main
 import (
 	"bytes"
 	"encoding/gob"
+	"flag"
+	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -26,6 +28,10 @@ import (
 	"text/template"
 
 	"code.google.com/p/gomock/mockgen/model"
+)
+
+var (
+	progOnly = flag.Bool("prog_only", false, "(reflect mode) Only generate the reflection program; write it to stdout.")
 )
 
 func Reflect(importPath string, symbols []string) (*model.Package, error) {
@@ -48,6 +54,10 @@ func Reflect(importPath string, symbols []string) (*model.Package, error) {
 	}
 	if err := reflectProgram.Execute(&program, &data); err != nil {
 		return nil, err
+	}
+	if *progOnly {
+		io.Copy(os.Stdout, &program)
+		os.Exit(0)
 	}
 	if err := ioutil.WriteFile(filepath.Join(tmpDir, progSource), program.Bytes(), 0600); err != nil {
 		return nil, err
