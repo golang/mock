@@ -32,48 +32,53 @@ import (
 
 var (
 	progOnly = flag.Bool("prog_only", false, "(reflect mode) Only generate the reflection program; write it to stdout.")
+	execOnly = flag.String("exec_only", "", "(reflect mode) If set, execute this reflection program.")
 )
 
 func Reflect(importPath string, symbols []string) (*model.Package, error) {
 	// TODO: sanity check arguments
 
-	// We use TempDir instead of TempFile so we can control the filename.
-	tmpDir, err := ioutil.TempDir("", "gomock_reflect_")
-	if err != nil {
-		return nil, err
-	}
-	defer func() { os.RemoveAll(tmpDir) }()
-	const progSource = "prog.go"
-	const progBinary = "prog.bin"
+	progPath := *execOnly
+	if *execOnly == "" {
+		// We use TempDir instead of TempFile so we can control the filename.
+		tmpDir, err := ioutil.TempDir("", "gomock_reflect_")
+		if err != nil {
+			return nil, err
+		}
+		defer func() { os.RemoveAll(tmpDir) }()
+		const progSource = "prog.go"
+		const progBinary = "prog.bin"
 
-	// Generate program.
-	var program bytes.Buffer
-	data := reflectData{
-		ImportPath: importPath,
-		Symbols:    symbols,
-	}
-	if err := reflectProgram.Execute(&program, &data); err != nil {
-		return nil, err
-	}
-	if *progOnly {
-		io.Copy(os.Stdout, &program)
-		os.Exit(0)
-	}
-	if err := ioutil.WriteFile(filepath.Join(tmpDir, progSource), program.Bytes(), 0600); err != nil {
-		return nil, err
-	}
+		// Generate program.
+		var program bytes.Buffer
+		data := reflectData{
+			ImportPath: importPath,
+			Symbols:    symbols,
+		}
+		if err := reflectProgram.Execute(&program, &data); err != nil {
+			return nil, err
+		}
+		if *progOnly {
+			io.Copy(os.Stdout, &program)
+			os.Exit(0)
+		}
+		if err := ioutil.WriteFile(filepath.Join(tmpDir, progSource), program.Bytes(), 0600); err != nil {
+			return nil, err
+		}
 
-	// Build the program.
-	cmd := exec.Command("go", "build", "-o", progBinary, progSource)
-	cmd.Dir = tmpDir
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	if err := cmd.Run(); err != nil {
-		return nil, err
+		// Build the program.
+		cmd := exec.Command("go", "build", "-o", progBinary, progSource)
+		cmd.Dir = tmpDir
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		if err := cmd.Run(); err != nil {
+			return nil, err
+		}
+		progPath = filepath.Join(tmpDir, progBinary)
 	}
 
 	// Run it.
-	cmd = exec.Command(filepath.Join(tmpDir, progBinary))
+	cmd := exec.Command(progPath)
 	var stdout bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = os.Stderr
