@@ -53,7 +53,7 @@ type Index interface {
 	Ptr(arg *int)
 
 	// A method with a slice argument and an array return.
-	Slice(a []int) [3]int
+	Slice(a []int, b []byte) [3]int
 
 	// A method with channel arguments.
 	Chan(a chan int, b chan<- hash.Hash)

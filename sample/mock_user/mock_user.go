@@ -193,14 +193,14 @@ func (_mr *_MockIndexRecorder) Put(arg0, arg1 interface{}) *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "Put", arg0, arg1)
 }
 
-func (_m *MockIndex) Slice(_param0 []int) [3]int {
-	ret := _m.ctrl.Call(_m, "Slice", _param0)
+func (_m *MockIndex) Slice(_param0 []int, _param1 []byte) [3]int {
+	ret := _m.ctrl.Call(_m, "Slice", _param0, _param1)
 	ret0, _ := ret[0].([3]int)
 	return ret0
 }
 
-func (_mr *_MockIndexRecorder) Slice(arg0 interface{}) *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "Slice", arg0)
+func (_mr *_MockIndexRecorder) Slice(arg0, arg1 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "Slice", arg0, arg1)
 }
 
 func (_m *MockIndex) Summary(_param0 *bytes.Buffer, _param1 io.Writer) {
