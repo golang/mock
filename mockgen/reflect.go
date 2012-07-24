@@ -127,7 +127,9 @@ func main() {
 		{{end}}
 	}
 	pkg := &model.Package{
-		// TODO: how reliable is this?
+		// NOTE: This behaves contrary to documented behaviour if the
+		// package name is not the final component of the import path.
+		// The reflect package doesn't expose the package name, though.
 		Name: path.Base({{printf "%q" .ImportPath}}),
 	}
 
