@@ -40,6 +40,7 @@ var (
 	source      = flag.String("source", "", "(source mode) Input Go source file; enables source mode.")
 	destination = flag.String("destination", "", "Output file; defaults to stdout.")
 	packageOut  = flag.String("package", "", "Package of the generated code; defaults to the package of the input with a 'mock_' prefix.")
+	selfPackage = flag.String("self_package", "", "If set, the package this mock will be part of.")
 
 	debugParser = flag.Bool("debug_parser", false, "Print out parser results only.")
 )
@@ -204,6 +205,9 @@ func (g *generator) Generate(pkg *model.Package, pkgName string) error {
 	g.p("import (")
 	g.in()
 	for path, pkg := range g.packageMap {
+		if path == *selfPackage {
+			continue
+		}
 		g.p("%v %q", pkg, path)
 	}
 	for _, path := range pkg.DotImports {
@@ -268,7 +272,7 @@ func (g *generator) GenerateMockInterface(intf *model.Interface) error {
 	g.out()
 	g.p("}")
 
-	g.GenerateMockMethods(mockType, intf, "")
+	g.GenerateMockMethods(mockType, intf, *selfPackage)
 
 	return nil
 }
