@@ -116,6 +116,12 @@ func (ctrl *Controller) Call(receiver interface{}, method string, args ...interf
 }
 
 func (ctrl *Controller) Finish() {
+	// If we're currently panicking, probably because this is a deferred call,
+	// pass through the panic.
+	if err := recover(); err != nil {
+		panic(err)
+	}
+
 	// Check that all remaining expected calls are satisfied.
 	failures := false
 	for _, methodMap := range ctrl.expectedCalls {

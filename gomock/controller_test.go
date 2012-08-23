@@ -65,7 +65,7 @@ func (e *ErrorReporter) assertFatal(fn func()) {
 			}
 			e.t.Error("Expected fatal failure, but got a", actual)
 		} else if token, ok := err.(*struct{}); ok && token == &e.fatalToken {
-			// This is okay - the panic is from FailNow().
+			// This is okay - the panic is from Fatalf().
 			return
 		} else {
 			// Some other panic.
@@ -358,4 +358,15 @@ func TestCallAfterLoopPanic(t *testing.T) {
 
 	// This should panic due to dependency loop.
 	firstCall.After(thirdCall)
+}
+
+func TestPanicOverridesExpectationChecks(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	reporter := NewErrorReporter(t)
+
+	reporter.assertFatal(func() {
+		ctrl.RecordCall(new(Subject), "FooMethod", "1")
+		defer ctrl.Finish()
+		reporter.Fatalf("Intentional panic")
+	})
 }
