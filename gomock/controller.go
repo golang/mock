@@ -55,6 +55,8 @@
 //	- Handle different argument/return types (e.g. ..., chan, map, interface).
 package gomock
 
+import "sync"
+
 // A TestReporter is something that can be used to report test failures.
 // It is satisfied by the standard library's *testing.T.
 type TestReporter interface {
@@ -64,7 +66,9 @@ type TestReporter interface {
 
 // A Controller represents the top-level control of a mock ecosystem.
 // It defines the scope and lifetime of mock objects, as well as their expectations.
+// It is safe to call Controller's methods from multiple goroutines.
 type Controller struct {
+	mu            sync.Mutex
 	t             TestReporter
 	expectedCalls callSet
 }
@@ -87,6 +91,9 @@ func (ctrl *Controller) RecordCall(receiver interface{}, method string, args ...
 		}
 	}
 
+	ctrl.mu.Lock()
+	defer ctrl.mu.Unlock()
+
 	call := &Call{t: ctrl.t, receiver: receiver, method: method, args: margs, minCalls: 1, maxCalls: 1}
 
 	ctrl.expectedCalls.Add(call)
@@ -94,6 +101,9 @@ func (ctrl *Controller) RecordCall(receiver interface{}, method string, args ...
 }
 
 func (ctrl *Controller) Call(receiver interface{}, method string, args ...interface{}) []interface{} {
+	ctrl.mu.Lock()
+	defer ctrl.mu.Unlock()
+
 	expected := ctrl.expectedCalls.FindMatch(receiver, method, args)
 	if expected == nil {
 		ctrl.t.Fatalf("no matching expected call: %T.%v(%v)", receiver, method, args)
@@ -107,15 +117,28 @@ func (ctrl *Controller) Call(receiver interface{}, method string, args ...interf
 		ctrl.expectedCalls.Remove(preReqCall)
 	}
 
-	rets := expected.call(args)
+	rets, action := expected.call(args)
 	if expected.exhausted() {
 		ctrl.expectedCalls.Remove(expected)
+	}
+
+	// Don't hold the lock while doing the call's action (if any)
+	// so that actions may execute concurrently.
+	// We use the deferred Unlock to capture any panics that happen above;
+	// here we add a deferred Lock to balance it.
+	ctrl.mu.Unlock()
+	defer ctrl.mu.Lock()
+	if action != nil {
+		action()
 	}
 
 	return rets
 }
 
 func (ctrl *Controller) Finish() {
+	ctrl.mu.Lock()
+	defer ctrl.mu.Unlock()
+
 	// If we're currently panicking, probably because this is a deferred call,
 	// pass through the panic.
 	if err := recover(); err != nil {

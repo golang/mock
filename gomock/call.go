@@ -176,7 +176,7 @@ func (c *Call) dropPrereqs() (preReqs []*Call) {
 	return
 }
 
-func (c *Call) call(args []interface{}) []interface{} {
+func (c *Call) call(args []interface{}) (rets []interface{}, action func()) {
 	c.numCalls++
 
 	// Actions
@@ -186,13 +186,13 @@ func (c *Call) call(args []interface{}) []interface{} {
 		for i := 0; i < ft.NumIn(); i++ {
 			doArgs[i] = reflect.ValueOf(args[i])
 		}
-		c.doFunc.Call(doArgs)
+		action = func() { c.doFunc.Call(doArgs) }
 	}
 	for n, v := range c.setArgs {
 		reflect.ValueOf(args[n]).Elem().Set(v)
 	}
 
-	rets := c.rets
+	rets = c.rets
 	if rets == nil {
 		// Synthesize the zero value for each of the return args' types.
 		mt := c.methodType()
@@ -202,7 +202,7 @@ func (c *Call) call(args []interface{}) []interface{} {
 		}
 	}
 
-	return rets
+	return
 }
 
 func (c *Call) methodType() reflect.Type {
