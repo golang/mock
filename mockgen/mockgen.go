@@ -186,18 +186,20 @@ func (g *generator) Generate(pkg *model.Package, pkgName string) error {
 	im := pkg.Imports()
 	im[gomockImportPath] = true
 	g.packageMap = make(map[string]string, len(im))
+	localNames := make(map[string]bool, len(im))
 	for pth := range im {
 		base := sanitize(path.Base(pth))
 
 		// try base0, base1, ...
 		pkgName := base
 		i := 0
-		for g.packageMap[pkgName] != "" {
+		for localNames[pkgName] {
 			pkgName = base + strconv.Itoa(i)
 			i++
 		}
 
 		g.packageMap[pth] = pkgName
+		localNames[pkgName] = true
 	}
 
 	g.p("package %v", pkgName)

@@ -12,8 +12,10 @@ import (
 	imp3 "code.google.com/p/gomock/sample/imp3"
 	imp4 "code.google.com/p/gomock/sample/imp4"
 	hash "hash"
+	template "html/template"
 	io "io"
 	http "net/http"
+	template0 "text/template"
 )
 
 // Mock of Index interface
@@ -209,6 +211,14 @@ func (_m *MockIndex) Summary(_param0 *bytes.Buffer, _param1 io.Writer) {
 
 func (_mr *_MockIndexRecorder) Summary(arg0, arg1 interface{}) *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "Summary", arg0, arg1)
+}
+
+func (_m *MockIndex) Templates(_param0 template.CSS, _param1 template0.FuncMap) {
+	_m.ctrl.Call(_m, "Templates", _param0, _param1)
+}
+
+func (_mr *_MockIndexRecorder) Templates(arg0, arg1 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "Templates", arg0, arg1)
 }
 
 // Mock of Embed interface

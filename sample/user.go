@@ -9,6 +9,10 @@ import (
 	"log"
 	"net"
 	"net/http"
+
+	// Two imports with the same base name.
+	t1 "html/template"
+	t2 "text/template"
 )
 
 // Dependencies outside the standard library.
@@ -30,6 +34,7 @@ type Index interface {
 	// Check that imports are handled correctly.
 	Summary(buf *btz.Buffer, w io.Writer)
 	Other() hash.Hash
+	Templates(a t1.CSS, b t2.FuncMap)
 
 	// A method with an anonymous argument.
 	Anon(string)
