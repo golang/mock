@@ -80,7 +80,9 @@ func main() {
 
 	packageName := *packageOut
 	if packageName == "" {
-		packageName = "mock_" + pkg.Name
+		// pkg.Name in reflect mode is the base name of the import path,
+		// which might have characters that are illegal to have in package names.
+		packageName = "mock_" + sanitize(pkg.Name)
 	}
 
 	g := generator{
