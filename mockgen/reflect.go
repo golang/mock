@@ -25,6 +25,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"text/template"
 
 	"code.google.com/p/gomock/mockgen/model"
@@ -47,7 +48,11 @@ func Reflect(importPath string, symbols []string) (*model.Package, error) {
 		}
 		defer func() { os.RemoveAll(tmpDir) }()
 		const progSource = "prog.go"
-		const progBinary = "prog.bin"
+		var progBinary = "prog.bin"
+		if runtime.GOOS == "windows" {
+			// Windows won't execute a program unless it has a ".exe" suffix.
+			progBinary += ".exe"
+		}
 
 		// Generate program.
 		var program bytes.Buffer
