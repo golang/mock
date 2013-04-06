@@ -99,7 +99,19 @@ func (c *Call) SetArg(n int, value interface{}) *Call {
 	if c.setArgs == nil {
 		c.setArgs = make(map[int]reflect.Value)
 	}
-	// TODO: Check func arity and value type.
+	mt := c.methodType()
+	// TODO: This will break on variadic methods.
+	// We will need to check those at invocation time.
+	if n < 0 || n >= mt.NumIn() {
+		c.t.Fatalf("SetArg(%d, ...) called for a method with %d args", n, mt.NumIn())
+	}
+	at := mt.In(n)
+	if at.Kind() != reflect.Ptr {
+		c.t.Fatalf("SetArg(%d, ...) referring to argument of non-pointer type %v", n, at)
+	}
+	if vt := reflect.TypeOf(value); !vt.AssignableTo(at.Elem()) {
+		c.t.Fatalf("SetArg(%d, ...) argument is a %v, not assignable to %v", n, vt, at.Elem())
+	}
 	c.setArgs[n] = reflect.ValueOf(value)
 	return c
 }

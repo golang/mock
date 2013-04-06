@@ -370,3 +370,15 @@ func TestPanicOverridesExpectationChecks(t *testing.T) {
 		reporter.Fatalf("Intentional panic")
 	})
 }
+
+func TestSetArgWithBadType(t *testing.T) {
+	rep, ctrl := createFixtures(t)
+	defer ctrl.Finish()
+
+	s := new(Subject)
+	// This should catch a type error:
+	rep.assertFatal(func() {
+		ctrl.RecordCall(s, "FooMethod", "1").SetArg(0, "blah")
+	})
+	ctrl.Call(s, "FooMethod", "1")
+}
