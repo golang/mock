@@ -52,6 +52,15 @@ func TestRemember(t *testing.T) {
 	if calledString != "blah" {
 		t.Fatalf(`Uh oh. %q != "blah"`, calledString)
 	}
+
+	// Use Do with a nil arg.
+	mockIndex.EXPECT().Put("nil-key", gomock.Any()).Do(func(key string, value interface{}) {
+		if value != nil {
+			t.Errorf("Put did not pass through nil; got %v", value)
+		}
+	})
+	mockIndex.EXPECT().NillableRet()
+	user.Remember(mockIndex, []string{"nil-key"}, []interface{}{nil})
 }
 
 func TestGrabPointer(t *testing.T) {
