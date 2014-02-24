@@ -21,6 +21,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"go/token"
 	"io"
 	"log"
 	"os"
@@ -192,10 +193,14 @@ func (g *generator) Generate(pkg *model.Package, pkgName string) error {
 	for pth := range im {
 		base := sanitize(path.Base(pth))
 
+		// Local names for an imported package can usually be the basename of the import path.
+		// A couple of situations don't permit that, such as duplicate local names
+		// (e.g. importing "html/template" and "text/template"), or where the basename is
+		// a keyword (e.g. "foo/case").
 		// try base0, base1, ...
 		pkgName := base
 		i := 0
-		for localNames[pkgName] {
+		for localNames[pkgName] || token.Lookup(pkgName).IsKeyword() {
 			pkgName = base + strconv.Itoa(i)
 			i++
 		}
