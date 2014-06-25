@@ -90,3 +90,14 @@ func TestEmbeddedInterface(t *testing.T) {
 	var emb imp1.ForeignEmbedded = mockEmbed // also does interface check
 	emb.ForeignEmbeddedMethod()
 }
+
+func TestExpectTrueNil(t *testing.T) {
+	// Make sure that passing "nil" to EXPECT (thus as a nil interface value),
+	// will correctly match a nil concrete type.
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockIndex := mock_user.NewMockIndex(ctrl)
+	mockIndex.EXPECT().Ptr(nil) // this nil is a nil interface{}
+	mockIndex.Ptr(nil)          // this nil is a nil *int
+}
