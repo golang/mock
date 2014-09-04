@@ -420,6 +420,10 @@ func typeFromType(t reflect.Type) (Type, error) {
 			Len:  -1,
 			Type: elemType,
 		}, nil
+	case reflect.Struct:
+		if t.NumField() == 0 {
+			return PredeclaredType("struct{}"), nil
+		}
 	}
 
 	// TODO: Struct, UnsafePointer
