@@ -61,4 +61,4 @@ an example.
 
 [golang]: http://golang.org/
 [golang-install]: http://golang.org/doc/install.html#releases
-[gomock-ref]: http://gopkgdoc.appspot.com/pkg/code.google.com/p/gomock/gomock
+[gomock-ref]: http://godoc.org/code.google.com/p/gomock/gomock
