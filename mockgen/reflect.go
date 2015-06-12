@@ -28,7 +28,7 @@ import (
 	"runtime"
 	"text/template"
 
-	"code.google.com/p/gomock/mockgen/model"
+	"github.com/golang/mock/mockgen/model"
 )
 
 var (
@@ -117,7 +117,7 @@ import (
 	"path"
 	"reflect"
 
-	"code.google.com/p/gomock/mockgen/model"
+	"github.com/golang/mock/mockgen/model"
 
 	pkg_ {{printf "%q" .ImportPath}}
 )

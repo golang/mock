@@ -336,7 +336,7 @@ var errorType = reflect.TypeOf((*error)(nil)).Elem()
 var byteType = reflect.TypeOf(byte(0))
 
 func typeFromType(t reflect.Type) (Type, error) {
-	// Hack workaround for http://code.google.com/p/go/issues/detail?id=3853.
+	// Hack workaround for https://golang.org/issue/3853.
 	// This explicit check should not be necessary.
 	if t == byteType {
 		return PredeclaredType("byte"), nil
