@@ -19,8 +19,10 @@ package main
 // TODO: This does not support embedding package-local interfaces in a separate file.
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
+	"go/format"
 	"go/token"
 	"io"
 	"log"
@@ -86,9 +88,7 @@ func main() {
 		packageName = "mock_" + sanitize(pkg.Name)
 	}
 
-	g := generator{
-		w: dst,
-	}
+	g := new(generator)
 	if *source != "" {
 		g.filename = *source
 	} else {
@@ -97,6 +97,9 @@ func main() {
 	}
 	if err := g.Generate(pkg, packageName); err != nil {
 		log.Fatalf("Failed generating mock: %v", err)
+	}
+	if _, err := dst.Write(g.Output()); err != nil {
+		log.Fatalf("Failed writing to destination: %v", err)
 	}
 }
 
@@ -123,7 +126,7 @@ Example:
 `
 
 type generator struct {
-	w      io.Writer
+	buf    bytes.Buffer
 	indent string
 
 	filename                  string // may be empty
@@ -133,7 +136,7 @@ type generator struct {
 }
 
 func (g *generator) p(format string, args ...interface{}) {
-	fmt.Fprintf(g.w, g.indent+format+"\n", args...)
+	fmt.Fprintf(&g.buf, g.indent+format+"\n", args...)
 }
 
 func (g *generator) in() {
@@ -410,4 +413,13 @@ func (g *generator) GenerateMockRecorderMethod(mockType string, m *model.Method)
 	g.out()
 	g.p("}")
 	return nil
+}
+
+// Output returns the generator's output, formatted in the standard Go style.
+func (g *generator) Output() []byte {
+	src, err := format.Source(g.buf.Bytes())
+	if err != nil {
+		log.Fatalf("Failed to format generated source code: %s\n%s", err, g.buf.String())
+	}
+	return src
 }
