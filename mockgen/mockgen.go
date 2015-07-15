@@ -88,7 +88,7 @@ func main() {
 		packageName = "mock_" + sanitize(pkg.Name)
 	}
 
-	g := generator{}
+	g := new(generator)
 	if *source != "" {
 		g.filename = *source
 	} else {
@@ -98,7 +98,7 @@ func main() {
 	if err := g.Generate(pkg, packageName); err != nil {
 		log.Fatalf("Failed generating mock: %v", err)
 	}
-	if _, err := dst.Write(g.Format()); err != nil {
+	if _, err := dst.Write(g.Output()); err != nil {
 		log.Fatalf("Failed writing to destination: %v", err)
 	}
 }
@@ -415,14 +415,11 @@ func (g *generator) GenerateMockRecorderMethod(mockType string, m *model.Method)
 	return nil
 }
 
-// Format gives a go-formatted copy of the buffer.
-func (g *generator) Format() []byte {
+// Output returns the generator's output, formatted in the standard Go style.
+func (g *generator) Output() []byte {
 	src, err := format.Source(g.buf.Bytes())
 	if err != nil {
-		// This should never happen, but if it does, give the user a warning
-		// and return the contents of the unmodified buffer.
-		log.Printf("Warning: generated source could not be go-formatted: %s", err)
-		return g.buf.Bytes()
+		log.Fatalf("Failed to format generated source code: %s\n%s", err, g.buf.String())
 	}
 	return src
 }
