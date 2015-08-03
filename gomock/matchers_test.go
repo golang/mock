@@ -30,6 +30,7 @@ func TestMatchers(t *testing.T) {
 	}
 	tests := []testCase{
 		testCase{gomock.Any(), []e{3, nil, "foo"}, nil},
+		testCase{gomock.Lambda(func(x int) bool { return x == 3 }), []e{3}, []e{1, 2}},
 		testCase{gomock.Eq(4), []e{4}, []e{3, "blah", nil, int64(4)}},
 		testCase{gomock.Nil(),
 			[]e{nil, (error)(nil), (chan bool)(nil), (*int)(nil)},

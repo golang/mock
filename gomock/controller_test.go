@@ -210,6 +210,39 @@ func TestAnyTimes(t *testing.T) {
 	ctrl.Finish()
 }
 
+func TestAtMost(t *testing.T) {
+	reporter, ctrl := createFixtures(t)
+	subject := new(Subject)
+
+	ctrl.RecordCall(subject, "FooMethod", "argument").AtMost(3)
+	ctrl.Call(subject, "FooMethod", "argument")
+	ctrl.Call(subject, "FooMethod", "argument")
+	ctrl.Call(subject, "FooMethod", "argument")
+	reporter.assertPass("After expected repeated method calls.")
+	reporter.assertFatal(func() {
+		ctrl.Call(subject, "FooMethod", "argument")
+	})
+	ctrl.Finish()
+	reporter.assertFail("After calling one too many times.")
+}
+
+func TestAtLeast(t *testing.T) {
+	reporter, ctrl := createFixtures(t)
+	subject := new(Subject)
+
+	ctrl.RecordCall(subject, "FooMethod", "argument").AtLeast(2)
+	ctrl.Call(subject, "FooMethod", "argument")
+
+	reporter.assertFatal(func() {
+		ctrl.Finish()
+	})
+
+	reporter.assertFail("After calling one too many times.")
+
+	ctrl.Call(subject, "FooMethod", "argument")
+	ctrl.Finish()
+}
+
 func TestDo(t *testing.T) {
 	_, ctrl := createFixtures(t)
 	subject := new(Subject)
