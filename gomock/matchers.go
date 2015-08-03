@@ -39,6 +39,21 @@ func (anyMatcher) String() string {
 	return "is anything"
 }
 
+// lambdaMatcher allows matching generic function against a custom lambda
+type lambdaMatcher struct {
+	f interface{}
+}
+
+func (e lambdaMatcher) Matches(x interface{}) bool {
+	f := reflect.ValueOf(e.f)
+	result := f.Call([]reflect.Value{reflect.ValueOf(x)})[0]
+	return result.Bool()
+}
+
+func (e lambdaMatcher) String() string {
+	return fmt.Sprintf("lambda matcher")
+}
+
 type eqMatcher struct {
 	x interface{}
 }
@@ -86,9 +101,10 @@ func (n notMatcher) String() string {
 }
 
 // Constructors
-func Any() Matcher             { return anyMatcher{} }
-func Eq(x interface{}) Matcher { return eqMatcher{x} }
-func Nil() Matcher             { return nilMatcher{} }
+func Any() Matcher                 { return anyMatcher{} }
+func Lambda(x interface{}) Matcher { return lambdaMatcher{x} }
+func Eq(x interface{}) Matcher     { return eqMatcher{x} }
+func Nil() Matcher                 { return nilMatcher{} }
 func Not(x interface{}) Matcher {
 	if m, ok := x.(Matcher); ok {
 		return notMatcher{m}

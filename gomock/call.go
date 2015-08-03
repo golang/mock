@@ -20,6 +20,8 @@ import (
 	"strings"
 )
 
+const infinity = 1e8 // close enough to infinity
+
 // Call represents an expected call to a mock.
 type Call struct {
 	t TestReporter // for triggering test failures on invalid call setup
@@ -42,7 +44,19 @@ type Call struct {
 }
 
 func (c *Call) AnyTimes() *Call {
-	c.minCalls, c.maxCalls = 0, 1e8 // close enough to infinity
+	c.minCalls, c.maxCalls = 0, infinity
+	return c
+}
+
+// AtLeast specifies that a mocked method should be invoked callCount time as minimum (inclusive).
+func (c *Call) AtLeast(callCount int) *Call {
+	c.minCalls, c.maxCalls = callCount, infinity
+	return c
+}
+
+// AtMost specifies that a mocked method should be invoked callCount time as maximum (inclusive).
+func (c *Call) AtMost(callCount int) *Call {
+	c.minCalls, c.maxCalls = 0, callCount
 	return c
 }
 
