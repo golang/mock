@@ -12,10 +12,10 @@ import (
 	imp3 "github.com/golang/mock/sample/imp3"
 	imp4 "github.com/golang/mock/sample/imp4"
 	hash "hash"
-	template0 "html/template"
+	template "html/template"
 	io "io"
 	http "net/http"
-	template "text/template"
+	template0 "text/template"
 )
 
 // Mock of Index interface
@@ -205,6 +205,22 @@ func (_mr *_MockIndexRecorder) Slice(arg0, arg1 interface{}) *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "Slice", arg0, arg1)
 }
 
+func (_m *MockIndex) Struct(_param0 struct{}) {
+	_m.ctrl.Call(_m, "Struct", _param0)
+}
+
+func (_mr *_MockIndexRecorder) Struct(arg0 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "Struct", arg0)
+}
+
+func (_m *MockIndex) StructChan(_param0 chan struct{}) {
+	_m.ctrl.Call(_m, "StructChan", _param0)
+}
+
+func (_mr *_MockIndexRecorder) StructChan(arg0 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "StructChan", arg0)
+}
+
 func (_m *MockIndex) Summary(_param0 *bytes.Buffer, _param1 io.Writer) {
 	_m.ctrl.Call(_m, "Summary", _param0, _param1)
 }
@@ -213,7 +229,7 @@ func (_mr *_MockIndexRecorder) Summary(arg0, arg1 interface{}) *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "Summary", arg0, arg1)
 }
 
-func (_m *MockIndex) Templates(_param0 template0.CSS, _param1 template.FuncMap) {
+func (_m *MockIndex) Templates(_param0 template.CSS, _param1 template0.FuncMap) {
 	_m.ctrl.Call(_m, "Templates", _param0, _param1)
 }
 

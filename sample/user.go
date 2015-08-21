@@ -68,6 +68,10 @@ type Index interface {
 
 	// A method with a map argument.
 	Map(a map[int]hash.Hash)
+
+	// Methods with an unnamed empty struct argument.
+	Struct(a struct{})          // not so likely
+	StructChan(a chan struct{}) // a bit more common
 }
 
 // An interface with an embedded interface.

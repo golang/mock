@@ -353,6 +353,11 @@ func (p *fileParser) parseType(pkg string, typ ast.Expr) (model.Type, error) {
 			return nil, err
 		}
 		return &model.PointerType{Type: t}, nil
+	case *ast.StructType:
+		if v.Fields != nil && len(v.Fields.List) > 0 {
+			return nil, p.errorf(v.Pos(), "can't handle non-empty unnamed struct types")
+		}
+		return model.PredeclaredType("struct{}"), nil
 	}
 
 	return nil, fmt.Errorf("don't know how to parse type %T", typ)
