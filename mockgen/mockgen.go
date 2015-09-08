@@ -40,10 +40,11 @@ const (
 )
 
 var (
-	source      = flag.String("source", "", "(source mode) Input Go source file; enables source mode.")
-	destination = flag.String("destination", "", "Output file; defaults to stdout.")
-	packageOut  = flag.String("package", "", "Package of the generated code; defaults to the package of the input with a 'mock_' prefix.")
-	selfPackage = flag.String("self_package", "", "If set, the package this mock will be part of.")
+	source       = flag.String("source", "", "(source mode) Input Go source file; enables source mode.")
+	destination  = flag.String("destination", "", "Output file; defaults to stdout.")
+	packageOut   = flag.String("package", "", "Package of the generated code; defaults to the package of the input with a 'mock_' prefix.")
+	selfPackage  = flag.String("self_package", "", "If set, the package this mock will be part of.")
+	importPrefix = flag.String("import_prefix", "", "If set, the prefix for the import of the gomock package")
 
 	debugParser = flag.Bool("debug_parser", false, "Print out parser results only.")
 )
@@ -190,7 +191,8 @@ func (g *generator) Generate(pkg *model.Package, pkgName string) error {
 
 	// Get all required imports, and generate unique names for them all.
 	im := pkg.Imports()
-	im[gomockImportPath] = true
+	gomockPath := path.Join(*importPrefix, gomockImportPath)
+	im[gomockPath] = true
 	g.packageMap = make(map[string]string, len(im))
 	localNames := make(map[string]bool, len(im))
 	for pth := range im {
