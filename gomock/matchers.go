@@ -85,6 +85,18 @@ func (n notMatcher) String() string {
 	return "not(" + n.m.String() + ")"
 }
 
+type funcMatcher struct {
+	f func(arg interface{}) bool
+}
+
+func (n funcMatcher) Matches(x interface{}) bool {
+	return n.f(x)
+}
+
+func (n funcMatcher) String() string {
+	return "matched by function"
+}
+
 // Constructors
 func Any() Matcher             { return anyMatcher{} }
 func Eq(x interface{}) Matcher { return eqMatcher{x} }
@@ -95,3 +107,4 @@ func Not(x interface{}) Matcher {
 	}
 	return notMatcher{Eq(x)}
 }
+func Func(f func(arg interface{}) bool) Matcher { return funcMatcher{f} }
