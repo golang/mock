@@ -44,6 +44,7 @@ var (
 	destination = flag.String("destination", "", "Output file; defaults to stdout.")
 	packageOut  = flag.String("package", "", "Package of the generated code; defaults to the package of the input with a 'mock_' prefix.")
 	selfPackage = flag.String("self_package", "", "If set, the package this mock will be part of.")
+	mockPrefix  = flag.String("mock_prefix", "", "If set, adds prefix to the mocked function names.")
 
 	debugParser = flag.Bool("debug_parser", false, "Print out parser results only.")
 )
@@ -239,7 +240,7 @@ func (g *generator) Generate(pkg *model.Package, pkgName string) error {
 
 // The name of the mock type to use for the given interface identifier.
 func mockName(typeName string) string {
-	return "Mock" + typeName
+	return "Mock" + *mockPrefix + typeName
 }
 
 func (g *generator) GenerateMockInterface(intf *model.Interface) error {
