@@ -27,12 +27,29 @@ Alternatively, there is an online reference for the package hosted on GoPkgDoc
 Running mockgen
 ---------------
 
+`mockgen` has two modes of operation: source and reflect.
+Source mode generates mock interfaces from a source file.
+It is enabled by using the -source flag. Other flags that
+may be useful in this mode are -imports and -aux_files.
+
+Example:
+
+	mockgen -source=foo.go [other options]
+
+Reflect mode generates mock interfaces by building a program
+that uses reflection to understand interfaces. It is enabled
+by passing two non-flag arguments: an import path, and a
+comma-separated list of symbols.
+
+Example:
+
+	mockgen database/sql/driver Conn,Driver
+	
 The `mockgen` command is used to generate source code for a mock
 class given a Go source file containing interfaces to be mocked.
 It supports the following flags:
 
- *  `-source`: The file containing interfaces to be mocked. You must
-    supply this flag.
+ *  `-source`: A file containing interfaces to be mocked.
 
  *  `-destination`: A file to which to write the resulting source code. If you
     don't set this, the code is printed to standard output.
