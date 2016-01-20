@@ -46,6 +46,11 @@ func (c *Call) AnyTimes() *Call {
 	return c
 }
 
+func (c *Call) AtLeastOnce() *Call {
+	c.minCalls, c.maxCalls = 1, 1e8 // close enough to infinity
+	return c
+}
+
 // Do declares the action to run when the call is matched.
 // It takes an interface{} argument to support n-arity functions.
 func (c *Call) Do(f interface{}) *Call {

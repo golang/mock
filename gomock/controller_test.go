@@ -210,6 +210,32 @@ func TestAnyTimes(t *testing.T) {
 	ctrl.Finish()
 }
 
+func TestAtLeastOnce(t *testing.T) {
+	// It fails if there are no calls
+	reporter, ctrl := createFixtures(t)
+	subject := new(Subject)
+	ctrl.RecordCall(subject, "FooMethod", "argument").AtLeastOnce()
+	reporter.assertFatal(func() {
+		ctrl.Finish()
+	})
+
+	// It succeeds if there is one call
+	reporter, ctrl = createFixtures(t)
+	subject = new(Subject)
+	ctrl.RecordCall(subject, "FooMethod", "argument").AtLeastOnce()
+	ctrl.Call(subject, "FooMethod", "argument")
+	ctrl.Finish()
+
+	// It succeeds if there are many calls
+	reporter, ctrl = createFixtures(t)
+	subject = new(Subject)
+	ctrl.RecordCall(subject, "FooMethod", "argument").AtLeastOnce()
+	for i := 0; i < 100; i++ {
+		ctrl.Call(subject, "FooMethod", "argument")
+	}
+	ctrl.Finish()
+}
+
 func TestDo(t *testing.T) {
 	_, ctrl := createFixtures(t)
 	subject := new(Subject)
