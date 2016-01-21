@@ -41,8 +41,29 @@ type Call struct {
 	setArgs map[int]reflect.Value
 }
 
+// AnyTimes allows the expectation to be called 0 or more times
 func (c *Call) AnyTimes() *Call {
 	c.minCalls, c.maxCalls = 0, 1e8 // close enough to infinity
+	return c
+}
+
+// MinTimes requires the call to occur at least n times. If AnyTimes or MaxTimes have not been called, MinTimes also
+// sets the maximum number of calls to infinity.
+func (c *Call) MinTimes(n int) *Call {
+	c.minCalls = n
+	if c.maxCalls == 1 {
+		c.maxCalls = 1e8
+	}
+	return c
+}
+
+// MaxTimes limits the number of calls to n times. If AnyTimes or MinTimes have not been called, MaxTimes also
+// sets the minimum number of calls to 0.
+func (c *Call) MaxTimes(n int) *Call {
+	c.maxCalls = n
+	if c.minCalls == 1 {
+		c.minCalls = 0
+	}
 	return c
 }
 
