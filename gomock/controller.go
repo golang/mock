@@ -55,7 +55,11 @@
 //	- Handle different argument/return types (e.g. ..., chan, map, interface).
 package gomock
 
-import "sync"
+import (
+	"fmt"
+	"runtime"
+	"sync"
+)
 
 // A TestReporter is something that can be used to report test failures.
 // It is satisfied by the standard library's *testing.T.
@@ -98,7 +102,8 @@ func (ctrl *Controller) RecordCall(receiver interface{}, method string, args ...
 	ctrl.mu.Lock()
 	defer ctrl.mu.Unlock()
 
-	call := &Call{t: ctrl.t, receiver: receiver, method: method, args: margs, minCalls: 1, maxCalls: 1}
+	origin := callerInfo(2)
+	call := &Call{t: ctrl.t, receiver: receiver, method: method, args: margs, origin: origin, minCalls: 1, maxCalls: 1}
 
 	ctrl.expectedCalls.Add(call)
 	return call
@@ -110,7 +115,8 @@ func (ctrl *Controller) Call(receiver interface{}, method string, args ...interf
 
 	expected := ctrl.expectedCalls.FindMatch(receiver, method, args)
 	if expected == nil {
-		ctrl.t.Fatalf("no matching expected call: %T.%v(%v)", receiver, method, args)
+		origin := callerInfo(2)
+		ctrl.t.Fatalf("no matching expected call: %T.%v(%v) [%s]", receiver, method, args, origin)
 	}
 
 	// Two things happen here:
@@ -164,4 +170,11 @@ func (ctrl *Controller) Finish() {
 	if failures {
 		ctrl.t.Fatalf("aborting test due to missing call(s)")
 	}
+}
+
+func callerInfo(skip int) string {
+	if _, file, line, ok := runtime.Caller(skip + 1); ok {
+		return fmt.Sprintf("%s:%d", file, line)
+	}
+	return "unknown file"
 }
