@@ -75,6 +75,9 @@ func (c *Call) Do(f interface{}) *Call {
 	return c
 }
 
+// Return sets the values to return when the target method is called.
+//
+// If Return and Do are called, the values returned via Do will be returned.
 func (c *Call) Return(rets ...interface{}) *Call {
 	mt := c.methodType()
 	if len(rets) != mt.NumOut() {
@@ -216,7 +219,7 @@ func (c *Call) dropPrereqs() (preReqs []*Call) {
 	return
 }
 
-func (c *Call) call(args []interface{}) (rets []interface{}, action func()) {
+func (c *Call) call(args []interface{}) (rets []interface{}, action func() []interface{}) {
 	c.numCalls++
 
 	// Actions
@@ -231,7 +234,15 @@ func (c *Call) call(args []interface{}) (rets []interface{}, action func()) {
 				doArgs[i] = reflect.Zero(ft.In(i))
 			}
 		}
-		action = func() { c.doFunc.Call(doArgs) }
+		action = func() []interface{} {
+			rets := c.doFunc.Call(doArgs)
+			values := make([]interface{}, 0, c.doFunc.Type().NumOut())
+			for _, rv := range rets {
+				values = append(values, rv.Interface())
+			}
+
+			return values
+		}
 	}
 	for n, v := range c.setArgs {
 		reflect.ValueOf(args[n]).Elem().Set(v)
