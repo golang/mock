@@ -54,9 +54,9 @@ It supports the following flags:
  *  `-destination`: A file to which to write the resulting source code. If you
     don't set this, the code is printed to standard output.
 
- *  `-package`: The package to use for the resulting mock class
-    source code. If you don't set this, the package name is `mock_` concatenated
-    with the package of the input file.
+ *  `-package`: The package name to use for the resulting mock class source
+    code. If you don't set this, the package name is `mock_` concatenated with
+    the package of the input file.
 
  *  `-imports`: A list of explicit imports that should be used in the resulting
     source code, specified as a comma-separated list of elements of the form
@@ -68,6 +68,13 @@ It supports the following flags:
     specified as a comma-separated list of elements of the form
     `foo=bar/baz.go`, where `bar/baz.go` is the source file and `foo` is the
     package name of that file used by the -source file.
+
+ *  `-self_package`: The package this mock will be part of. Setting this
+    ensures that the package is not included in the imports.
+
+ *  `-source_package`: The package of the types in the source file. Setting
+    this ensures that types referenced by the interfaces in the source file
+    will be properly qualified.
 
 For an example of the use of `mockgen`, see the `sample/` directory. In simple
 cases, you will need only the `-source` flag.
