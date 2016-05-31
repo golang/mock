@@ -31,8 +31,9 @@ import (
 )
 
 var (
-	imports  = flag.String("imports", "", "(source mode) Comma-separated name=path pairs of explicit imports to use.")
-	auxFiles = flag.String("aux_files", "", "(source mode) Comma-separated pkg=path pairs of auxiliary Go source files.")
+	imports       = flag.String("imports", "", "(source mode) Comma-separated name=path pairs of explicit imports to use.")
+	auxFiles      = flag.String("aux_files", "", "(source mode) Comma-separated pkg=path pairs of auxiliary Go source files.")
+	sourcePackage = flag.String("source_package", "", "(source mode) The import path of the Go source file.")
 )
 
 // TODO: simplify error reporting
@@ -70,12 +71,13 @@ func ParseFile(source string) (*model.Package, error) {
 	if err := p.parseAuxFiles(*auxFiles); err != nil {
 		return nil, err
 	}
-	p.addAuxInterfacesFromFile("", file) // this file
+	p.addAuxInterfacesFromFile(*sourcePackage, file) // this file
 
-	pkg, err := p.parseFile(file)
+	pkg, err := p.parseFile(*sourcePackage, file)
 	if err != nil {
 		return nil, err
 	}
+
 	pkg.DotImports = make([]string, 0, len(dotImports))
 	for path := range dotImports {
 		pkg.DotImports = append(pkg.DotImports, path)
@@ -127,7 +129,7 @@ func (p *fileParser) addAuxInterfacesFromFile(pkg string, file *ast.File) {
 	}
 }
 
-func (p *fileParser) parseFile(file *ast.File) (*model.Package, error) {
+func (p *fileParser) parseFile(pkg string, file *ast.File) (*model.Package, error) {
 	allImports := importsOfFile(file)
 	// Don't stomp imports provided by -imports. Those should take precedence.
 	for pkg, path := range allImports {
@@ -147,7 +149,7 @@ func (p *fileParser) parseFile(file *ast.File) (*model.Package, error) {
 
 	var is []*model.Interface
 	for ni := range iterInterfaces(file) {
-		i, err := p.parseInterface(ni.name.String(), "", ni.it)
+		i, err := p.parseInterface(ni.name.String(), pkg, ni.it)
 		if err != nil {
 			return nil, err
 		}
