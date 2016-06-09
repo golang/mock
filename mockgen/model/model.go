@@ -106,9 +106,8 @@ func (m *Method) addImports(im map[string]bool) {
 
 // Parameter is an argument or return parameter of a method.
 type Parameter struct {
-	Name   string // may be empty
-	Prefix string
-	Type   Type
+	Name string // may be empty
+	Type Type
 }
 
 func (p *Parameter) Print(w io.Writer) {
