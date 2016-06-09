@@ -106,8 +106,9 @@ func (m *Method) addImports(im map[string]bool) {
 
 // Parameter is an argument or return parameter of a method.
 type Parameter struct {
-	Name string // may be empty
-	Type Type
+	Name   string // may be empty
+	Prefix string
+	Type   Type
 }
 
 func (p *Parameter) Print(w io.Writer) {
@@ -233,16 +234,18 @@ func (mt *MapType) addImports(im map[string]bool) {
 // NamedType is an exported type in a package.
 type NamedType struct {
 	Package string // may be empty
-	Type    string // TODO: should this be typed Type?
+	Type    string
+	Prefix  string
 }
 
 func (nt *NamedType) String(pm map[string]string, pkgOverride string) string {
 	// TODO: is this right?
 	if pkgOverride == nt.Package {
-		return nt.Type
+		return nt.Prefix + nt.Type
 	}
-	return pm[nt.Package] + "." + nt.Type
+	return nt.Prefix + pm[nt.Package] + "." + nt.Type
 }
+
 func (nt *NamedType) addImports(im map[string]bool) {
 	if nt.Package != "" {
 		im[nt.Package] = true
@@ -343,9 +346,11 @@ func typeFromType(t reflect.Type) (Type, error) {
 	}
 
 	if imp := t.PkgPath(); imp != "" {
+		name, prefix := nameAndPrefix(t)
 		return &NamedType{
 			Package: imp,
-			Type:    t.Name(),
+			Type:    name,
+			Prefix:  prefix,
 		}, nil
 	}
 
@@ -428,4 +433,26 @@ func typeFromType(t reflect.Type) (Type, error) {
 
 	// TODO: Struct, UnsafePointer
 	return nil, fmt.Errorf("can't yet turn %v (%v) into a model.Type", t, t.Kind())
+}
+
+func nameAndPrefix(t reflect.Type) (string, string) {
+	var (
+		prefix = ""
+		kind   = t.Kind()
+	)
+
+	for kind == reflect.Ptr || kind == reflect.Array || kind == reflect.Slice {
+		switch kind {
+		case reflect.Ptr:
+			prefix += "*"
+		case reflect.Slice:
+			prefix += "[]"
+		case reflect.Array:
+			prefix += fmt.Sprintf("[%d]", t.Len())
+		}
+		t = t.Elem()
+		kind = t.Kind()
+	}
+
+	return t.Name(), prefix
 }
