@@ -16,6 +16,7 @@ package gomock_test
 
 import (
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -31,6 +32,7 @@ func TestMatchers(t *testing.T) {
 	tests := []testCase{
 		testCase{gomock.Any(), []e{3, nil, "foo"}, nil},
 		testCase{gomock.Eq(4), []e{4}, []e{3, "blah", nil, int64(4)}},
+		testCase{gomock.Str(4), []e{4, "4", int64(4), float64(4.0)}, []e{3, float64(4.1)}},
 		testCase{gomock.Nil(),
 			[]e{nil, (error)(nil), (chan bool)(nil), (*int)(nil)},
 			[]e{"", 0, make(chan bool), errors.New("err"), new(int)}},
@@ -66,5 +68,67 @@ func TestNotMatcher(t *testing.T) {
 	mockMatcher.EXPECT().Matches(5).Return(false)
 	if match := notMatcher.Matches(5); !match {
 		t.Errorf("notMatcher should match 5")
+	}
+}
+
+type testStruct struct {
+	id                string
+	interestingValues []string
+}
+
+func (t testStruct) String() string {
+	return strings.Join(t.interestingValues, ";")
+}
+
+// A more thorough test of strMatcher
+func TestStrMatcher(t *testing.T) {
+	for _, test := range []struct {
+		title    string
+		first    testStruct
+		second   testStruct
+		expected bool
+	}{
+		{
+			title:    "Empty structs",
+			expected: true,
+		}, {
+			title: "Identical structs",
+			first: testStruct{
+				id:                "id",
+				interestingValues: []string{"1", "2", "3"},
+			},
+			second: testStruct{
+				id:                "id",
+				interestingValues: []string{"1", "2", "3"},
+			},
+			expected: true,
+		}, {
+			title: "Identical interesting values",
+			first: testStruct{
+				id:                "first",
+				interestingValues: []string{"1", "2", "3"},
+			},
+			second: testStruct{
+				id:                "second",
+				interestingValues: []string{"1", "2", "3"},
+			},
+			expected: true,
+		}, {
+			title: "Different interesting values",
+			first: testStruct{
+				id:                "first",
+				interestingValues: []string{"1", "2", "3"},
+			},
+			second: testStruct{
+				id:                "second",
+				interestingValues: []string{"1", "2", "3", "4"},
+			},
+			expected: false,
+		},
+	} {
+		matcher := gomock.Str(test.first)
+		if match := matcher.Matches(test.second); match != test.expected {
+			t.Errorf("Test %v failed. expected %v, recieved %v", test.title, test.expected, match)
+		}
 	}
 }

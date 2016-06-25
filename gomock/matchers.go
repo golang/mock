@@ -51,6 +51,18 @@ func (e eqMatcher) String() string {
 	return fmt.Sprintf("is equal to %v", e.x)
 }
 
+type strMatcher struct {
+	x interface{}
+}
+
+func (s strMatcher) Matches(x interface{}) bool {
+	return fmt.Sprintf("%v", x) == fmt.Sprintf("%v", s.x)
+}
+
+func (s strMatcher) String() string {
+	return fmt.Sprintf("%v", s.x)
+}
+
 type nilMatcher struct{}
 
 func (nilMatcher) Matches(x interface{}) bool {
@@ -86,9 +98,10 @@ func (n notMatcher) String() string {
 }
 
 // Constructors
-func Any() Matcher             { return anyMatcher{} }
-func Eq(x interface{}) Matcher { return eqMatcher{x} }
-func Nil() Matcher             { return nilMatcher{} }
+func Any() Matcher              { return anyMatcher{} }
+func Eq(x interface{}) Matcher  { return eqMatcher{x} }
+func Str(x interface{}) Matcher { return strMatcher{x} }
+func Nil() Matcher              { return nilMatcher{} }
 func Not(x interface{}) Matcher {
 	if m, ok := x.(Matcher); ok {
 		return notMatcher{m}
