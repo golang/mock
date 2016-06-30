@@ -343,12 +343,21 @@ func typeFromType(t reflect.Type) (Type, error) {
 	}
 
 	if imp := t.PkgPath(); imp != "" {
-		return &NamedType{
-			Package: imp,
-			Type:    t.Name(),
-		}, nil
+		switch t.Kind() {
+		case reflect.Ptr:
+			return &PointerType{
+				Type: &NamedType{
+					Package: imp,
+					Type:    t.Elem().Name(),
+				},
+			}, nil
+		default:
+			return &NamedType{
+				Package: imp,
+				Type:    t.Name(),
+			}, nil
+		}
 	}
-
 	// only unnamed or predeclared types after here
 
 	// Lots of types have element types. Let's do the parsing and error checking for all of them.
