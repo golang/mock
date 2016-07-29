@@ -216,7 +216,7 @@ func (c *Call) dropPrereqs() (preReqs []*Call) {
 	return
 }
 
-func (c *Call) call(args []interface{}) (rets []interface{}, action func()) {
+func (c *Call) call(args []interface{}) (action func() []interface {}) {
 	c.numCalls++
 
 	// Actions
@@ -231,22 +231,31 @@ func (c *Call) call(args []interface{}) (rets []interface{}, action func()) {
 				doArgs[i] = reflect.Zero(ft.In(i))
 			}
 		}
-		action = func() { c.doFunc.Call(doArgs) }
+		action = func() []interface {} {
+			result := c.doFunc.Call(doArgs)
+			rets := make([]interface{}, len(result))
+			for i:=0; i<len(result); i++{
+				rets[i] = result[i].Interface()
+			}
+			return rets
+		}
+	} else {
+		action = func() []interface {} {
+			rets := c.rets
+			if  rets == nil {
+				// Synthesize the zero value for each of the return args' types.
+				mt := c.methodType()
+				rets = make([]interface{}, mt.NumOut())
+				for i := 0; i < mt.NumOut(); i++ {
+					rets[i] = reflect.Zero(mt.Out(i)).Interface()
+				}
+			}
+			return rets
+		}
 	}
 	for n, v := range c.setArgs {
 		reflect.ValueOf(args[n]).Elem().Set(v)
 	}
-
-	rets = c.rets
-	if rets == nil {
-		// Synthesize the zero value for each of the return args' types.
-		mt := c.methodType()
-		rets = make([]interface{}, mt.NumOut())
-		for i := 0; i < mt.NumOut(); i++ {
-			rets[i] = reflect.Zero(mt.Out(i)).Interface()
-		}
-	}
-
 	return
 }
 
