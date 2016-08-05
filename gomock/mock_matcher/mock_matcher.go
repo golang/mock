@@ -7,43 +7,49 @@ import (
 	gomock "github.com/golang/mock/gomock"
 )
 
-// Mock of Matcher interface
+// MockMatcher is a Mock of Matcher interface
 type MockMatcher struct {
 	ctrl     *gomock.Controller
-	recorder *_MockMatcherRecorder
+	recorder *MockMatcherRecorder
 }
 
-// Recorder for MockMatcher (not exported)
-type _MockMatcherRecorder struct {
+// MockMatcherRecorder is a Recorder for MockMatcher (not exported)
+type MockMatcherRecorder struct {
 	mock *MockMatcher
 }
 
+// NewMockMatcher creates a new instance of the mock
 func NewMockMatcher(ctrl *gomock.Controller) *MockMatcher {
 	mock := &MockMatcher{ctrl: ctrl}
-	mock.recorder = &_MockMatcherRecorder{mock}
+	mock.recorder = &MockMatcherRecorder{mock}
 	return mock
 }
 
-func (_m *MockMatcher) EXPECT() *_MockMatcherRecorder {
+// EXPECT allows declaring expectations on the mock
+func (_m *MockMatcher) EXPECT() *MockMatcherRecorder {
 	return _m.recorder
 }
 
+// Matches is a mock version of the original Matches function
 func (_m *MockMatcher) Matches(_param0 interface{}) bool {
 	ret := _m.ctrl.Call(_m, "Matches", _param0)
 	ret0, _ := ret[0].(bool)
 	return ret0
 }
 
-func (_mr *_MockMatcherRecorder) Matches(arg0 interface{}) *gomock.Call {
+// Matches is a recorder version of the mocked Matches method
+func (_mr *MockMatcherRecorder) Matches(arg0 interface{}) *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "Matches", arg0)
 }
 
+// String is a mock version of the original String function
 func (_m *MockMatcher) String() string {
 	ret := _m.ctrl.Call(_m, "String")
 	ret0, _ := ret[0].(string)
 	return ret0
 }
 
-func (_mr *_MockMatcherRecorder) String() *gomock.Call {
+// String is a recorder version of the mocked String method
+func (_mr *MockMatcherRecorder) String() *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "String")
 }

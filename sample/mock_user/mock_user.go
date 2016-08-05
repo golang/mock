@@ -18,53 +18,62 @@ import (
 	template0 "text/template"
 )
 
-// Mock of Index interface
+// MockIndex is a Mock of Index interface
 type MockIndex struct {
 	ctrl     *gomock.Controller
-	recorder *_MockIndexRecorder
+	recorder *MockIndexRecorder
 }
 
-// Recorder for MockIndex (not exported)
-type _MockIndexRecorder struct {
+// MockIndexRecorder is a Recorder for MockIndex (not exported)
+type MockIndexRecorder struct {
 	mock *MockIndex
 }
 
+// NewMockIndex creates a new instance of the mock
 func NewMockIndex(ctrl *gomock.Controller) *MockIndex {
 	mock := &MockIndex{ctrl: ctrl}
-	mock.recorder = &_MockIndexRecorder{mock}
+	mock.recorder = &MockIndexRecorder{mock}
 	return mock
 }
 
-func (_m *MockIndex) EXPECT() *_MockIndexRecorder {
+// EXPECT allows declaring expectations on the mock
+func (_m *MockIndex) EXPECT() *MockIndexRecorder {
 	return _m.recorder
 }
 
+// Anon is a mock version of the original Anon function
 func (_m *MockIndex) Anon(_param0 string) {
 	_m.ctrl.Call(_m, "Anon", _param0)
 }
 
-func (_mr *_MockIndexRecorder) Anon(arg0 interface{}) *gomock.Call {
+// Anon is a recorder version of the mocked Anon method
+func (_mr *MockIndexRecorder) Anon(arg0 interface{}) *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "Anon", arg0)
 }
 
+// Chan is a mock version of the original Chan function
 func (_m *MockIndex) Chan(_param0 chan int, _param1 chan<- hash.Hash) {
 	_m.ctrl.Call(_m, "Chan", _param0, _param1)
 }
 
-func (_mr *_MockIndexRecorder) Chan(arg0, arg1 interface{}) *gomock.Call {
+// Chan is a recorder version of the mocked Chan method
+func (_mr *MockIndexRecorder) Chan(arg0, arg1 interface{}) *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "Chan", arg0, arg1)
 }
 
+// ConcreteRet is a mock version of the original ConcreteRet function
 func (_m *MockIndex) ConcreteRet() chan<- bool {
 	ret := _m.ctrl.Call(_m, "ConcreteRet")
 	ret0, _ := ret[0].(chan<- bool)
 	return ret0
 }
 
-func (_mr *_MockIndexRecorder) ConcreteRet() *gomock.Call {
+// ConcreteRet is a recorder version of the mocked ConcreteRet method
+func (_mr *MockIndexRecorder) ConcreteRet() *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "ConcreteRet")
 }
 
+// Ellip is a mock version of the original Ellip function
 func (_m *MockIndex) Ellip(_param0 string, _param1 ...interface{}) {
 	_s := []interface{}{_param0}
 	for _, _x := range _param1 {
@@ -73,11 +82,13 @@ func (_m *MockIndex) Ellip(_param0 string, _param1 ...interface{}) {
 	_m.ctrl.Call(_m, "Ellip", _s...)
 }
 
-func (_mr *_MockIndexRecorder) Ellip(arg0 interface{}, arg1 ...interface{}) *gomock.Call {
+// Ellip is a recorder version of the mocked Ellip method
+func (_mr *MockIndexRecorder) Ellip(arg0 interface{}, arg1 ...interface{}) *gomock.Call {
 	_s := append([]interface{}{arg0}, arg1...)
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "Ellip", _s...)
 }
 
+// EllipOnly is a mock version of the original EllipOnly function
 func (_m *MockIndex) EllipOnly(_param0 ...string) {
 	_s := []interface{}{}
 	for _, _x := range _param0 {
@@ -86,60 +97,74 @@ func (_m *MockIndex) EllipOnly(_param0 ...string) {
 	_m.ctrl.Call(_m, "EllipOnly", _s...)
 }
 
-func (_mr *_MockIndexRecorder) EllipOnly(arg0 ...interface{}) *gomock.Call {
+// EllipOnly is a recorder version of the mocked EllipOnly method
+func (_mr *MockIndexRecorder) EllipOnly(arg0 ...interface{}) *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "EllipOnly", arg0...)
 }
 
+// ForeignFour is a mock version of the original ForeignFour function
 func (_m *MockIndex) ForeignFour(_param0 imp4.Imp4) {
 	_m.ctrl.Call(_m, "ForeignFour", _param0)
 }
 
-func (_mr *_MockIndexRecorder) ForeignFour(arg0 interface{}) *gomock.Call {
+// ForeignFour is a recorder version of the mocked ForeignFour method
+func (_mr *MockIndexRecorder) ForeignFour(arg0 interface{}) *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "ForeignFour", arg0)
 }
 
+// ForeignOne is a mock version of the original ForeignOne function
 func (_m *MockIndex) ForeignOne(_param0 imp1.Imp1) {
 	_m.ctrl.Call(_m, "ForeignOne", _param0)
 }
 
-func (_mr *_MockIndexRecorder) ForeignOne(arg0 interface{}) *gomock.Call {
+// ForeignOne is a recorder version of the mocked ForeignOne method
+func (_mr *MockIndexRecorder) ForeignOne(arg0 interface{}) *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "ForeignOne", arg0)
 }
 
+// ForeignThree is a mock version of the original ForeignThree function
 func (_m *MockIndex) ForeignThree(_param0 imp3.Imp3) {
 	_m.ctrl.Call(_m, "ForeignThree", _param0)
 }
 
-func (_mr *_MockIndexRecorder) ForeignThree(arg0 interface{}) *gomock.Call {
+// ForeignThree is a recorder version of the mocked ForeignThree method
+func (_mr *MockIndexRecorder) ForeignThree(arg0 interface{}) *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "ForeignThree", arg0)
 }
 
+// ForeignTwo is a mock version of the original ForeignTwo function
 func (_m *MockIndex) ForeignTwo(_param0 imp2.Imp2) {
 	_m.ctrl.Call(_m, "ForeignTwo", _param0)
 }
 
-func (_mr *_MockIndexRecorder) ForeignTwo(arg0 interface{}) *gomock.Call {
+// ForeignTwo is a recorder version of the mocked ForeignTwo method
+func (_mr *MockIndexRecorder) ForeignTwo(arg0 interface{}) *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "ForeignTwo", arg0)
 }
 
+// Func is a mock version of the original Func function
 func (_m *MockIndex) Func(_param0 func(http.Request) (int, bool)) {
 	_m.ctrl.Call(_m, "Func", _param0)
 }
 
-func (_mr *_MockIndexRecorder) Func(arg0 interface{}) *gomock.Call {
+// Func is a recorder version of the mocked Func method
+func (_mr *MockIndexRecorder) Func(arg0 interface{}) *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "Func", arg0)
 }
 
+// Get is a mock version of the original Get function
 func (_m *MockIndex) Get(_param0 string) interface{} {
 	ret := _m.ctrl.Call(_m, "Get", _param0)
 	ret0, _ := ret[0].(interface{})
 	return ret0
 }
 
-func (_mr *_MockIndexRecorder) Get(arg0 interface{}) *gomock.Call {
+// Get is a recorder version of the mocked Get method
+func (_mr *MockIndexRecorder) Get(arg0 interface{}) *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "Get", arg0)
 }
 
+// GetTwo is a mock version of the original GetTwo function
 func (_m *MockIndex) GetTwo(_param0 string, _param1 string) (interface{}, interface{}) {
 	ret := _m.ctrl.Call(_m, "GetTwo", _param0, _param1)
 	ret0, _ := ret[0].(interface{})
@@ -147,176 +172,211 @@ func (_m *MockIndex) GetTwo(_param0 string, _param1 string) (interface{}, interf
 	return ret0, ret1
 }
 
-func (_mr *_MockIndexRecorder) GetTwo(arg0, arg1 interface{}) *gomock.Call {
+// GetTwo is a recorder version of the mocked GetTwo method
+func (_mr *MockIndexRecorder) GetTwo(arg0, arg1 interface{}) *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "GetTwo", arg0, arg1)
 }
 
+// Map is a mock version of the original Map function
 func (_m *MockIndex) Map(_param0 map[int]hash.Hash) {
 	_m.ctrl.Call(_m, "Map", _param0)
 }
 
-func (_mr *_MockIndexRecorder) Map(arg0 interface{}) *gomock.Call {
+// Map is a recorder version of the mocked Map method
+func (_mr *MockIndexRecorder) Map(arg0 interface{}) *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "Map", arg0)
 }
 
+// NillableRet is a mock version of the original NillableRet function
 func (_m *MockIndex) NillableRet() error {
 	ret := _m.ctrl.Call(_m, "NillableRet")
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-func (_mr *_MockIndexRecorder) NillableRet() *gomock.Call {
+// NillableRet is a recorder version of the mocked NillableRet method
+func (_mr *MockIndexRecorder) NillableRet() *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "NillableRet")
 }
 
+// Other is a mock version of the original Other function
 func (_m *MockIndex) Other() hash.Hash {
 	ret := _m.ctrl.Call(_m, "Other")
 	ret0, _ := ret[0].(hash.Hash)
 	return ret0
 }
 
-func (_mr *_MockIndexRecorder) Other() *gomock.Call {
+// Other is a recorder version of the mocked Other method
+func (_mr *MockIndexRecorder) Other() *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "Other")
 }
 
+// Ptr is a mock version of the original Ptr function
 func (_m *MockIndex) Ptr(_param0 *int) {
 	_m.ctrl.Call(_m, "Ptr", _param0)
 }
 
-func (_mr *_MockIndexRecorder) Ptr(arg0 interface{}) *gomock.Call {
+// Ptr is a recorder version of the mocked Ptr method
+func (_mr *MockIndexRecorder) Ptr(arg0 interface{}) *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "Ptr", arg0)
 }
 
+// Put is a mock version of the original Put function
 func (_m *MockIndex) Put(_param0 string, _param1 interface{}) {
 	_m.ctrl.Call(_m, "Put", _param0, _param1)
 }
 
-func (_mr *_MockIndexRecorder) Put(arg0, arg1 interface{}) *gomock.Call {
+// Put is a recorder version of the mocked Put method
+func (_mr *MockIndexRecorder) Put(arg0, arg1 interface{}) *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "Put", arg0, arg1)
 }
 
+// Slice is a mock version of the original Slice function
 func (_m *MockIndex) Slice(_param0 []int, _param1 []byte) [3]int {
 	ret := _m.ctrl.Call(_m, "Slice", _param0, _param1)
 	ret0, _ := ret[0].([3]int)
 	return ret0
 }
 
-func (_mr *_MockIndexRecorder) Slice(arg0, arg1 interface{}) *gomock.Call {
+// Slice is a recorder version of the mocked Slice method
+func (_mr *MockIndexRecorder) Slice(arg0, arg1 interface{}) *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "Slice", arg0, arg1)
 }
 
+// Struct is a mock version of the original Struct function
 func (_m *MockIndex) Struct(_param0 struct{}) {
 	_m.ctrl.Call(_m, "Struct", _param0)
 }
 
-func (_mr *_MockIndexRecorder) Struct(arg0 interface{}) *gomock.Call {
+// Struct is a recorder version of the mocked Struct method
+func (_mr *MockIndexRecorder) Struct(arg0 interface{}) *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "Struct", arg0)
 }
 
+// StructChan is a mock version of the original StructChan function
 func (_m *MockIndex) StructChan(_param0 chan struct{}) {
 	_m.ctrl.Call(_m, "StructChan", _param0)
 }
 
-func (_mr *_MockIndexRecorder) StructChan(arg0 interface{}) *gomock.Call {
+// StructChan is a recorder version of the mocked StructChan method
+func (_mr *MockIndexRecorder) StructChan(arg0 interface{}) *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "StructChan", arg0)
 }
 
+// Summary is a mock version of the original Summary function
 func (_m *MockIndex) Summary(_param0 *bytes.Buffer, _param1 io.Writer) {
 	_m.ctrl.Call(_m, "Summary", _param0, _param1)
 }
 
-func (_mr *_MockIndexRecorder) Summary(arg0, arg1 interface{}) *gomock.Call {
+// Summary is a recorder version of the mocked Summary method
+func (_mr *MockIndexRecorder) Summary(arg0, arg1 interface{}) *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "Summary", arg0, arg1)
 }
 
+// Templates is a mock version of the original Templates function
 func (_m *MockIndex) Templates(_param0 template.CSS, _param1 template0.FuncMap) {
 	_m.ctrl.Call(_m, "Templates", _param0, _param1)
 }
 
-func (_mr *_MockIndexRecorder) Templates(arg0, arg1 interface{}) *gomock.Call {
+// Templates is a recorder version of the mocked Templates method
+func (_mr *MockIndexRecorder) Templates(arg0, arg1 interface{}) *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "Templates", arg0, arg1)
 }
 
-// Mock of Embed interface
+// MockEmbed is a Mock of Embed interface
 type MockEmbed struct {
 	ctrl     *gomock.Controller
-	recorder *_MockEmbedRecorder
+	recorder *MockEmbedRecorder
 }
 
-// Recorder for MockEmbed (not exported)
-type _MockEmbedRecorder struct {
+// MockEmbedRecorder is a Recorder for MockEmbed (not exported)
+type MockEmbedRecorder struct {
 	mock *MockEmbed
 }
 
+// NewMockEmbed creates a new instance of the mock
 func NewMockEmbed(ctrl *gomock.Controller) *MockEmbed {
 	mock := &MockEmbed{ctrl: ctrl}
-	mock.recorder = &_MockEmbedRecorder{mock}
+	mock.recorder = &MockEmbedRecorder{mock}
 	return mock
 }
 
-func (_m *MockEmbed) EXPECT() *_MockEmbedRecorder {
+// EXPECT allows declaring expectations on the mock
+func (_m *MockEmbed) EXPECT() *MockEmbedRecorder {
 	return _m.recorder
 }
 
+// EmbeddedMethod is a mock version of the original EmbeddedMethod function
 func (_m *MockEmbed) EmbeddedMethod() {
 	_m.ctrl.Call(_m, "EmbeddedMethod")
 }
 
-func (_mr *_MockEmbedRecorder) EmbeddedMethod() *gomock.Call {
+// EmbeddedMethod is a recorder version of the mocked EmbeddedMethod method
+func (_mr *MockEmbedRecorder) EmbeddedMethod() *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "EmbeddedMethod")
 }
 
+// ForeignEmbeddedMethod is a mock version of the original ForeignEmbeddedMethod function
 func (_m *MockEmbed) ForeignEmbeddedMethod() *bufio.Reader {
 	ret := _m.ctrl.Call(_m, "ForeignEmbeddedMethod")
 	ret0, _ := ret[0].(*bufio.Reader)
 	return ret0
 }
 
-func (_mr *_MockEmbedRecorder) ForeignEmbeddedMethod() *gomock.Call {
+// ForeignEmbeddedMethod is a recorder version of the mocked ForeignEmbeddedMethod method
+func (_mr *MockEmbedRecorder) ForeignEmbeddedMethod() *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "ForeignEmbeddedMethod")
 }
 
+// ImplicitPackage is a mock version of the original ImplicitPackage function
 func (_m *MockEmbed) ImplicitPackage(_param0 string, _param1 imp1.ImpT, _param2 []imp1.ImpT, _param3 *imp1.ImpT, _param4 chan imp1.ImpT) {
 	_m.ctrl.Call(_m, "ImplicitPackage", _param0, _param1, _param2, _param3, _param4)
 }
 
-func (_mr *_MockEmbedRecorder) ImplicitPackage(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
+// ImplicitPackage is a recorder version of the mocked ImplicitPackage method
+func (_mr *MockEmbedRecorder) ImplicitPackage(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "ImplicitPackage", arg0, arg1, arg2, arg3, arg4)
 }
 
+// RegularMethod is a mock version of the original RegularMethod function
 func (_m *MockEmbed) RegularMethod() {
 	_m.ctrl.Call(_m, "RegularMethod")
 }
 
-func (_mr *_MockEmbedRecorder) RegularMethod() *gomock.Call {
+// RegularMethod is a recorder version of the mocked RegularMethod method
+func (_mr *MockEmbedRecorder) RegularMethod() *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "RegularMethod")
 }
 
-// Mock of Embedded interface
+// MockEmbedded is a Mock of Embedded interface
 type MockEmbedded struct {
 	ctrl     *gomock.Controller
-	recorder *_MockEmbeddedRecorder
+	recorder *MockEmbeddedRecorder
 }
 
-// Recorder for MockEmbedded (not exported)
-type _MockEmbeddedRecorder struct {
+// MockEmbeddedRecorder is a Recorder for MockEmbedded (not exported)
+type MockEmbeddedRecorder struct {
 	mock *MockEmbedded
 }
 
+// NewMockEmbedded creates a new instance of the mock
 func NewMockEmbedded(ctrl *gomock.Controller) *MockEmbedded {
 	mock := &MockEmbedded{ctrl: ctrl}
-	mock.recorder = &_MockEmbeddedRecorder{mock}
+	mock.recorder = &MockEmbeddedRecorder{mock}
 	return mock
 }
 
-func (_m *MockEmbedded) EXPECT() *_MockEmbeddedRecorder {
+// EXPECT allows declaring expectations on the mock
+func (_m *MockEmbedded) EXPECT() *MockEmbeddedRecorder {
 	return _m.recorder
 }
 
+// EmbeddedMethod is a mock version of the original EmbeddedMethod function
 func (_m *MockEmbedded) EmbeddedMethod() {
 	_m.ctrl.Call(_m, "EmbeddedMethod")
 }
 
-func (_mr *_MockEmbeddedRecorder) EmbeddedMethod() *gomock.Call {
+// EmbeddedMethod is a recorder version of the mocked EmbeddedMethod method
+func (_mr *MockEmbeddedRecorder) EmbeddedMethod() *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "EmbeddedMethod")
 }
