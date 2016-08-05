@@ -246,17 +246,17 @@ func (g *generator) GenerateMockInterface(intf *model.Interface) error {
 	mockType := mockName(intf.Name)
 
 	g.p("")
-	g.p("// Mock of %v interface", intf.Name)
+	g.p("// %v is a Mock of %v interface", mockType, intf.Name)
 	g.p("type %v struct {", mockType)
 	g.in()
 	g.p("ctrl     *gomock.Controller")
-	g.p("recorder *_%vRecorder", mockType)
+	g.p("recorder *%vRecorder", mockType)
 	g.out()
 	g.p("}")
 	g.p("")
 
-	g.p("// Recorder for %v (not exported)", mockType)
-	g.p("type _%vRecorder struct {", mockType)
+	g.p("// %vRecorder is a Recorder for %v (not exported)", mockType, mockType)
+	g.p("type %vRecorder struct {", mockType)
 	g.in()
 	g.p("mock *%v", mockType)
 	g.out()
@@ -268,17 +268,19 @@ func (g *generator) GenerateMockInterface(intf *model.Interface) error {
 	//g.p("var _ %v = (*%v)(nil)", typeName, mockType)
 	//g.p("")
 
+	g.p("// New%v creates a new instance of the mock", mockType)
 	g.p("func New%v(ctrl *gomock.Controller) *%v {", mockType, mockType)
 	g.in()
 	g.p("mock := &%v{ctrl: ctrl}", mockType)
-	g.p("mock.recorder = &_%vRecorder{mock}", mockType)
+	g.p("mock.recorder = &%vRecorder{mock}", mockType)
 	g.p("return mock")
 	g.out()
 	g.p("}")
 	g.p("")
 
 	// XXX: possible name collision here if someone has EXPECT in their interface.
-	g.p("func (_m *%v) EXPECT() *_%vRecorder {", mockType, mockType)
+	g.p("// EXPECT allows declaring expectations on the mock")
+	g.p("func (_m *%v) EXPECT() *%vRecorder {", mockType, mockType)
 	g.in()
 	g.p("return _m.recorder")
 	g.out()
@@ -335,6 +337,7 @@ func (g *generator) GenerateMockMethod(mockType string, m *model.Method, pkgOver
 		retString = " " + retString
 	}
 
+	g.p("// %v is a mock version of the original %v function", m.Name, m.Name)
 	g.p("func (_m *%v) %v(%v)%v {", mockType, m.Name, argString, retString)
 	g.in()
 
@@ -391,7 +394,8 @@ func (g *generator) GenerateMockRecorderMethod(mockType string, m *model.Method)
 		argString += fmt.Sprintf("arg%d ...interface{}", nargs)
 	}
 
-	g.p("func (_mr *_%vRecorder) %v(%v) *gomock.Call {", mockType, m.Name, argString)
+	g.p("// %v is a recorder version of the mocked %v method", m.Name, m.Name)
+	g.p("func (_mr *%vRecorder) %v(%v) *gomock.Call {", mockType, m.Name, argString)
 	g.in()
 
 	callArgs := strings.Join(args, ", ")
