@@ -294,13 +294,62 @@ func (g *generator) GenerateMockMethods(mockType string, intf *model.Interface, 
 		g.p("")
 		g.GenerateMockMethod(mockType, m, pkgOverride)
 		g.p("")
-		g.GenerateMockRecorderMethod(mockType, m)
+		g.GenerateMockRecorderMethod(mockType, m, pkgOverride)
 	}
 }
 
 // GenerateMockMethod generates a mock method implementation.
 // If non-empty, pkgOverride is the package in which unqualified types reside.
 func (g *generator) GenerateMockMethod(mockType string, m *model.Method, pkgOverride string) error {
+	rets := make([]string, len(m.Out))
+	for i, p := range m.Out {
+		rets[i] = p.Type.String(g.packageMap, pkgOverride)
+	}
+	retString := strings.Join(rets, ", ")
+	if len(rets) > 1 {
+		retString = "(" + retString + ")"
+	}
+	if retString != "" {
+		retString = " " + retString
+	}
+
+	callArgs := g.funcStart("_m", mockType, m, pkgOverride, retString)
+
+	if len(m.Out) == 0 {
+		g.p(`_m.ctrl.Call(_m, "%v"%v)`, m.Name, callArgs)
+	} else {
+		g.p(`ret := _m.ctrl.Call(_m, "%v"%v)`, m.Name, callArgs)
+
+		// Go does not allow "naked" type assertions on nil values, so we use the two-value form here.
+		// The value of that is either (x.(T), true) or (Z, false), where Z is the zero value for T.
+		// Happily, this coincides with the semantics we want here.
+		retNames := make([]string, len(rets))
+		for i, t := range rets {
+			retNames[i] = fmt.Sprintf("ret%d", i)
+			g.p("%s, _ := ret[%d].(%s)", retNames[i], i, t)
+		}
+		g.p("return " + strings.Join(retNames, ", "))
+	}
+
+	g.out()
+	g.p("}")
+	return nil
+}
+
+func (g *generator) GenerateMockRecorderMethod(mockType string, m *model.Method, pkgOverride string) error {
+
+	callArgs := g.funcStart("_mr", "_"+mockType+"Recorder", m, pkgOverride, "*gomock.Call")
+	g.p(`return _mr.mock.ctrl.RecordCall(_mr.mock, "%v"%v)`, m.Name, callArgs)
+
+	g.out()
+	g.p("}")
+	return nil
+}
+
+// funcStart generates the signature of the generated method and the type
+// conversions needed for variadic functions. It returns the string of arguments
+// that the generated function body needs to use in its call.
+func (g *generator) funcStart(recvName, mockType string, m *model.Method, pkgOverride string, retString string) string {
 	args := make([]string, len(m.In))
 	argNames := make([]string, len(m.In))
 	for i, p := range m.In {
@@ -323,19 +372,7 @@ func (g *generator) GenerateMockMethod(mockType string, m *model.Method, pkgOver
 	}
 	argString := strings.Join(args, ", ")
 
-	rets := make([]string, len(m.Out))
-	for i, p := range m.Out {
-		rets[i] = p.Type.String(g.packageMap, pkgOverride)
-	}
-	retString := strings.Join(rets, ", ")
-	if len(rets) > 1 {
-		retString = "(" + retString + ")"
-	}
-	if retString != "" {
-		retString = " " + retString
-	}
-
-	g.p("func (_m *%v) %v(%v)%v {", mockType, m.Name, argString, retString)
+	g.p("func (%s *%v) %v(%v)%v {", recvName, mockType, m.Name, argString, retString)
 	g.in()
 
 	callArgs := strings.Join(argNames, ", ")
@@ -353,66 +390,7 @@ func (g *generator) GenerateMockMethod(mockType string, m *model.Method, pkgOver
 		g.p("}")
 		callArgs = ", _s..."
 	}
-	if len(m.Out) == 0 {
-		g.p(`_m.ctrl.Call(_m, "%v"%v)`, m.Name, callArgs)
-	} else {
-		g.p(`ret := _m.ctrl.Call(_m, "%v"%v)`, m.Name, callArgs)
-
-		// Go does not allow "naked" type assertions on nil values, so we use the two-value form here.
-		// The value of that is either (x.(T), true) or (Z, false), where Z is the zero value for T.
-		// Happily, this coincides with the semantics we want here.
-		retNames := make([]string, len(rets))
-		for i, t := range rets {
-			retNames[i] = fmt.Sprintf("ret%d", i)
-			g.p("%s, _ := ret[%d].(%s)", retNames[i], i, t)
-		}
-		g.p("return " + strings.Join(retNames, ", "))
-	}
-
-	g.out()
-	g.p("}")
-	return nil
-}
-
-func (g *generator) GenerateMockRecorderMethod(mockType string, m *model.Method) error {
-	nargs := len(m.In)
-	args := make([]string, nargs)
-	for i := 0; i < nargs; i++ {
-		args[i] = "arg" + strconv.Itoa(i)
-	}
-	argString := strings.Join(args, ", ")
-	if nargs > 0 {
-		argString += " interface{}"
-	}
-	if m.Variadic != nil {
-		if nargs > 0 {
-			argString += ", "
-		}
-		argString += fmt.Sprintf("arg%d ...interface{}", nargs)
-	}
-
-	g.p("func (_mr *_%vRecorder) %v(%v) *gomock.Call {", mockType, m.Name, argString)
-	g.in()
-
-	callArgs := strings.Join(args, ", ")
-	if nargs > 0 {
-		callArgs = ", " + callArgs
-	}
-	if m.Variadic != nil {
-		if nargs == 0 {
-			// Easy: just use ... to push the arguments through.
-			callArgs = ", arg0..."
-		} else {
-			// Hard: create a temporary slice.
-			g.p("_s := append([]interface{}{%s}, arg%d...)", strings.Join(args, ", "), nargs)
-			callArgs = ", _s..."
-		}
-	}
-	g.p(`return _mr.mock.ctrl.RecordCall(_mr.mock, "%v"%v)`, m.Name, callArgs)
-
-	g.out()
-	g.p("}")
-	return nil
+	return callArgs
 }
 
 // Output returns the generator's output, formatted in the standard Go style.
