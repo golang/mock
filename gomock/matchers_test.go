@@ -35,6 +35,9 @@ func TestMatchers(t *testing.T) {
 			[]e{nil, (error)(nil), (chan bool)(nil), (*int)(nil)},
 			[]e{"", 0, make(chan bool), errors.New("err"), new(int)}},
 		testCase{gomock.Not(gomock.Eq(4)), []e{3, "blah", nil, int64(4)}, []e{4}},
+		testCase{gomock.Func(func(arg interface{}) bool { return arg == 42 }),
+			[]e{42},
+			[]e{0, nil, "blah"}},
 	}
 	for i, test := range tests {
 		for _, x := range test.yes {
