@@ -28,6 +28,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"sort"
 	"strconv"
 	"strings"
 	"unicode"
@@ -216,12 +217,18 @@ func (g *generator) Generate(pkg *model.Package, pkgName string) error {
 	g.p("")
 	g.p("import (")
 	g.in()
-	for path, pkg := range g.packageMap {
+	var paths []string
+	for path := range g.packageMap {
+		paths = append(paths, path)
+	}
+	sort.Strings(paths)
+	for _, path := range paths {
 		if path == *selfPackage {
 			continue
 		}
-		g.p("%v %q", pkg, path)
+		g.p("%v %q", g.packageMap[path], path)
 	}
+	sort.Strings(pkg.DotImports)
 	for _, path := range pkg.DotImports {
 		g.p(". %q", path)
 	}
