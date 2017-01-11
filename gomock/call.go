@@ -24,7 +24,7 @@ import (
 type Call struct {
 	t TestReporter // for triggering test failures on invalid call setup
 
-	receiver interface{}   // the receiver of the method call
+	receiver Mock          // the receiver of the method call
 	method   string        // the name of the method
 	args     []Matcher     // the args
 	rets     []interface{} // the return values (if any)
@@ -251,11 +251,8 @@ func (c *Call) call(args []interface{}) (rets []interface{}, action func()) {
 }
 
 func (c *Call) methodType() reflect.Type {
-	recv := reflect.ValueOf(c.receiver)
-	for i := 0; i < recv.Type().NumMethod(); i++ {
-		if recv.Type().Method(i).Name == c.method {
-			return recv.Method(i).Type()
-		}
+	if t := c.receiver.GomockMethodType(c.method); t != nil {
+		return t
 	}
 	panic(fmt.Sprintf("gomock: failed finding method %s on %T", c.method, c.receiver))
 }

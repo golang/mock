@@ -119,6 +119,16 @@ func (s *Subject) BarMethod(arg string) int {
 	return 0
 }
 
+func (s *Subject) GomockMethodType(name string) reflect.Type {
+	switch name {
+	case "FooMethod":
+		return reflect.TypeOf(s.FooMethod)
+	case "BarMethod":
+		return reflect.TypeOf(s.BarMethod)
+	}
+	return nil
+}
+
 func assertEqual(t *testing.T, expected interface{}, actual interface{}) {
 	if !reflect.DeepEqual(expected, actual) {
 		t.Error("Expected %+v, but got %+v", expected, actual)

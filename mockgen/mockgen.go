@@ -191,6 +191,7 @@ func (g *generator) Generate(pkg *model.Package, pkgName string) error {
 	// Get all required imports, and generate unique names for them all.
 	im := pkg.Imports()
 	im[gomockImportPath] = true
+	im["reflect"] = true
 	g.packageMap = make(map[string]string, len(im))
 	localNames := make(map[string]bool, len(im))
 	for pth := range im {
@@ -281,6 +282,20 @@ func (g *generator) GenerateMockInterface(intf *model.Interface) error {
 	g.p("func (_m *%v) EXPECT() *_%vRecorder {", mockType, mockType)
 	g.in()
 	g.p("return _m.recorder")
+	g.out()
+	g.p("}")
+
+	g.p("func (_m *%v) GomockMethodType(name string) reflect.Type {", mockType)
+	g.in()
+	g.p("switch name {")
+	for _, m := range intf.Methods {
+		g.p("case %q:", m.Name)
+		g.in()
+		g.p("return reflect.TypeOf(_m.%s)", m.Name)
+		g.out()
+	}
+	g.p("}")
+	g.p("return nil")
 	g.out()
 	g.p("}")
 
