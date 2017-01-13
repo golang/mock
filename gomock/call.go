@@ -81,7 +81,6 @@ func (c *Call) Do(f interface{}) *Call {
 
 func (c *Call) Invoke(f interface{}) *Call {
 	// TODO: Check arity and types here, rather than dying badly elsewhere.
-	c.doFunc = reflect.ValueOf(f)
 	funcValue := reflect.ValueOf(f)
 	funcType := funcValue.Type()
 
@@ -276,7 +275,7 @@ func (c *Call) call(args []interface{}) (rets []interface{}, action func()) {
 	rets = c.rets
 
 	if c.invokeFunc.IsValid() {
-		rets = make([]interface{}, len(args))
+		rets = make([]interface{}, len(c.retsType))
 		invokeArgs := make([]reflect.Value, len(args))
 		for i := 0; i < len(args); i++ {
 			if args[i] != nil {
@@ -286,6 +285,7 @@ func (c *Call) call(args []interface{}) (rets []interface{}, action func()) {
 			}
 		}
 		retValues := c.invokeFunc.Call(invokeArgs)
+		//c.t.Errorf("len(retValues)=%v\n", len(retValues))
 		for i := 0; i < len(c.retsType); i++ {
 			rets[i] = retValues[i].Interface()
 		}

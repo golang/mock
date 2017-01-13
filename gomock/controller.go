@@ -151,7 +151,9 @@ func (ctrl *Controller) Call(receiver interface{}, method string, args ...interf
 		ctrl.expectedCalls.Remove(preReqCall)
 	}
 
+	//ctrl.t.Errorf("before expected.call")
 	rets, action := expected.call(args)
+	//ctrl.t.Errorf("after expected.call")
 	if expected.exhausted() {
 		ctrl.expectedCalls.Remove(expected)
 	}
