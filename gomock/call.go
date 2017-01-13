@@ -37,8 +37,12 @@ type Call struct {
 	numCalls int // actual number made
 
 	// Actions
-	doFunc  reflect.Value
-	setArgs map[int]reflect.Value
+	doFunc reflect.Value
+
+	argsType   []reflect.Type
+	retsType   []reflect.Type
+	invokeFunc reflect.Value
+	setArgs    map[int]reflect.Value
 }
 
 // AnyTimes allows the expectation to be called 0 or more times
@@ -72,6 +76,38 @@ func (c *Call) MaxTimes(n int) *Call {
 func (c *Call) Do(f interface{}) *Call {
 	// TODO: Check arity and types here, rather than dying badly elsewhere.
 	c.doFunc = reflect.ValueOf(f)
+	return c
+}
+
+func (c *Call) Invoke(f interface{}) *Call {
+	// TODO: Check arity and types here, rather than dying badly elsewhere.
+	c.doFunc = reflect.ValueOf(f)
+	funcValue := reflect.ValueOf(f)
+	funcType := funcValue.Type()
+
+	if funcType.NumIn() != len(c.argsType) {
+		c.t.Fatalf("'%v' needs %v arguments, but %v provided", c.method, len(c.argsType), funcType.NumIn())
+	}
+
+	for i := 0; i < funcType.NumIn(); i++ {
+		if funcType.In(i) != c.argsType[i] {
+			c.t.Fatalf("the argument type at position %v is not matched with '%v': expect=%v, actural=%v\n",
+				i, c.method, c.argsType[i], funcType.In(i))
+		}
+	}
+
+	if funcType.NumOut() != len(c.retsType) {
+		c.t.Fatalf("'%v' returns %v values, but %v returned", c.method, len(c.retsType), funcType.NumOut())
+	}
+
+	for i := 0; i < funcType.NumOut(); i++ {
+		if funcType.Out(i) != c.retsType[i] {
+			c.t.Fatalf("the return type at position %v is not matched with '%v': expect=%v, actural=%v\n",
+				i, c.method, c.retsType[i], funcType.Out(i))
+		}
+	}
+
+	c.invokeFunc = funcValue
 	return c
 }
 
@@ -238,6 +274,23 @@ func (c *Call) call(args []interface{}) (rets []interface{}, action func()) {
 	}
 
 	rets = c.rets
+
+	if c.invokeFunc.IsValid() {
+		rets = make([]interface{}, len(args))
+		invokeArgs := make([]reflect.Value, len(args))
+		for i := 0; i < len(args); i++ {
+			if args[i] != nil {
+				invokeArgs[i] = reflect.ValueOf(args[i])
+			} else {
+				invokeArgs[i] = reflect.Zero(c.argsType[i])
+			}
+		}
+		retValues := c.invokeFunc.Call(invokeArgs)
+		for i := 0; i < len(c.retsType); i++ {
+			rets[i] = retValues[i].Interface()
+		}
+	}
+
 	if rets == nil {
 		// Synthesize the zero value for each of the return args' types.
 		mt := c.methodType()
