@@ -250,13 +250,13 @@ func (g *generator) GenerateMockInterface(intf *model.Interface) error {
 	g.p("type %v struct {", mockType)
 	g.in()
 	g.p("ctrl     *gomock.Controller")
-	g.p("recorder *_%vRecorder", mockType)
+	g.p("recorder *%vMockRecorder", mockType)
 	g.out()
 	g.p("}")
 	g.p("")
 
-	g.p("// Recorder for %v (not exported)", mockType)
-	g.p("type _%vRecorder struct {", mockType)
+	g.p("// %vMockRecorder is the mock recorder for %v", mockType, mockType)
+	g.p("type %vMockRecorder struct {", mockType)
 	g.in()
 	g.p("mock *%v", mockType)
 	g.out()
@@ -272,7 +272,7 @@ func (g *generator) GenerateMockInterface(intf *model.Interface) error {
 	g.p("func New%v(ctrl *gomock.Controller) *%v {", mockType, mockType)
 	g.in()
 	g.p("mock := &%v{ctrl: ctrl}", mockType)
-	g.p("mock.recorder = &_%vRecorder{mock}", mockType)
+	g.p("mock.recorder = &%vMockRecorder{mock}", mockType)
 	g.p("return mock")
 	g.out()
 	g.p("}")
@@ -280,7 +280,7 @@ func (g *generator) GenerateMockInterface(intf *model.Interface) error {
 
 	// XXX: possible name collision here if someone has EXPECT in their interface.
 	g.p("// EXPECT returns an object that allows the caller to indicate expected use")
-	g.p("func (_m *%v) EXPECT() *_%vRecorder {", mockType, mockType)
+	g.p("func (_m *%v) EXPECT() *%vMockRecorder {", mockType, mockType)
 	g.in()
 	g.p("return _m.recorder")
 	g.out()
@@ -394,7 +394,8 @@ func (g *generator) GenerateMockRecorderMethod(mockType string, m *model.Method)
 		argString += fmt.Sprintf("arg%d ...interface{}", nargs)
 	}
 
-	g.p("func (_mr *_%vRecorder) %v(%v) *gomock.Call {", mockType, m.Name, argString)
+	g.p("// %v indicates an expected call of %v", m.Name, m.Name)
+	g.p("func (_mr *%vMockRecorder) %v(%v) *gomock.Call {", mockType, m.Name, argString)
 	g.in()
 
 	callArgs := strings.Join(args, ", ")
