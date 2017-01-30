@@ -246,7 +246,7 @@ func (g *generator) GenerateMockInterface(intf *model.Interface) error {
 	mockType := mockName(intf.Name)
 
 	g.p("")
-	g.p("// Mock of %v interface", intf.Name)
+	g.p("// %v is a mock of %v interface", mockType, intf.Name)
 	g.p("type %v struct {", mockType)
 	g.in()
 	g.p("ctrl     *gomock.Controller")
@@ -268,6 +268,7 @@ func (g *generator) GenerateMockInterface(intf *model.Interface) error {
 	//g.p("var _ %v = (*%v)(nil)", typeName, mockType)
 	//g.p("")
 
+	g.p("// New%v creates a new mock instance", mockType)
 	g.p("func New%v(ctrl *gomock.Controller) *%v {", mockType, mockType)
 	g.in()
 	g.p("mock := &%v{ctrl: ctrl}", mockType)
@@ -278,6 +279,7 @@ func (g *generator) GenerateMockInterface(intf *model.Interface) error {
 	g.p("")
 
 	// XXX: possible name collision here if someone has EXPECT in their interface.
+	g.p("// EXPECT returns an object that allows the caller to indicate expected use")
 	g.p("func (_m *%v) EXPECT() *_%vRecorder {", mockType, mockType)
 	g.in()
 	g.p("return _m.recorder")
@@ -335,6 +337,7 @@ func (g *generator) GenerateMockMethod(mockType string, m *model.Method, pkgOver
 		retString = " " + retString
 	}
 
+	g.p("// %v mocks base method", m.Name)
 	g.p("func (_m *%v) %v(%v)%v {", mockType, m.Name, argString, retString)
 	g.in()
 
