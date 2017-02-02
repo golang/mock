@@ -63,6 +63,25 @@ func TestRemember(t *testing.T) {
 	user.Remember(mockIndex, []string{"nil-key"}, []interface{}{nil})
 }
 
+func TestVariadicFunction(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockIndex := mock_user.NewMockIndex(ctrl)
+	m := mockIndex.EXPECT().Ellip("%d", 0, 1, 1, 2, 3)
+	m.Do(func(format string, nums ...int) {
+		sum := 0
+		for _, value := range nums {
+			sum += value
+		}
+		if sum != 7 {
+			t.Errorf("Expected 7, got %d", sum)
+		}
+	})
+
+	mockIndex.Ellip("%d", 0, 1, 1, 2, 3)
+}
+
 func TestGrabPointer(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
