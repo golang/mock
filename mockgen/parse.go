@@ -20,6 +20,7 @@ import (
 	"flag"
 	"fmt"
 	"go/ast"
+	"go/build"
 	"go/parser"
 	"go/token"
 	"log"
@@ -118,12 +119,12 @@ func (p *fileParser) parseAuxFiles(auxFiles string) error {
 	return nil
 }
 
-func (p *fileParser) addAuxInterfacesFromFile(pkg string, file *ast.File) {
-	if _, ok := p.auxInterfaces[pkg]; !ok {
-		p.auxInterfaces[pkg] = make(map[string]*ast.InterfaceType)
+func (p *fileParser) addAuxInterfacesFromFile(pkgPath string, file *ast.File) {
+	if _, ok := p.auxInterfaces[pkgPath]; !ok {
+		p.auxInterfaces[pkgPath] = make(map[string]*ast.InterfaceType)
 	}
 	for ni := range iterInterfaces(file) {
-		p.auxInterfaces[pkg][ni.name.Name] = ni.it
+		p.auxInterfaces[pkgPath][ni.name.Name] = ni.it
 	}
 }
 
@@ -159,6 +160,21 @@ func (p *fileParser) parseFile(file *ast.File) (*model.Package, error) {
 	}, nil
 }
 
+func (p *fileParser) parsePackage(path string) error {
+	var pkgs map[string]*ast.Package
+	if imp, err := build.Import(path, "", build.FindOnly|build.IgnoreVendor); err != nil {
+		return err
+	} else if pkgs, err = parser.ParseDir(p.fileSet, imp.Dir, nil, 0); err != nil {
+		return err
+	}
+	for _, pkg := range pkgs {
+		file := ast.MergePackageFiles(pkg, ast.FilterFuncDuplicates|ast.FilterUnassociatedComments|ast.FilterImportDuplicates)
+		p.auxFiles = append(p.auxFiles, file)
+		p.addAuxInterfacesFromFile(path, file)
+	}
+	return nil
+}
+
 func (p *fileParser) parseInterface(name, pkg string, it *ast.InterfaceType) (*model.Interface, error) {
 	intf := &model.Interface{Name: name}
 	for _, field := range it.Methods.List {
@@ -178,7 +194,7 @@ func (p *fileParser) parseInterface(name, pkg string, it *ast.InterfaceType) (*m
 			intf.Methods = append(intf.Methods, m)
 		case *ast.Ident:
 			// Embedded interface in this package.
-			ei := p.auxInterfaces[""][v.String()]
+			ei := p.auxInterfaces[pkg][v.String()]
 			if ei == nil {
 				return nil, p.errorf(v.Pos(), "unknown embedded interface %s", v.String())
 			}
@@ -194,13 +210,17 @@ func (p *fileParser) parseInterface(name, pkg string, it *ast.InterfaceType) (*m
 		case *ast.SelectorExpr:
 			// Embedded interface in another package.
 			fpkg, sel := v.X.(*ast.Ident).String(), v.Sel.String()
-			ei := p.auxInterfaces[fpkg][sel]
-			if ei == nil {
-				return nil, p.errorf(v.Pos(), "unknown embedded interface %s.%s", fpkg, sel)
-			}
 			epkg, ok := p.imports[fpkg]
 			if !ok {
 				return nil, p.errorf(v.X.Pos(), "unknown package %s", fpkg)
+			}
+			ei := p.auxInterfaces[epkg][sel]
+			if ei == nil {
+				if err := p.parsePackage(epkg); err != nil {
+					return nil, p.errorf(v.Pos(), "could not parse package %s at %s", fpkg, epkg)
+				} else if ei = p.auxInterfaces[epkg][sel]; ei == nil {
+					return nil, p.errorf(v.Pos(), "unknown embedded interface %s.%s", fpkg, sel)
+				}
 			}
 			eintf, err := p.parseInterface(sel, epkg, ei)
 			if err != nil {
