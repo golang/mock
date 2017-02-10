@@ -25,6 +25,7 @@ import (
 	"go/token"
 	"log"
 	"path"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -39,6 +40,10 @@ var (
 // TODO: simplify error reporting
 
 func ParseFile(source string) (*model.Package, error) {
+	srcDir, err := filepath.Abs(filepath.Dir(source))
+	if err != nil {
+		return nil, fmt.Errorf("failed getting source directory: %v", err)
+	}
 	fs := token.NewFileSet()
 	file, err := parser.ParseFile(fs, source, nil, 0)
 	if err != nil {
@@ -49,6 +54,7 @@ func ParseFile(source string) (*model.Package, error) {
 		fileSet:       fs,
 		imports:       make(map[string]string),
 		auxInterfaces: make(map[string]map[string]*ast.InterfaceType),
+		srcDir:        srcDir,
 	}
 
 	// Handle -imports.
@@ -90,6 +96,8 @@ type fileParser struct {
 
 	auxFiles      []*ast.File
 	auxInterfaces map[string]map[string]*ast.InterfaceType // package (or "") => name => interface
+
+	srcDir string
 }
 
 func (p *fileParser) errorf(pos token.Pos, format string, args ...interface{}) error {
@@ -162,7 +170,7 @@ func (p *fileParser) parseFile(file *ast.File) (*model.Package, error) {
 
 func (p *fileParser) parsePackage(path string) error {
 	var pkgs map[string]*ast.Package
-	if imp, err := build.Import(path, "", build.FindOnly); err != nil {
+	if imp, err := build.Import(path, p.srcDir, build.FindOnly); err != nil {
 		return err
 	} else if pkgs, err = parser.ParseDir(p.fileSet, imp.Dir, nil, 0); err != nil {
 		return err
@@ -222,7 +230,7 @@ func (p *fileParser) parseInterface(name, pkg string, it *ast.InterfaceType) (*m
 			ei := p.auxInterfaces[epkg][sel]
 			if ei == nil {
 				if err := p.parsePackage(epkg); err != nil {
-					return nil, p.errorf(v.Pos(), "could not parse package %s at %s", fpkg, epkg)
+					return nil, p.errorf(v.Pos(), "could not parse package %s: %v", fpkg, err)
 				} else if ei = p.auxInterfaces[epkg][sel]; ei == nil {
 					return nil, p.errorf(v.Pos(), "unknown embedded interface %s.%s", fpkg, sel)
 				}
