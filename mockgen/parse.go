@@ -162,7 +162,7 @@ func (p *fileParser) parseFile(file *ast.File) (*model.Package, error) {
 
 func (p *fileParser) parsePackage(path string) error {
 	var pkgs map[string]*ast.Package
-	if imp, err := build.Import(path, "", build.FindOnly|build.IgnoreVendor); err != nil {
+	if imp, err := build.Import(path, "", build.FindOnly); err != nil {
 		return err
 	} else if pkgs, err = parser.ParseDir(p.fileSet, imp.Dir, nil, 0); err != nil {
 		return err
@@ -171,6 +171,11 @@ func (p *fileParser) parsePackage(path string) error {
 		file := ast.MergePackageFiles(pkg, ast.FilterFuncDuplicates|ast.FilterUnassociatedComments|ast.FilterImportDuplicates)
 		p.auxFiles = append(p.auxFiles, file)
 		p.addAuxInterfacesFromFile(path, file)
+		for pkgName, pkgPath := range importsOfFile(file) {
+			if _, ok := p.imports[pkgName]; !ok {
+				p.imports[pkgName] = pkgPath
+			}
+		}
 	}
 	return nil
 }
@@ -393,33 +398,23 @@ func importsOfFile(file *ast.File) map[string]string {
 	 */
 
 	m := make(map[string]string)
-	for _, decl := range file.Decls {
-		gd, ok := decl.(*ast.GenDecl)
-		if !ok || gd.Tok != token.IMPORT {
-			continue
-		}
-		for _, spec := range gd.Specs {
-			is, ok := spec.(*ast.ImportSpec)
-			if !ok {
+	for _, is := range file.Imports {
+		var pkg string
+		importPath := is.Path.Value[1 : len(is.Path.Value)-1] // remove quotes
+
+		if is.Name != nil {
+			if is.Name.Name == "_" {
 				continue
 			}
-			pkg, importPath := "", string(is.Path.Value)
-			importPath = importPath[1 : len(importPath)-1] // remove quotes
-
-			if is.Name != nil {
-				if is.Name.Name == "_" {
-					continue
-				}
-				pkg = removeDot(is.Name.Name)
-			} else {
-				_, last := path.Split(importPath)
-				pkg = strings.SplitN(last, ".", 2)[0]
-			}
-			if _, ok := m[pkg]; ok {
-				log.Fatalf("imported package collision: %q imported twice", pkg)
-			}
-			m[pkg] = importPath
+			pkg = removeDot(is.Name.Name)
+		} else {
+			_, last := path.Split(importPath)
+			pkg = strings.SplitN(last, ".", 2)[0]
 		}
+		if _, ok := m[pkg]; ok {
+			log.Fatalf("imported package collision: %q imported twice", pkg)
+		}
+		m[pkg] = importPath
 	}
 	return m
 }
