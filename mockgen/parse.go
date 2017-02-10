@@ -51,10 +51,11 @@ func ParseFile(source string) (*model.Package, error) {
 	}
 
 	p := &fileParser{
-		fileSet:       fs,
-		imports:       make(map[string]string),
-		auxInterfaces: make(map[string]map[string]*ast.InterfaceType),
-		srcDir:        srcDir,
+		fileSet:            fs,
+		imports:            make(map[string]string),
+		importedInterfaces: make(map[string]map[string]*ast.InterfaceType),
+		auxInterfaces:      make(map[string]map[string]*ast.InterfaceType),
+		srcDir:             srcDir,
 	}
 
 	// Handle -imports.
@@ -91,8 +92,9 @@ func ParseFile(source string) (*model.Package, error) {
 }
 
 type fileParser struct {
-	fileSet *token.FileSet
-	imports map[string]string // package name => import path
+	fileSet            *token.FileSet
+	imports            map[string]string                        // package name => import path
+	importedInterfaces map[string]map[string]*ast.InterfaceType // package (or "") => name => interface
 
 	auxFiles      []*ast.File
 	auxInterfaces map[string]map[string]*ast.InterfaceType // package (or "") => name => interface
@@ -127,12 +129,12 @@ func (p *fileParser) parseAuxFiles(auxFiles string) error {
 	return nil
 }
 
-func (p *fileParser) addAuxInterfacesFromFile(pkgPath string, file *ast.File) {
-	if _, ok := p.auxInterfaces[pkgPath]; !ok {
-		p.auxInterfaces[pkgPath] = make(map[string]*ast.InterfaceType)
+func (p *fileParser) addAuxInterfacesFromFile(pkg string, file *ast.File) {
+	if _, ok := p.auxInterfaces[pkg]; !ok {
+		p.auxInterfaces[pkg] = make(map[string]*ast.InterfaceType)
 	}
 	for ni := range iterInterfaces(file) {
-		p.auxInterfaces[pkgPath][ni.name.Name] = ni.it
+		p.auxInterfaces[pkg][ni.name.Name] = ni.it
 	}
 }
 
@@ -177,8 +179,12 @@ func (p *fileParser) parsePackage(path string) error {
 	}
 	for _, pkg := range pkgs {
 		file := ast.MergePackageFiles(pkg, ast.FilterFuncDuplicates|ast.FilterUnassociatedComments|ast.FilterImportDuplicates)
-		p.auxFiles = append(p.auxFiles, file)
-		p.addAuxInterfacesFromFile(path, file)
+		if _, ok := p.importedInterfaces[path]; !ok {
+			p.importedInterfaces[path] = make(map[string]*ast.InterfaceType)
+		}
+		for ni := range iterInterfaces(file) {
+			p.importedInterfaces[path][ni.name.Name] = ni.it
+		}
 		for pkgName, pkgPath := range importsOfFile(file) {
 			if _, ok := p.imports[pkgName]; !ok {
 				p.imports[pkgName] = pkgPath
@@ -207,9 +213,11 @@ func (p *fileParser) parseInterface(name, pkg string, it *ast.InterfaceType) (*m
 			intf.Methods = append(intf.Methods, m)
 		case *ast.Ident:
 			// Embedded interface in this package.
-			ei := p.auxInterfaces[pkg][v.String()]
+			ei := p.auxInterfaces[""][v.String()]
 			if ei == nil {
-				return nil, p.errorf(v.Pos(), "unknown embedded interface %s", v.String())
+				if ei = p.importedInterfaces[pkg][v.String()]; ei == nil {
+					return nil, p.errorf(v.Pos(), "unknown embedded interface %s", v.String())
+				}
 			}
 			eintf, err := p.parseInterface(v.String(), pkg, ei)
 			if err != nil {
@@ -227,11 +235,14 @@ func (p *fileParser) parseInterface(name, pkg string, it *ast.InterfaceType) (*m
 			if !ok {
 				return nil, p.errorf(v.X.Pos(), "unknown package %s", fpkg)
 			}
-			ei := p.auxInterfaces[epkg][sel]
+			ei := p.auxInterfaces[fpkg][sel]
 			if ei == nil {
-				if err := p.parsePackage(epkg); err != nil {
-					return nil, p.errorf(v.Pos(), "could not parse package %s: %v", fpkg, err)
-				} else if ei = p.auxInterfaces[epkg][sel]; ei == nil {
+				if _, ok = p.importedInterfaces[epkg]; !ok {
+					if err := p.parsePackage(epkg); err != nil {
+						return nil, p.errorf(v.Pos(), "could not parse package %s: %v", fpkg, err)
+					}
+				}
+				if ei = p.importedInterfaces[epkg][sel]; ei == nil {
 					return nil, p.errorf(v.Pos(), "unknown embedded interface %s.%s", fpkg, sel)
 				}
 			}
