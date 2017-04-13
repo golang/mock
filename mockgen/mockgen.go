@@ -58,6 +58,7 @@ func main() {
 		pkg, err = ParseFile(*source)
 	} else {
 		if flag.NArg() != 2 {
+			usage()
 			log.Fatal("Expected exactly two arguments")
 		}
 		pkg, err = Reflect(flag.Arg(0), strings.Split(flag.Arg(1), ","))
