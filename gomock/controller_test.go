@@ -119,6 +119,10 @@ func (s *Subject) BarMethod(arg string) int {
 	return 0
 }
 
+func (s *Subject) VariableArgmentsMethod(args ...string) int {
+	return 0
+}
+
 func assertEqual(t *testing.T, expected interface{}, actual interface{}) {
 	if !reflect.DeepEqual(expected, actual) {
 		t.Error("Expected %+v, but got %+v", expected, actual)
@@ -312,6 +316,39 @@ func TestDo(t *testing.T) {
 	}
 	if "argument" != argument {
 		t.Error("Do callback received wrong argument.")
+	}
+
+	ctrl.Finish()
+}
+
+func TestDoWithVariableArguments(t *testing.T) {
+	_, ctrl := createFixtures(t)
+	subject := new(Subject)
+
+	doCalled := false
+	var arguments []string
+	ctrl.RecordCall(subject, "VariableArgmentsMethod", "argument1", "argument2").Do(
+		func(args ...string) {
+			doCalled = true
+			arguments = args
+		})
+	if doCalled {
+		t.Error("Do() callback called too early.")
+	}
+
+	ctrl.Call(subject, "VariableArgmentsMethod", "argument1", "argument2")
+
+	if !doCalled {
+		t.Error("Do() callback not called.")
+	}
+	if !reflect.DeepEqual(
+		[]string{
+			"argument1",
+			"argument2",
+		},
+		arguments,
+	) {
+		t.Error("Do callback received wrong arguments.")
 	}
 
 	ctrl.Finish()
