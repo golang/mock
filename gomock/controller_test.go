@@ -322,36 +322,53 @@ func TestDo(t *testing.T) {
 }
 
 func TestDoWithVariableArguments(t *testing.T) {
-	_, ctrl := createFixtures(t)
-	subject := new(Subject)
-
-	doCalled := false
-	var arguments []string
-	ctrl.RecordCall(subject, "VariableArgmentsMethod", "argument1", "argument2").Do(
-		func(args ...string) {
-			doCalled = true
-			arguments = args
-		})
-	if doCalled {
-		t.Error("Do() callback called too early.")
-	}
-
-	ctrl.Call(subject, "VariableArgmentsMethod", "argument1", "argument2")
-
-	if !doCalled {
-		t.Error("Do() callback not called.")
-	}
-	if !reflect.DeepEqual(
+	argSet := [][]string{
+		[]string{},
+		[]string{
+			"argument",
+		},
 		[]string{
 			"argument1",
 			"argument2",
 		},
-		arguments,
-	) {
-		t.Error("Do callback received wrong arguments.")
 	}
 
-	ctrl.Finish()
+	for _, args := range argSet {
+		t.Run(fmt.Sprintf("len=%d", len(args)), func(t *testing.T) {
+			argInfs := make([]interface{}, len(args))
+			for i := range args {
+				argInfs[i] = args[i]
+			}
+
+			_, ctrl := createFixtures(t)
+			subject := new(Subject)
+
+			doCalled := false
+			var arguments []string
+			ctrl.RecordCall(subject, "VariableArgmentsMethod", argInfs...).Do(
+				func(args ...string) {
+					doCalled = true
+					arguments = args
+				})
+			if doCalled {
+				t.Error("Do() callback called too early.")
+			}
+
+			ctrl.Call(subject, "VariableArgmentsMethod", argInfs...)
+
+			if !doCalled {
+				t.Error("Do() callback not called.")
+			}
+			if !reflect.DeepEqual(
+				args,
+				arguments,
+			) {
+				t.Error("Do callback received wrong arguments.")
+			}
+
+			ctrl.Finish()
+		})
+	}
 }
 
 func TestReturn(t *testing.T) {
