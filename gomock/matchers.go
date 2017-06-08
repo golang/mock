@@ -17,6 +17,7 @@ package gomock
 import (
 	"fmt"
 	"reflect"
+	"time"
 )
 
 // A Matcher is a representation of a class of values.
@@ -49,6 +50,22 @@ func (e eqMatcher) Matches(x interface{}) bool {
 
 func (e eqMatcher) String() string {
 	return fmt.Sprintf("is equal to %v", e.x)
+}
+
+type timeMatcher struct {
+	t time.Time
+}
+
+func (t timeMatcher) Matches(x interface{}) bool {
+	converted, ok := x.(time.Time)
+	if !ok {
+		return false
+	}
+	return t.t.Equal(converted)
+}
+
+func (t timeMatcher) String() string {
+	return fmt.Sprintf("is equal to %v", t.t)
 }
 
 type nilMatcher struct{}
@@ -86,9 +103,10 @@ func (n notMatcher) String() string {
 }
 
 // Constructors
-func Any() Matcher             { return anyMatcher{} }
-func Eq(x interface{}) Matcher { return eqMatcher{x} }
-func Nil() Matcher             { return nilMatcher{} }
+func Any() Matcher               { return anyMatcher{} }
+func Eq(x interface{}) Matcher   { return eqMatcher{x} }
+func TimeEq(t time.Time) Matcher { return timeMatcher{t} }
+func Nil() Matcher               { return nilMatcher{} }
 func Not(x interface{}) Matcher {
 	if m, ok := x.(Matcher); ok {
 		return notMatcher{m}

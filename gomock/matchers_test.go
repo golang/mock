@@ -20,9 +20,11 @@ import (
 
 	"github.com/golang/mock/gomock"
 	mock_matcher "github.com/golang/mock/gomock/mock_matcher"
+	"time"
 )
 
 func TestMatchers(t *testing.T) {
+	testTime := time.Now()
 	type e interface{}
 	type testCase struct {
 		matcher gomock.Matcher
@@ -31,6 +33,7 @@ func TestMatchers(t *testing.T) {
 	tests := []testCase{
 		testCase{gomock.Any(), []e{3, nil, "foo"}, nil},
 		testCase{gomock.Eq(4), []e{4}, []e{3, "blah", nil, int64(4)}},
+		testCase{gomock.TimeEq(testTime), []e{testTime}, []e{testTime.Add(time.Second)}},
 		testCase{gomock.Nil(),
 			[]e{nil, (error)(nil), (chan bool)(nil), (*int)(nil)},
 			[]e{"", 0, make(chan bool), errors.New("err"), new(int)}},
