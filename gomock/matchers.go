@@ -22,7 +22,7 @@ import (
 // A Matcher is a representation of a class of values.
 // It is used to represent the valid or expected arguments to a mocked method.
 type Matcher interface {
-	// Matches returns whether y is a match.
+	// Matches returns whether x is a match.
 	Matches(x interface{}) bool
 
 	// String describes what the matcher matches.
