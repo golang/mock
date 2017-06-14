@@ -5,6 +5,7 @@ package mock_gomock
 
 import (
 	gomock "github.com/golang/mock/gomock"
+	reflect "reflect"
 )
 
 // MockMatcher is a mock of Matcher interface
@@ -28,6 +29,15 @@ func NewMockMatcher(ctrl *gomock.Controller) *MockMatcher {
 // EXPECT returns an object that allows the caller to indicate expected use
 func (_m *MockMatcher) EXPECT() *MockMatcherMockRecorder {
 	return _m.recorder
+}
+func (_m *MockMatcher) GomockMethodType(name string) reflect.Type {
+	switch name {
+	case "Matches":
+		return reflect.TypeOf(_m.Matches)
+	case "String":
+		return reflect.TypeOf(_m.String)
+	}
+	return nil
 }
 
 // Matches mocks base method

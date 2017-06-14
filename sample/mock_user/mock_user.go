@@ -15,6 +15,7 @@ import (
 	template "html/template"
 	io "io"
 	http "net/http"
+	reflect "reflect"
 	template0 "text/template"
 )
 
@@ -39,6 +40,55 @@ func NewMockIndex(ctrl *gomock.Controller) *MockIndex {
 // EXPECT returns an object that allows the caller to indicate expected use
 func (_m *MockIndex) EXPECT() *MockIndexMockRecorder {
 	return _m.recorder
+}
+func (_m *MockIndex) GomockMethodType(name string) reflect.Type {
+	switch name {
+	case "Anon":
+		return reflect.TypeOf(_m.Anon)
+	case "Chan":
+		return reflect.TypeOf(_m.Chan)
+	case "ConcreteRet":
+		return reflect.TypeOf(_m.ConcreteRet)
+	case "Ellip":
+		return reflect.TypeOf(_m.Ellip)
+	case "EllipOnly":
+		return reflect.TypeOf(_m.EllipOnly)
+	case "ForeignFour":
+		return reflect.TypeOf(_m.ForeignFour)
+	case "ForeignOne":
+		return reflect.TypeOf(_m.ForeignOne)
+	case "ForeignThree":
+		return reflect.TypeOf(_m.ForeignThree)
+	case "ForeignTwo":
+		return reflect.TypeOf(_m.ForeignTwo)
+	case "Func":
+		return reflect.TypeOf(_m.Func)
+	case "Get":
+		return reflect.TypeOf(_m.Get)
+	case "GetTwo":
+		return reflect.TypeOf(_m.GetTwo)
+	case "Map":
+		return reflect.TypeOf(_m.Map)
+	case "NillableRet":
+		return reflect.TypeOf(_m.NillableRet)
+	case "Other":
+		return reflect.TypeOf(_m.Other)
+	case "Ptr":
+		return reflect.TypeOf(_m.Ptr)
+	case "Put":
+		return reflect.TypeOf(_m.Put)
+	case "Slice":
+		return reflect.TypeOf(_m.Slice)
+	case "Struct":
+		return reflect.TypeOf(_m.Struct)
+	case "StructChan":
+		return reflect.TypeOf(_m.StructChan)
+	case "Summary":
+		return reflect.TypeOf(_m.Summary)
+	case "Templates":
+		return reflect.TypeOf(_m.Templates)
+	}
+	return nil
 }
 
 // Anon mocks base method
@@ -305,6 +355,19 @@ func NewMockEmbed(ctrl *gomock.Controller) *MockEmbed {
 func (_m *MockEmbed) EXPECT() *MockEmbedMockRecorder {
 	return _m.recorder
 }
+func (_m *MockEmbed) GomockMethodType(name string) reflect.Type {
+	switch name {
+	case "EmbeddedMethod":
+		return reflect.TypeOf(_m.EmbeddedMethod)
+	case "ForeignEmbeddedMethod":
+		return reflect.TypeOf(_m.ForeignEmbeddedMethod)
+	case "ImplicitPackage":
+		return reflect.TypeOf(_m.ImplicitPackage)
+	case "RegularMethod":
+		return reflect.TypeOf(_m.RegularMethod)
+	}
+	return nil
+}
 
 // EmbeddedMethod mocks base method
 func (_m *MockEmbed) EmbeddedMethod() {
@@ -369,6 +432,13 @@ func NewMockEmbedded(ctrl *gomock.Controller) *MockEmbedded {
 // EXPECT returns an object that allows the caller to indicate expected use
 func (_m *MockEmbedded) EXPECT() *MockEmbeddedMockRecorder {
 	return _m.recorder
+}
+func (_m *MockEmbedded) GomockMethodType(name string) reflect.Type {
+	switch name {
+	case "EmbeddedMethod":
+		return reflect.TypeOf(_m.EmbeddedMethod)
+	}
+	return nil
 }
 
 // EmbeddedMethod mocks base method

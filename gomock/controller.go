@@ -55,13 +55,20 @@
 //	- Handle different argument/return types (e.g. ..., chan, map, interface).
 package gomock
 
-import "sync"
+import (
+	"reflect"
+	"sync"
+)
 
 // A TestReporter is something that can be used to report test failures.
 // It is satisfied by the standard library's *testing.T.
 type TestReporter interface {
 	Errorf(format string, args ...interface{})
 	Fatalf(format string, args ...interface{})
+}
+
+type Mock interface {
+	GomockMethodType(name string) reflect.Type
 }
 
 // A Controller represents the top-level control of a mock ecosystem.
@@ -80,7 +87,7 @@ func NewController(t TestReporter) *Controller {
 	}
 }
 
-func (ctrl *Controller) RecordCall(receiver interface{}, method string, args ...interface{}) *Call {
+func (ctrl *Controller) RecordCall(receiver Mock, method string, args ...interface{}) *Call {
 	// TODO: check arity, types.
 	margs := make([]Matcher, len(args))
 	for i, arg := range args {
@@ -104,7 +111,7 @@ func (ctrl *Controller) RecordCall(receiver interface{}, method string, args ...
 	return call
 }
 
-func (ctrl *Controller) Call(receiver interface{}, method string, args ...interface{}) []interface{} {
+func (ctrl *Controller) Call(receiver Mock, method string, args ...interface{}) []interface{} {
 	ctrl.mu.Lock()
 	defer ctrl.mu.Unlock()
 
