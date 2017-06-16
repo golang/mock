@@ -28,6 +28,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"sort"
 	"strconv"
 	"strings"
 	"unicode"
@@ -192,9 +193,19 @@ func (g *generator) Generate(pkg *model.Package, pkgName string) error {
 	// Get all required imports, and generate unique names for them all.
 	im := pkg.Imports()
 	im[gomockImportPath] = true
+
+	// Sort keys to make import alias generation predictable
+	sorted_paths := make([]string, len(im), len(im))
+	x := 0
+	for pth := range im {
+		sorted_paths[x] = pth
+		x++
+	}
+	sort.Strings(sorted_paths)
+
 	g.packageMap = make(map[string]string, len(im))
 	localNames := make(map[string]bool, len(im))
-	for pth := range im {
+	for _, pth := range sorted_paths {
 		base := sanitize(path.Base(pth))
 
 		// Local names for an imported package can usually be the basename of the import path.
