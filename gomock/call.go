@@ -223,7 +223,7 @@ func (c *Call) call(args []interface{}) (rets []interface{}, action func()) {
 	if c.doFunc.IsValid() {
 		doArgs := make([]reflect.Value, len(args))
 		ft := c.doFunc.Type()
-		for i := 0; i < ft.NumIn(); i++ {
+		for i := 0; i < len(args); i++ {
 			if args[i] != nil {
 				doArgs[i] = reflect.ValueOf(args[i])
 			} else {
