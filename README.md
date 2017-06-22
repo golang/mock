@@ -69,6 +69,8 @@ It supports the following flags:
     `foo=bar/baz.go`, where `bar/baz.go` is the source file and `foo` is the
     package name of that file used by the -source file.
 
+*  `-build_flags`: (reflect mode only) Flags passed verbatim to `go build`.
+
 For an example of the use of `mockgen`, see the `sample/` directory. In simple
 cases, you will need only the `-source` flag.
 
