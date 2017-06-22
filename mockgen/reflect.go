@@ -32,8 +32,8 @@ import (
 )
 
 var (
-	progOnly = flag.Bool("prog_only", false, "(reflect mode) Only generate the reflection program; write it to stdout.")
-	execOnly = flag.String("exec_only", "", "(reflect mode) If set, execute this reflection program.")
+	progOnly   = flag.Bool("prog_only", false, "(reflect mode) Only generate the reflection program; write it to stdout.")
+	execOnly   = flag.String("exec_only", "", "(reflect mode) If set, execute this reflection program.")
 	buildFlags = flag.String("build_flags", "", "(reflect mode) Additional flags for go build.")
 )
 
