@@ -72,8 +72,15 @@ func Reflect(importPath string, symbols []string) (*model.Package, error) {
 			return nil, err
 		}
 
+		cmdArgs := []string{}
+		cmdArgs = append(cmdArgs, "build")
+		if *buildFlags != "" {
+			cmdArgs = append(cmdArgs, *buildFlags)
+		}
+		cmdArgs = append(cmdArgs, "-o", progBinary, progSource)
+
 		// Build the program.
-		cmd := exec.Command("go", "build", *buildFlags, "-o", progBinary, progSource)
+		cmd := exec.Command("go", cmdArgs...)
 		cmd.Dir = tmpDir
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
