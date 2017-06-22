@@ -32,8 +32,8 @@ import (
 )
 
 var (
-	progOnly = flag.Bool("prog_only", false, "(reflect mode) Only generate the reflection program; write it to stdout.")
-	execOnly = flag.String("exec_only", "", "(reflect mode) If set, execute this reflection program.")
+	progOnly   = flag.Bool("prog_only", false, "(reflect mode) Only generate the reflection program; write it to stdout.")
+	execOnly   = flag.String("exec_only", "", "(reflect mode) If set, execute this reflection program.")
 	buildFlags = flag.String("build_flags", "", "(reflect mode) Additional flags for go build.")
 )
 
@@ -72,8 +72,15 @@ func Reflect(importPath string, symbols []string) (*model.Package, error) {
 			return nil, err
 		}
 
+		cmdArgs := []string{}
+		cmdArgs = append(cmdArgs, "build")
+		if *buildFlags != "" {
+			cmdArgs = append(cmdArgs, *buildFlags)
+		}
+		cmdArgs = append(cmdArgs, "-o", progBinary, progSource)
+
 		// Build the program.
-		cmd := exec.Command("go", "build", *buildFlags, "-o", progBinary, progSource)
+		cmd := exec.Command("go", cmdArgs...)
 		cmd.Dir = tmpDir
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
