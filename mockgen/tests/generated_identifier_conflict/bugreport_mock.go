@@ -27,31 +27,31 @@ func NewMockExample(ctrl *gomock.Controller) *MockExample {
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use
-func (_m *MockExample) EXPECT() *MockExampleMockRecorder {
-	return _m.recorder
+func (m *MockExample) EXPECT() *MockExampleMockRecorder {
+	return m.recorder
 }
 
 // Method mocks base method
-func (_m *MockExample) Method(_m int, _mr int, m int, mr int) {
-	_m.ctrl.Call(_m, "Method", _m, _mr, m, mr)
+func (m_2 *MockExample) Method(_m int, _mr int, m int, mr int) {
+	m_2.ctrl.Call(m_2, "Method", _m, _mr, m, mr)
 }
 
 // Method indicates an expected call of Method
-func (_mr *MockExampleMockRecorder) Method(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
-	return _mr.mock.ctrl.RecordCallWithMethodType(_mr.mock, "Method", reflect.TypeOf((*MockExample)(nil).Method), arg0, arg1, arg2, arg3)
+func (mr_2 *MockExampleMockRecorder) Method(_m, _mr, m, mr interface{}) *gomock.Call {
+	return mr_2.mock.ctrl.RecordCallWithMethodType(mr_2.mock, "Method", reflect.TypeOf((*MockExample)(nil).Method), _m, _mr, m, mr)
 }
 
 // VarargMethod mocks base method
-func (_m *MockExample) VarargMethod(_s int, _x int, a int, ret int, varargs ...int) {
-	_s := []interface{}{_s, _x, a, ret}
-	for _, _x := range varargs {
-		_s = append(_s, _x)
+func (m *MockExample) VarargMethod(_s int, _x int, a int, ret int, varargs ...int) {
+	varargs_2 := []interface{}{_s, _x, a, ret}
+	for _, a_2 := range varargs {
+		varargs_2 = append(varargs_2, a_2)
 	}
-	_m.ctrl.Call(_m, "VarargMethod", _s...)
+	m.ctrl.Call(m, "VarargMethod", varargs_2...)
 }
 
 // VarargMethod indicates an expected call of VarargMethod
-func (_mr *MockExampleMockRecorder) VarargMethod(arg0, arg1, arg2, arg3 interface{}, arg4 ...interface{}) *gomock.Call {
-	_s := append([]interface{}{arg0, arg1, arg2, arg3}, arg4...)
-	return _mr.mock.ctrl.RecordCallWithMethodType(_mr.mock, "VarargMethod", reflect.TypeOf((*MockExample)(nil).VarargMethod), _s...)
+func (mr *MockExampleMockRecorder) VarargMethod(_s, _x, a, ret interface{}, varargs ...interface{}) *gomock.Call {
+	varargs_2 := append([]interface{}{_s, _x, a, ret}, varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VarargMethod", reflect.TypeOf((*MockExample)(nil).VarargMethod), varargs_2...)
 }
