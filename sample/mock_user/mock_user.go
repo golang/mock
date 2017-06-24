@@ -166,7 +166,7 @@ func (mr *MockIndexMockRecorder) Get(arg0 interface{}) *gomock.Call {
 }
 
 // GetTwo mocks base method
-func (m *MockIndex) GetTwo(arg0 string, arg1 string) (interface{}, interface{}) {
+func (m *MockIndex) GetTwo(arg0, arg1 string) (interface{}, interface{}) {
 	ret := m.ctrl.Call(m, "GetTwo", arg0, arg1)
 	ret0, _ := ret[0].(interface{})
 	ret1, _ := ret[1].(interface{})

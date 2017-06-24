@@ -32,7 +32,7 @@ func (m *MockExample) EXPECT() *MockExampleMockRecorder {
 }
 
 // Method mocks base method
-func (m_2 *MockExample) Method(_m int, _mr int, m int, mr int) {
+func (m_2 *MockExample) Method(_m, _mr, m, mr int) {
 	m_2.ctrl.Call(m_2, "Method", _m, _mr, m, mr)
 }
 
@@ -42,7 +42,7 @@ func (mr_2 *MockExampleMockRecorder) Method(_m, _mr, m, mr interface{}) *gomock.
 }
 
 // VarargMethod mocks base method
-func (m *MockExample) VarargMethod(_s int, _x int, a int, ret int, varargs ...int) {
+func (m *MockExample) VarargMethod(_s, _x, a, ret int, varargs ...int) {
 	varargs_2 := []interface{}{_s, _x, a, ret}
 	for _, a_2 := range varargs {
 		varargs_2 = append(varargs_2, a_2)

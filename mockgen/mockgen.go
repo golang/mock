@@ -313,17 +313,25 @@ func (g *generator) GenerateMockMethods(mockType string, intf *model.Interface, 
 	}
 }
 
+func makeArgString(argNames, argTypes []string) string {
+	args := make([]string, len(argNames))
+	for i, name := range argNames {
+		// specify the type only once for consecutive args of the same type
+		if i+1 < len(argTypes) && argTypes[i] == argTypes[i+1] {
+			args[i] = name
+		} else {
+			args[i] = name + " " + argTypes[i]
+		}
+	}
+	return strings.Join(args, ", ")
+}
+
 // GenerateMockMethod generates a mock method implementation.
 // If non-empty, pkgOverride is the package in which unqualified types reside.
 func (g *generator) GenerateMockMethod(mockType string, m *model.Method, pkgOverride string) error {
 	argNames := g.getArgNames(m)
 	argTypes := g.getArgTypes(m, pkgOverride)
-
-	args := make([]string, len(argNames))
-	for i, name := range argNames {
-		args[i] = name + " " + argTypes[i]
-	}
-	argString := strings.Join(args, ", ")
+	argString := makeArgString(argNames, argTypes)
 
 	rets := make([]string, len(m.Out))
 	for i, p := range m.Out {

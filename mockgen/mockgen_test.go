@@ -1,6 +1,112 @@
 package main
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+)
+
+func TestMakeArgString(t *testing.T) {
+	testCases := []struct {
+		argNames  []string
+		argTypes  []string
+		argString string
+	}{
+		{
+			argNames:  nil,
+			argTypes:  nil,
+			argString: "",
+		},
+		{
+			argNames:  []string{"arg0"},
+			argTypes:  []string{"int"},
+			argString: "arg0 int",
+		},
+		{
+			argNames:  []string{"arg0", "arg1"},
+			argTypes:  []string{"int", "bool"},
+			argString: "arg0 int, arg1 bool",
+		},
+		{
+			argNames:  []string{"arg0", "arg1"},
+			argTypes:  []string{"int", "int"},
+			argString: "arg0, arg1 int",
+		},
+		{
+			argNames:  []string{"arg0", "arg1", "arg2"},
+			argTypes:  []string{"bool", "int", "int"},
+			argString: "arg0 bool, arg1, arg2 int",
+		},
+		{
+			argNames:  []string{"arg0", "arg1", "arg2"},
+			argTypes:  []string{"int", "bool", "int"},
+			argString: "arg0 int, arg1 bool, arg2 int",
+		},
+		{
+			argNames:  []string{"arg0", "arg1", "arg2"},
+			argTypes:  []string{"int", "int", "bool"},
+			argString: "arg0, arg1 int, arg2 bool",
+		},
+		{
+			argNames:  []string{"arg0", "arg1", "arg2"},
+			argTypes:  []string{"int", "int", "int"},
+			argString: "arg0, arg1, arg2 int",
+		},
+		{
+			argNames:  []string{"arg0", "arg1", "arg2", "arg3"},
+			argTypes:  []string{"bool", "int", "int", "int"},
+			argString: "arg0 bool, arg1, arg2, arg3 int",
+		},
+		{
+			argNames:  []string{"arg0", "arg1", "arg2", "arg3"},
+			argTypes:  []string{"int", "bool", "int", "int"},
+			argString: "arg0 int, arg1 bool, arg2, arg3 int",
+		},
+		{
+			argNames:  []string{"arg0", "arg1", "arg2", "arg3"},
+			argTypes:  []string{"int", "int", "bool", "int"},
+			argString: "arg0, arg1 int, arg2 bool, arg3 int",
+		},
+		{
+			argNames:  []string{"arg0", "arg1", "arg2", "arg3"},
+			argTypes:  []string{"int", "int", "int", "bool"},
+			argString: "arg0, arg1, arg2 int, arg3 bool",
+		},
+		{
+			argNames:  []string{"arg0", "arg1", "arg2", "arg3", "arg4"},
+			argTypes:  []string{"bool", "int", "int", "int", "bool"},
+			argString: "arg0 bool, arg1, arg2, arg3 int, arg4 bool",
+		},
+		{
+			argNames:  []string{"arg0", "arg1", "arg2", "arg3", "arg4"},
+			argTypes:  []string{"int", "bool", "int", "int", "bool"},
+			argString: "arg0 int, arg1 bool, arg2, arg3 int, arg4 bool",
+		},
+		{
+			argNames:  []string{"arg0", "arg1", "arg2", "arg3", "arg4"},
+			argTypes:  []string{"int", "int", "bool", "int", "bool"},
+			argString: "arg0, arg1 int, arg2 bool, arg3 int, arg4 bool",
+		},
+		{
+			argNames:  []string{"arg0", "arg1", "arg2", "arg3", "arg4"},
+			argTypes:  []string{"int", "int", "int", "bool", "bool"},
+			argString: "arg0, arg1, arg2 int, arg3, arg4 bool",
+		},
+		{
+			argNames:  []string{"arg0", "arg1", "arg2", "arg3", "arg4"},
+			argTypes:  []string{"int", "int", "bool", "bool", "int"},
+			argString: "arg0, arg1 int, arg2, arg3 bool, arg4 int",
+		},
+	}
+
+	for i, tc := range testCases {
+		t.Run(fmt.Sprintf("#%d", i), func(t *testing.T) {
+			s := makeArgString(tc.argNames, tc.argTypes)
+			if s != tc.argString {
+				t.Errorf("result == %q, want %q", s, tc.argString)
+			}
+		})
+	}
+}
 
 func TestNewIdentifierAllocator(t *testing.T) {
 	a := newIdentifierAllocator([]string{"taken1", "taken2"})
