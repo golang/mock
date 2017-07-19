@@ -8,8 +8,6 @@ go:
   - 1.7
   - 1.8
 
-install: export PATH=$(go env GOPATH)/bin:$PATH
-
 script:
   - go build ./...
   - go install github.com/golang/mock/mockgen
