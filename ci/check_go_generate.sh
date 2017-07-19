@@ -8,7 +8,6 @@
 # each time before executing this script.
 
 set -euo pipefail
-cd "$( dirname "$0" )"
 
 TEMP_DIR=$( mktemp -d )
 function cleanup() {

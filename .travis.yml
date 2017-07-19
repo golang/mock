@@ -8,9 +8,11 @@ go:
   - 1.7
   - 1.8
 
+install: export PATH=$(go env GOPATH)/bin:$PATH
+
 script:
   - go build ./...
   - go install github.com/golang/mock/mockgen
-  - ./check_go_fmt.sh
-  - ./check_go_generate.sh
+  - ./ci/check_go_fmt.sh
+  - ./ci/check_go_generate.sh
   - go test -v ./...
