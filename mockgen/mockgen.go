@@ -193,6 +193,7 @@ func (g *generator) Generate(pkg *model.Package, pkgName string) error {
 	// Get all required imports, and generate unique names for them all.
 	im := pkg.Imports()
 	im[gomockImportPath] = true
+	im["reflect"] = true
 
 	// Sort keys to make import alias generation predictable
 	sorted_paths := make([]string, len(im), len(im))
@@ -424,7 +425,7 @@ func (g *generator) GenerateMockRecorderMethod(mockType string, m *model.Method)
 			callArgs = ", _s..."
 		}
 	}
-	g.p(`return _mr.mock.ctrl.RecordCall(_mr.mock, "%v"%v)`, m.Name, callArgs)
+	g.p(`return _mr.mock.ctrl.RecordCall(_mr.mock, "%s", reflect.TypeOf((*%s)(nil).%s)%s)`, m.Name, mockType, m.Name, callArgs)
 
 	g.out()
 	g.p("}")
