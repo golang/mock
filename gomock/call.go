@@ -156,12 +156,11 @@ func (c *Call) isPreReq(other *Call) bool {
 
 // After declares that the call may only match after preReq has been exhausted.
 func (c *Call) After(preReq *Call) *Call {
+	if c == preReq {
+		c.t.Fatalf("A call isn't allowed to be it's own prerequisite")
+	}
 	if preReq.isPreReq(c) {
-		msg := fmt.Sprintf(
-			"Loop in call order: %v is a prerequisite to %v (possibly indirectly).",
-			c, preReq,
-		)
-		panic(msg)
+		c.t.Fatalf("Loop in call order: %v is a prerequisite to %v (possibly indirectly).", c, preReq)
 	}
 
 	c.preReqs = append(c.preReqs, preReq)
