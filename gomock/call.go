@@ -24,10 +24,11 @@ import (
 type Call struct {
 	t TestReporter // for triggering test failures on invalid call setup
 
-	receiver interface{}   // the receiver of the method call
-	method   string        // the name of the method
-	args     []Matcher     // the args
-	rets     []interface{} // the return values (if any)
+	receiver   interface{}   // the receiver of the method call
+	method     string        // the name of the method
+	methodType reflect.Type  // the type of the method
+	args       []Matcher     // the args
+	rets       []interface{} // the return values (if any)
 
 	preReqs []*Call // prerequisite calls
 
@@ -76,7 +77,7 @@ func (c *Call) Do(f interface{}) *Call {
 }
 
 func (c *Call) Return(rets ...interface{}) *Call {
-	mt := c.methodType()
+	mt := c.methodType
 	if len(rets) != mt.NumOut() {
 		c.t.Fatalf("wrong number of arguments to Return for %T.%v: got %d, want %d",
 			c.receiver, c.method, len(rets), mt.NumOut())
@@ -120,7 +121,7 @@ func (c *Call) SetArg(n int, value interface{}) *Call {
 	if c.setArgs == nil {
 		c.setArgs = make(map[int]reflect.Value)
 	}
-	mt := c.methodType()
+	mt := c.methodType
 	// TODO: This will break on variadic methods.
 	// We will need to check those at invocation time.
 	if n < 0 || n >= mt.NumIn() {
@@ -239,7 +240,7 @@ func (c *Call) call(args []interface{}) (rets []interface{}, action func()) {
 	rets = c.rets
 	if rets == nil {
 		// Synthesize the zero value for each of the return args' types.
-		mt := c.methodType()
+		mt := c.methodType
 		rets = make([]interface{}, mt.NumOut())
 		for i := 0; i < mt.NumOut(); i++ {
 			rets[i] = reflect.Zero(mt.Out(i)).Interface()
@@ -247,16 +248,6 @@ func (c *Call) call(args []interface{}) (rets []interface{}, action func()) {
 	}
 
 	return
-}
-
-func (c *Call) methodType() reflect.Type {
-	recv := reflect.ValueOf(c.receiver)
-	for i := 0; i < recv.Type().NumMethod(); i++ {
-		if recv.Type().Method(i).Name == c.method {
-			return recv.Method(i).Type()
-		}
-	}
-	panic(fmt.Sprintf("gomock: failed finding method %s on %T", c.method, c.receiver))
 }
 
 // InOrder declares that the given calls should occur in order.

@@ -5,6 +5,7 @@ package mock_gomock
 
 import (
 	gomock "github.com/golang/mock/gomock"
+	reflect "reflect"
 )
 
 // MockMatcher is a mock of Matcher interface
@@ -39,7 +40,7 @@ func (_m *MockMatcher) Matches(_param0 interface{}) bool {
 
 // Matches indicates an expected call of Matches
 func (_mr *MockMatcherMockRecorder) Matches(arg0 interface{}) *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "Matches", arg0)
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "Matches", reflect.TypeOf((*MockMatcher)(nil).Matches), arg0)
 }
 
 // String mocks base method
@@ -51,5 +52,5 @@ func (_m *MockMatcher) String() string {
 
 // String indicates an expected call of String
 func (_mr *MockMatcherMockRecorder) String() *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "String")
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "String", reflect.TypeOf((*MockMatcher)(nil).String))
 }
