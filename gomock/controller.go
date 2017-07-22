@@ -121,7 +121,7 @@ func (ctrl *Controller) Call(receiver interface{}, method string, args ...interf
 		ctrl.expectedCalls.Remove(preReqCall)
 	}
 
-	rets, action := expected.call(args)
+	action := expected.call(args)
 	if expected.exhausted() {
 		ctrl.expectedCalls.Remove(expected)
 	}
@@ -132,11 +132,8 @@ func (ctrl *Controller) Call(receiver interface{}, method string, args ...interf
 	// here we add a deferred Lock to balance it.
 	ctrl.mu.Unlock()
 	defer ctrl.mu.Lock()
-	if action != nil {
-		action()
-	}
 
-	return rets
+	return action()
 }
 
 func (ctrl *Controller) Finish() {
