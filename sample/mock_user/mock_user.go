@@ -49,7 +49,7 @@ func (_m *MockIndex) Anon(_param0 string) {
 
 // Anon indicates an expected call of Anon
 func (_mr *MockIndexMockRecorder) Anon(arg0 interface{}) *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "Anon", reflect.TypeOf((*MockIndex)(nil).Anon), arg0)
+	return _mr.mock.ctrl.RecordCallWithMethodType(_mr.mock, "Anon", reflect.TypeOf((*MockIndex)(nil).Anon), arg0)
 }
 
 // Chan mocks base method
@@ -59,7 +59,7 @@ func (_m *MockIndex) Chan(_param0 chan int, _param1 chan<- hash.Hash) {
 
 // Chan indicates an expected call of Chan
 func (_mr *MockIndexMockRecorder) Chan(arg0, arg1 interface{}) *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "Chan", reflect.TypeOf((*MockIndex)(nil).Chan), arg0, arg1)
+	return _mr.mock.ctrl.RecordCallWithMethodType(_mr.mock, "Chan", reflect.TypeOf((*MockIndex)(nil).Chan), arg0, arg1)
 }
 
 // ConcreteRet mocks base method
@@ -71,7 +71,7 @@ func (_m *MockIndex) ConcreteRet() chan<- bool {
 
 // ConcreteRet indicates an expected call of ConcreteRet
 func (_mr *MockIndexMockRecorder) ConcreteRet() *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "ConcreteRet", reflect.TypeOf((*MockIndex)(nil).ConcreteRet))
+	return _mr.mock.ctrl.RecordCallWithMethodType(_mr.mock, "ConcreteRet", reflect.TypeOf((*MockIndex)(nil).ConcreteRet))
 }
 
 // Ellip mocks base method
@@ -86,7 +86,7 @@ func (_m *MockIndex) Ellip(_param0 string, _param1 ...interface{}) {
 // Ellip indicates an expected call of Ellip
 func (_mr *MockIndexMockRecorder) Ellip(arg0 interface{}, arg1 ...interface{}) *gomock.Call {
 	_s := append([]interface{}{arg0}, arg1...)
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "Ellip", reflect.TypeOf((*MockIndex)(nil).Ellip), _s...)
+	return _mr.mock.ctrl.RecordCallWithMethodType(_mr.mock, "Ellip", reflect.TypeOf((*MockIndex)(nil).Ellip), _s...)
 }
 
 // EllipOnly mocks base method
@@ -100,7 +100,7 @@ func (_m *MockIndex) EllipOnly(_param0 ...string) {
 
 // EllipOnly indicates an expected call of EllipOnly
 func (_mr *MockIndexMockRecorder) EllipOnly(arg0 ...interface{}) *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "EllipOnly", reflect.TypeOf((*MockIndex)(nil).EllipOnly), arg0...)
+	return _mr.mock.ctrl.RecordCallWithMethodType(_mr.mock, "EllipOnly", reflect.TypeOf((*MockIndex)(nil).EllipOnly), arg0...)
 }
 
 // ForeignFour mocks base method
@@ -110,7 +110,7 @@ func (_m *MockIndex) ForeignFour(_param0 imp4.Imp4) {
 
 // ForeignFour indicates an expected call of ForeignFour
 func (_mr *MockIndexMockRecorder) ForeignFour(arg0 interface{}) *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "ForeignFour", reflect.TypeOf((*MockIndex)(nil).ForeignFour), arg0)
+	return _mr.mock.ctrl.RecordCallWithMethodType(_mr.mock, "ForeignFour", reflect.TypeOf((*MockIndex)(nil).ForeignFour), arg0)
 }
 
 // ForeignOne mocks base method
@@ -120,7 +120,7 @@ func (_m *MockIndex) ForeignOne(_param0 imp1.Imp1) {
 
 // ForeignOne indicates an expected call of ForeignOne
 func (_mr *MockIndexMockRecorder) ForeignOne(arg0 interface{}) *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "ForeignOne", reflect.TypeOf((*MockIndex)(nil).ForeignOne), arg0)
+	return _mr.mock.ctrl.RecordCallWithMethodType(_mr.mock, "ForeignOne", reflect.TypeOf((*MockIndex)(nil).ForeignOne), arg0)
 }
 
 // ForeignThree mocks base method
@@ -130,7 +130,7 @@ func (_m *MockIndex) ForeignThree(_param0 imp3.Imp3) {
 
 // ForeignThree indicates an expected call of ForeignThree
 func (_mr *MockIndexMockRecorder) ForeignThree(arg0 interface{}) *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "ForeignThree", reflect.TypeOf((*MockIndex)(nil).ForeignThree), arg0)
+	return _mr.mock.ctrl.RecordCallWithMethodType(_mr.mock, "ForeignThree", reflect.TypeOf((*MockIndex)(nil).ForeignThree), arg0)
 }
 
 // ForeignTwo mocks base method
@@ -140,7 +140,7 @@ func (_m *MockIndex) ForeignTwo(_param0 imp2.Imp2) {
 
 // ForeignTwo indicates an expected call of ForeignTwo
 func (_mr *MockIndexMockRecorder) ForeignTwo(arg0 interface{}) *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "ForeignTwo", reflect.TypeOf((*MockIndex)(nil).ForeignTwo), arg0)
+	return _mr.mock.ctrl.RecordCallWithMethodType(_mr.mock, "ForeignTwo", reflect.TypeOf((*MockIndex)(nil).ForeignTwo), arg0)
 }
 
 // Func mocks base method
@@ -150,7 +150,7 @@ func (_m *MockIndex) Func(_param0 func(http.Request) (int, bool)) {
 
 // Func indicates an expected call of Func
 func (_mr *MockIndexMockRecorder) Func(arg0 interface{}) *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "Func", reflect.TypeOf((*MockIndex)(nil).Func), arg0)
+	return _mr.mock.ctrl.RecordCallWithMethodType(_mr.mock, "Func", reflect.TypeOf((*MockIndex)(nil).Func), arg0)
 }
 
 // Get mocks base method
@@ -162,7 +162,7 @@ func (_m *MockIndex) Get(_param0 string) interface{} {
 
 // Get indicates an expected call of Get
 func (_mr *MockIndexMockRecorder) Get(arg0 interface{}) *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "Get", reflect.TypeOf((*MockIndex)(nil).Get), arg0)
+	return _mr.mock.ctrl.RecordCallWithMethodType(_mr.mock, "Get", reflect.TypeOf((*MockIndex)(nil).Get), arg0)
 }
 
 // GetTwo mocks base method
@@ -175,7 +175,7 @@ func (_m *MockIndex) GetTwo(_param0 string, _param1 string) (interface{}, interf
 
 // GetTwo indicates an expected call of GetTwo
 func (_mr *MockIndexMockRecorder) GetTwo(arg0, arg1 interface{}) *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "GetTwo", reflect.TypeOf((*MockIndex)(nil).GetTwo), arg0, arg1)
+	return _mr.mock.ctrl.RecordCallWithMethodType(_mr.mock, "GetTwo", reflect.TypeOf((*MockIndex)(nil).GetTwo), arg0, arg1)
 }
 
 // Map mocks base method
@@ -185,7 +185,7 @@ func (_m *MockIndex) Map(_param0 map[int]hash.Hash) {
 
 // Map indicates an expected call of Map
 func (_mr *MockIndexMockRecorder) Map(arg0 interface{}) *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "Map", reflect.TypeOf((*MockIndex)(nil).Map), arg0)
+	return _mr.mock.ctrl.RecordCallWithMethodType(_mr.mock, "Map", reflect.TypeOf((*MockIndex)(nil).Map), arg0)
 }
 
 // NillableRet mocks base method
@@ -197,7 +197,7 @@ func (_m *MockIndex) NillableRet() error {
 
 // NillableRet indicates an expected call of NillableRet
 func (_mr *MockIndexMockRecorder) NillableRet() *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "NillableRet", reflect.TypeOf((*MockIndex)(nil).NillableRet))
+	return _mr.mock.ctrl.RecordCallWithMethodType(_mr.mock, "NillableRet", reflect.TypeOf((*MockIndex)(nil).NillableRet))
 }
 
 // Other mocks base method
@@ -209,7 +209,7 @@ func (_m *MockIndex) Other() hash.Hash {
 
 // Other indicates an expected call of Other
 func (_mr *MockIndexMockRecorder) Other() *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "Other", reflect.TypeOf((*MockIndex)(nil).Other))
+	return _mr.mock.ctrl.RecordCallWithMethodType(_mr.mock, "Other", reflect.TypeOf((*MockIndex)(nil).Other))
 }
 
 // Ptr mocks base method
@@ -219,7 +219,7 @@ func (_m *MockIndex) Ptr(_param0 *int) {
 
 // Ptr indicates an expected call of Ptr
 func (_mr *MockIndexMockRecorder) Ptr(arg0 interface{}) *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "Ptr", reflect.TypeOf((*MockIndex)(nil).Ptr), arg0)
+	return _mr.mock.ctrl.RecordCallWithMethodType(_mr.mock, "Ptr", reflect.TypeOf((*MockIndex)(nil).Ptr), arg0)
 }
 
 // Put mocks base method
@@ -229,7 +229,7 @@ func (_m *MockIndex) Put(_param0 string, _param1 interface{}) {
 
 // Put indicates an expected call of Put
 func (_mr *MockIndexMockRecorder) Put(arg0, arg1 interface{}) *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "Put", reflect.TypeOf((*MockIndex)(nil).Put), arg0, arg1)
+	return _mr.mock.ctrl.RecordCallWithMethodType(_mr.mock, "Put", reflect.TypeOf((*MockIndex)(nil).Put), arg0, arg1)
 }
 
 // Slice mocks base method
@@ -241,7 +241,7 @@ func (_m *MockIndex) Slice(_param0 []int, _param1 []byte) [3]int {
 
 // Slice indicates an expected call of Slice
 func (_mr *MockIndexMockRecorder) Slice(arg0, arg1 interface{}) *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "Slice", reflect.TypeOf((*MockIndex)(nil).Slice), arg0, arg1)
+	return _mr.mock.ctrl.RecordCallWithMethodType(_mr.mock, "Slice", reflect.TypeOf((*MockIndex)(nil).Slice), arg0, arg1)
 }
 
 // Struct mocks base method
@@ -251,7 +251,7 @@ func (_m *MockIndex) Struct(_param0 struct{}) {
 
 // Struct indicates an expected call of Struct
 func (_mr *MockIndexMockRecorder) Struct(arg0 interface{}) *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "Struct", reflect.TypeOf((*MockIndex)(nil).Struct), arg0)
+	return _mr.mock.ctrl.RecordCallWithMethodType(_mr.mock, "Struct", reflect.TypeOf((*MockIndex)(nil).Struct), arg0)
 }
 
 // StructChan mocks base method
@@ -261,7 +261,7 @@ func (_m *MockIndex) StructChan(_param0 chan struct{}) {
 
 // StructChan indicates an expected call of StructChan
 func (_mr *MockIndexMockRecorder) StructChan(arg0 interface{}) *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "StructChan", reflect.TypeOf((*MockIndex)(nil).StructChan), arg0)
+	return _mr.mock.ctrl.RecordCallWithMethodType(_mr.mock, "StructChan", reflect.TypeOf((*MockIndex)(nil).StructChan), arg0)
 }
 
 // Summary mocks base method
@@ -271,7 +271,7 @@ func (_m *MockIndex) Summary(_param0 *bytes.Buffer, _param1 io.Writer) {
 
 // Summary indicates an expected call of Summary
 func (_mr *MockIndexMockRecorder) Summary(arg0, arg1 interface{}) *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "Summary", reflect.TypeOf((*MockIndex)(nil).Summary), arg0, arg1)
+	return _mr.mock.ctrl.RecordCallWithMethodType(_mr.mock, "Summary", reflect.TypeOf((*MockIndex)(nil).Summary), arg0, arg1)
 }
 
 // Templates mocks base method
@@ -281,7 +281,7 @@ func (_m *MockIndex) Templates(_param0 template.CSS, _param1 template0.FuncMap) 
 
 // Templates indicates an expected call of Templates
 func (_mr *MockIndexMockRecorder) Templates(arg0, arg1 interface{}) *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "Templates", reflect.TypeOf((*MockIndex)(nil).Templates), arg0, arg1)
+	return _mr.mock.ctrl.RecordCallWithMethodType(_mr.mock, "Templates", reflect.TypeOf((*MockIndex)(nil).Templates), arg0, arg1)
 }
 
 // MockEmbed is a mock of Embed interface
@@ -314,7 +314,7 @@ func (_m *MockEmbed) EmbeddedMethod() {
 
 // EmbeddedMethod indicates an expected call of EmbeddedMethod
 func (_mr *MockEmbedMockRecorder) EmbeddedMethod() *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "EmbeddedMethod", reflect.TypeOf((*MockEmbed)(nil).EmbeddedMethod))
+	return _mr.mock.ctrl.RecordCallWithMethodType(_mr.mock, "EmbeddedMethod", reflect.TypeOf((*MockEmbed)(nil).EmbeddedMethod))
 }
 
 // ForeignEmbeddedMethod mocks base method
@@ -326,7 +326,7 @@ func (_m *MockEmbed) ForeignEmbeddedMethod() *bufio.Reader {
 
 // ForeignEmbeddedMethod indicates an expected call of ForeignEmbeddedMethod
 func (_mr *MockEmbedMockRecorder) ForeignEmbeddedMethod() *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "ForeignEmbeddedMethod", reflect.TypeOf((*MockEmbed)(nil).ForeignEmbeddedMethod))
+	return _mr.mock.ctrl.RecordCallWithMethodType(_mr.mock, "ForeignEmbeddedMethod", reflect.TypeOf((*MockEmbed)(nil).ForeignEmbeddedMethod))
 }
 
 // ImplicitPackage mocks base method
@@ -336,7 +336,7 @@ func (_m *MockEmbed) ImplicitPackage(_param0 string, _param1 imp1.ImpT, _param2 
 
 // ImplicitPackage indicates an expected call of ImplicitPackage
 func (_mr *MockEmbedMockRecorder) ImplicitPackage(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "ImplicitPackage", reflect.TypeOf((*MockEmbed)(nil).ImplicitPackage), arg0, arg1, arg2, arg3, arg4)
+	return _mr.mock.ctrl.RecordCallWithMethodType(_mr.mock, "ImplicitPackage", reflect.TypeOf((*MockEmbed)(nil).ImplicitPackage), arg0, arg1, arg2, arg3, arg4)
 }
 
 // RegularMethod mocks base method
@@ -346,7 +346,7 @@ func (_m *MockEmbed) RegularMethod() {
 
 // RegularMethod indicates an expected call of RegularMethod
 func (_mr *MockEmbedMockRecorder) RegularMethod() *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "RegularMethod", reflect.TypeOf((*MockEmbed)(nil).RegularMethod))
+	return _mr.mock.ctrl.RecordCallWithMethodType(_mr.mock, "RegularMethod", reflect.TypeOf((*MockEmbed)(nil).RegularMethod))
 }
 
 // MockEmbedded is a mock of Embedded interface
@@ -379,5 +379,5 @@ func (_m *MockEmbedded) EmbeddedMethod() {
 
 // EmbeddedMethod indicates an expected call of EmbeddedMethod
 func (_mr *MockEmbeddedMockRecorder) EmbeddedMethod() *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "EmbeddedMethod", reflect.TypeOf((*MockEmbedded)(nil).EmbeddedMethod))
+	return _mr.mock.ctrl.RecordCallWithMethodType(_mr.mock, "EmbeddedMethod", reflect.TypeOf((*MockEmbedded)(nil).EmbeddedMethod))
 }

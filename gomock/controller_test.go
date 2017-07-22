@@ -119,11 +119,6 @@ func (s *Subject) BarMethod(arg string) int {
 	return 0
 }
 
-var (
-	FooMethodType = reflect.TypeOf((*Subject).FooMethod)
-	BarMethodType = reflect.TypeOf((*Subject).BarMethod)
-)
-
 func assertEqual(t *testing.T, expected interface{}, actual interface{}) {
 	if !reflect.DeepEqual(expected, actual) {
 		t.Errorf("Expected %+v, but got %+v", expected, actual)
@@ -149,7 +144,7 @@ func TestExpectedMethodCall(t *testing.T) {
 	reporter, ctrl := createFixtures(t)
 	subject := new(Subject)
 
-	ctrl.RecordCall(subject, "FooMethod", FooMethodType, "argument")
+	ctrl.RecordCall(subject, "FooMethod", "argument")
 	ctrl.Call(subject, "FooMethod", "argument")
 	ctrl.Finish()
 
@@ -171,7 +166,7 @@ func TestRepeatedCall(t *testing.T) {
 	reporter, ctrl := createFixtures(t)
 	subject := new(Subject)
 
-	ctrl.RecordCall(subject, "FooMethod", FooMethodType, "argument").Times(3)
+	ctrl.RecordCall(subject, "FooMethod", "argument").Times(3)
 	ctrl.Call(subject, "FooMethod", "argument")
 	ctrl.Call(subject, "FooMethod", "argument")
 	ctrl.Call(subject, "FooMethod", "argument")
@@ -188,7 +183,7 @@ func TestUnexpectedArgCount(t *testing.T) {
 	defer reporter.recoverUnexpectedFatal()
 	subject := new(Subject)
 
-	ctrl.RecordCall(subject, "FooMethod", FooMethodType, "argument")
+	ctrl.RecordCall(subject, "FooMethod", "argument")
 	reporter.assertFatal(func() {
 		// This call is made with the wrong number of arguments...
 		ctrl.Call(subject, "FooMethod", "argument", "extra_argument")
@@ -207,7 +202,7 @@ func TestAnyTimes(t *testing.T) {
 	reporter, ctrl := createFixtures(t)
 	subject := new(Subject)
 
-	ctrl.RecordCall(subject, "FooMethod", FooMethodType, "argument").AnyTimes()
+	ctrl.RecordCall(subject, "FooMethod", "argument").AnyTimes()
 	for i := 0; i < 100; i++ {
 		ctrl.Call(subject, "FooMethod", "argument")
 	}
@@ -219,7 +214,7 @@ func TestMinTimes1(t *testing.T) {
 	// It fails if there are no calls
 	reporter, ctrl := createFixtures(t)
 	subject := new(Subject)
-	ctrl.RecordCall(subject, "FooMethod", FooMethodType, "argument").MinTimes(1)
+	ctrl.RecordCall(subject, "FooMethod", "argument").MinTimes(1)
 	reporter.assertFatal(func() {
 		ctrl.Finish()
 	})
@@ -227,14 +222,14 @@ func TestMinTimes1(t *testing.T) {
 	// It succeeds if there is one call
 	reporter, ctrl = createFixtures(t)
 	subject = new(Subject)
-	ctrl.RecordCall(subject, "FooMethod", FooMethodType, "argument").MinTimes(1)
+	ctrl.RecordCall(subject, "FooMethod", "argument").MinTimes(1)
 	ctrl.Call(subject, "FooMethod", "argument")
 	ctrl.Finish()
 
 	// It succeeds if there are many calls
 	reporter, ctrl = createFixtures(t)
 	subject = new(Subject)
-	ctrl.RecordCall(subject, "FooMethod", FooMethodType, "argument").MinTimes(1)
+	ctrl.RecordCall(subject, "FooMethod", "argument").MinTimes(1)
 	for i := 0; i < 100; i++ {
 		ctrl.Call(subject, "FooMethod", "argument")
 	}
@@ -245,20 +240,20 @@ func TestMaxTimes1(t *testing.T) {
 	// It succeeds if there are no calls
 	_, ctrl := createFixtures(t)
 	subject := new(Subject)
-	ctrl.RecordCall(subject, "FooMethod", FooMethodType, "argument").MaxTimes(1)
+	ctrl.RecordCall(subject, "FooMethod", "argument").MaxTimes(1)
 	ctrl.Finish()
 
 	// It succeeds if there is one call
 	_, ctrl = createFixtures(t)
 	subject = new(Subject)
-	ctrl.RecordCall(subject, "FooMethod", FooMethodType, "argument").MaxTimes(1)
+	ctrl.RecordCall(subject, "FooMethod", "argument").MaxTimes(1)
 	ctrl.Call(subject, "FooMethod", "argument")
 	ctrl.Finish()
 
 	//It fails if there are more
 	reporter, ctrl := createFixtures(t)
 	subject = new(Subject)
-	ctrl.RecordCall(subject, "FooMethod", FooMethodType, "argument").MaxTimes(1)
+	ctrl.RecordCall(subject, "FooMethod", "argument").MaxTimes(1)
 	ctrl.Call(subject, "FooMethod", "argument")
 	reporter.assertFatal(func() {
 		ctrl.Call(subject, "FooMethod", "argument")
@@ -270,7 +265,7 @@ func TestMinMaxTimes(t *testing.T) {
 	// It fails if there are less calls than specified
 	reporter, ctrl := createFixtures(t)
 	subject := new(Subject)
-	ctrl.RecordCall(subject, "FooMethod", FooMethodType, "argument").MinTimes(2).MaxTimes(2)
+	ctrl.RecordCall(subject, "FooMethod", "argument").MinTimes(2).MaxTimes(2)
 	ctrl.Call(subject, "FooMethod", "argument")
 	reporter.assertFatal(func() {
 		ctrl.Finish()
@@ -279,7 +274,7 @@ func TestMinMaxTimes(t *testing.T) {
 	// It fails if there are more calls than specified
 	reporter, ctrl = createFixtures(t)
 	subject = new(Subject)
-	ctrl.RecordCall(subject, "FooMethod", FooMethodType, "argument").MinTimes(2).MaxTimes(2)
+	ctrl.RecordCall(subject, "FooMethod", "argument").MinTimes(2).MaxTimes(2)
 	ctrl.Call(subject, "FooMethod", "argument")
 	ctrl.Call(subject, "FooMethod", "argument")
 	reporter.assertFatal(func() {
@@ -289,7 +284,7 @@ func TestMinMaxTimes(t *testing.T) {
 	// It succeeds if there is just the right number of calls
 	reporter, ctrl = createFixtures(t)
 	subject = new(Subject)
-	ctrl.RecordCall(subject, "FooMethod", FooMethodType, "argument").MaxTimes(2).MinTimes(2)
+	ctrl.RecordCall(subject, "FooMethod", "argument").MaxTimes(2).MinTimes(2)
 	ctrl.Call(subject, "FooMethod", "argument")
 	ctrl.Call(subject, "FooMethod", "argument")
 	ctrl.Finish()
@@ -301,7 +296,7 @@ func TestDo(t *testing.T) {
 
 	doCalled := false
 	var argument string
-	ctrl.RecordCall(subject, "FooMethod", FooMethodType, "argument").Do(
+	ctrl.RecordCall(subject, "FooMethod", "argument").Do(
 		func(arg string) {
 			doCalled = true
 			argument = arg
@@ -327,8 +322,8 @@ func TestReturn(t *testing.T) {
 	subject := new(Subject)
 
 	// Unspecified return should produce "zero" result.
-	ctrl.RecordCall(subject, "FooMethod", FooMethodType, "zero")
-	ctrl.RecordCall(subject, "FooMethod", FooMethodType, "five").Return(5)
+	ctrl.RecordCall(subject, "FooMethod", "zero")
+	ctrl.RecordCall(subject, "FooMethod", "five").Return(5)
 
 	assertEqual(
 		t,
@@ -348,10 +343,10 @@ func TestUnorderedCalls(t *testing.T) {
 	subjectTwo := new(Subject)
 	subjectOne := new(Subject)
 
-	ctrl.RecordCall(subjectOne, "FooMethod", FooMethodType, "1")
-	ctrl.RecordCall(subjectOne, "BarMethod", BarMethodType, "2")
-	ctrl.RecordCall(subjectTwo, "FooMethod", FooMethodType, "3")
-	ctrl.RecordCall(subjectTwo, "BarMethod", BarMethodType, "4")
+	ctrl.RecordCall(subjectOne, "FooMethod", "1")
+	ctrl.RecordCall(subjectOne, "BarMethod", "2")
+	ctrl.RecordCall(subjectTwo, "FooMethod", "3")
+	ctrl.RecordCall(subjectTwo, "BarMethod", "4")
 
 	// Make the calls in a different order, which should be fine.
 	ctrl.Call(subjectOne, "BarMethod", "2")
@@ -373,9 +368,9 @@ func commonTestOrderedCalls(t *testing.T) (reporter *ErrorReporter, ctrl *gomock
 	subjectTwo = new(Subject)
 
 	gomock.InOrder(
-		ctrl.RecordCall(subjectOne, "FooMethod", FooMethodType, "1").AnyTimes(),
-		ctrl.RecordCall(subjectTwo, "FooMethod", FooMethodType, "2"),
-		ctrl.RecordCall(subjectTwo, "BarMethod", BarMethodType, "3"),
+		ctrl.RecordCall(subjectOne, "FooMethod", "1").AnyTimes(),
+		ctrl.RecordCall(subjectTwo, "FooMethod", "2"),
+		ctrl.RecordCall(subjectTwo, "BarMethod", "3"),
 	)
 
 	return
@@ -428,9 +423,9 @@ func TestCallAfterLoopPanic(t *testing.T) {
 
 	subject := new(Subject)
 
-	firstCall := ctrl.RecordCall(subject, "FooMethod", FooMethodType, "1")
-	secondCall := ctrl.RecordCall(subject, "FooMethod", FooMethodType, "2")
-	thirdCall := ctrl.RecordCall(subject, "FooMethod", FooMethodType, "3")
+	firstCall := ctrl.RecordCall(subject, "FooMethod", "1")
+	secondCall := ctrl.RecordCall(subject, "FooMethod", "2")
+	thirdCall := ctrl.RecordCall(subject, "FooMethod", "3")
 
 	gomock.InOrder(firstCall, secondCall, thirdCall)
 
@@ -450,7 +445,7 @@ func TestPanicOverridesExpectationChecks(t *testing.T) {
 	reporter := NewErrorReporter(t)
 
 	reporter.assertFatal(func() {
-		ctrl.RecordCall(new(Subject), "FooMethod", FooMethodType, "1")
+		ctrl.RecordCall(new(Subject), "FooMethod", "1")
 		defer ctrl.Finish()
 		reporter.Fatalf("Intentional panic")
 	})
@@ -463,7 +458,7 @@ func TestSetArgWithBadType(t *testing.T) {
 	s := new(Subject)
 	// This should catch a type error:
 	rep.assertFatal(func() {
-		ctrl.RecordCall(s, "FooMethod", FooMethodType, "1").SetArg(0, "blah")
+		ctrl.RecordCall(s, "FooMethod", "1").SetArg(0, "blah")
 	})
 	ctrl.Call(s, "FooMethod", "1")
 }
@@ -473,7 +468,7 @@ func TestTimes0(t *testing.T) {
 	defer ctrl.Finish()
 
 	s := new(Subject)
-	ctrl.RecordCall(s, "FooMethod", FooMethodType, "arg").Times(0)
+	ctrl.RecordCall(s, "FooMethod", "arg").Times(0)
 	rep.assertFatal(func() {
 		ctrl.Call(s, "FooMethod", "arg")
 	})
