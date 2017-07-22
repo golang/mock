@@ -425,7 +425,7 @@ func (g *generator) GenerateMockRecorderMethod(mockType string, m *model.Method)
 			callArgs = ", _s..."
 		}
 	}
-	g.p(`return _mr.mock.ctrl.RecordCall(_mr.mock, "%s", reflect.TypeOf((*%s)(nil).%s)%s)`, m.Name, mockType, m.Name, callArgs)
+	g.p(`return _mr.mock.ctrl.RecordCallWithMethodType(_mr.mock, "%s", reflect.TypeOf((*%s)(nil).%s)%s)`, m.Name, mockType, m.Name, callArgs)
 
 	g.out()
 	g.p("}")

@@ -56,6 +56,7 @@
 package gomock
 
 import (
+	"fmt"
 	"reflect"
 	"sync"
 )
@@ -83,7 +84,19 @@ func NewController(t TestReporter) *Controller {
 	}
 }
 
-func (ctrl *Controller) RecordCall(receiver interface{}, method string, methodType reflect.Type, args ...interface{}) *Call {
+func (ctrl *Controller) RecordCall(receiver interface{}, method string, args ...interface{}) *Call {
+	recv := reflect.ValueOf(receiver)
+	for i := 0; i < recv.Type().NumMethod(); i++ {
+		if recv.Type().Method(i).Name == method {
+			return ctrl.RecordCallWithMethodType(receiver, method, recv.Method(i).Type(), args...)
+		}
+	}
+	ctrl.t.Fatalf("gomock: failed finding method %s on %T", method, receiver)
+	// In case t.Fatalf does not panic.
+	panic(fmt.Sprintf("gomock: failed finding method %s on %T", method, receiver))
+}
+
+func (ctrl *Controller) RecordCallWithMethodType(receiver interface{}, method string, methodType reflect.Type, args ...interface{}) *Call {
 	// TODO: check arity, types.
 	margs := make([]Matcher, len(args))
 	for i, arg := range args {
