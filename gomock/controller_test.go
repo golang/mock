@@ -423,9 +423,9 @@ func TestCallAfterLoopPanic(t *testing.T) {
 
 	subject := new(Subject)
 
-	firstCall := ctrl.RecordCall(subject, "Foo", "1")
-	secondCall := ctrl.RecordCall(subject, "Foo", "2")
-	thirdCall := ctrl.RecordCall(subject, "Foo", "3")
+	firstCall := ctrl.RecordCall(subject, "FooMethod", "1")
+	secondCall := ctrl.RecordCall(subject, "FooMethod", "2")
+	thirdCall := ctrl.RecordCall(subject, "FooMethod", "3")
 
 	gomock.InOrder(firstCall, secondCall, thirdCall)
 
