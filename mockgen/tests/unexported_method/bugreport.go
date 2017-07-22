@@ -1,4 +1,5 @@
 //go:generate mockgen -destination bugreport_mock.go -package bugreport -source=bugreport.go Example
+
 package bugreport
 
 import "fmt"
