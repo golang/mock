@@ -126,10 +126,10 @@ func (ctrl *Controller) Call(receiver interface{}, method string, args ...interf
 	ctrl.mu.Lock()
 	defer ctrl.mu.Unlock()
 
-	expected := ctrl.expectedCalls.FindMatch(receiver, method, args)
-	if expected == nil {
+	expected, err := ctrl.expectedCalls.FindMatch(receiver, method, args)
+	if err != nil {
 		origin := callerInfo(2)
-		ctrl.t.Fatalf("no matching expected call: %T.%v(%v) [%s]", receiver, method, args, origin)
+		ctrl.t.Fatalf("no matching expected call: %T.%v(%v) [%s]\n%s", receiver, method, args, origin, err)
 	}
 
 	// Two things happen here:

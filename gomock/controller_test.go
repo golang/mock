@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"strings"
 )
 
 type ErrorReporter struct {
@@ -53,7 +54,7 @@ func (e *ErrorReporter) assertFail(msg string) {
 }
 
 // Use to check that code triggers a fatal test failure.
-func (e *ErrorReporter) assertFatal(fn func()) {
+func (e *ErrorReporter) assertFatal(fn func(), expectedErrMsgs ...string) {
 	defer func() {
 		err := recover()
 		if err == nil {
@@ -66,6 +67,18 @@ func (e *ErrorReporter) assertFatal(fn func()) {
 			e.t.Error("Expected fatal failure, but got a", actual)
 		} else if token, ok := err.(*struct{}); ok && token == &e.fatalToken {
 			// This is okay - the panic is from Fatalf().
+			if expectedErrMsgs != nil {
+				// assert that the actual error message
+				// contains expectedErrMsgs
+
+				// check the last actualErrMsg, because the previous messages come from previous errors
+				actualErrMsg := e.log[len(e.log)-1]
+				for _, expectedErrMsg := range expectedErrMsgs {
+					if !strings.Contains(actualErrMsg, expectedErrMsg) {
+						e.t.Errorf("Expected the actual error message:\n'%s'\nto contain expected error message:\n'%s'\n", actualErrMsg, expectedErrMsg)
+					}
+				}
+			}
 			return
 		} else {
 			// Some other panic.
@@ -119,6 +132,21 @@ func (s *Subject) BarMethod(arg string) int {
 	return 0
 }
 
+// A type purely for ActOnTestStructMethod
+type TestStruct struct {
+	Number  int
+	Message string
+}
+
+func (s *Subject) ActOnTestStructMethod(arg TestStruct, arg1 int) int {
+	return 0
+}
+
+// Without this method the string representation of a TestStruct object would be e.g. {%!!(MISSING)s(int=123) no message}
+func (tStruct TestStruct) String() string {
+	return fmt.Sprintf("{%v %s}", tStruct.Number, tStruct.Message)
+}
+
 func assertEqual(t *testing.T, expected interface{}, actual interface{}) {
 	if !reflect.DeepEqual(expected, actual) {
 		t.Errorf("Expected %+v, but got %+v", expected, actual)
@@ -138,6 +166,30 @@ func TestNoCalls(t *testing.T) {
 	reporter, ctrl := createFixtures(t)
 	ctrl.Finish()
 	reporter.assertPass("No calls expected or made.")
+}
+
+func TestNoRecordedCallsForAReceiver(t *testing.T) {
+	reporter, ctrl := createFixtures(t)
+	subject := new(Subject)
+
+	reporter.assertFatal(func() {
+		ctrl.Call(subject, "NotRecordedMethod", "argument")
+	}, "No expected method calls for that receiver")
+	ctrl.Finish()
+}
+
+func TestNoRecordedMatchingMethodNameForAReceiver(t *testing.T) {
+	reporter, ctrl := createFixtures(t)
+	subject := new(Subject)
+
+	ctrl.RecordCall(subject, "FooMethod", "argument")
+	reporter.assertFatal(func() {
+		ctrl.Call(subject, "NotRecordedMethod", "argument")
+	}, "No expected calls of the method: NotRecordedMethod for that receiver")
+	reporter.assertFatal(func() {
+		// The expected call wasn't made.
+		ctrl.Finish()
+	})
 }
 
 func TestExpectedMethodCall(t *testing.T) {
@@ -187,11 +239,68 @@ func TestUnexpectedArgCount(t *testing.T) {
 	reporter.assertFatal(func() {
 		// This call is made with the wrong number of arguments...
 		ctrl.Call(subject, "FooMethod", "argument", "extra_argument")
-	})
+	}, "no matching expected call", "Invalid number of arguments of call", "Set: 2, while this call takes: 1")
 	reporter.assertFatal(func() {
 		// ... so is this.
 		ctrl.Call(subject, "FooMethod")
+	}, "no matching expected call", "Invalid number of arguments of call", "Set: 0, while this call takes: 1")
+	reporter.assertFatal(func() {
+		// The expected call wasn't made.
+		ctrl.Finish()
 	})
+}
+
+func TestExpectedMethodCall_CustomStruct(t *testing.T) {
+	reporter, ctrl := createFixtures(t)
+	subject := new(Subject)
+
+	expectedArg0 := TestStruct{Number: 123, Message: "hello"}
+	ctrl.RecordCall(subject, "ActOnTestStructMethod", expectedArg0, 15)
+	ctrl.Call(subject, "ActOnTestStructMethod", expectedArg0, 15)
+
+	reporter.assertPass("Expected method call made.")
+}
+
+func TestUnexpectedArgValue_FirstArg(t *testing.T) {
+	reporter, ctrl := createFixtures(t)
+	defer reporter.recoverUnexpectedFatal()
+	subject := new(Subject)
+
+	expectedArg0 := TestStruct{Number: 123, Message: "hello"}
+	ctrl.RecordCall(subject, "ActOnTestStructMethod", expectedArg0, 15)
+
+	reporter.assertFatal(func() {
+		// the method argument (of TestStruct type) has 1 unexpected value (for the Number field)
+		ctrl.Call(subject, "ActOnTestStructMethod", TestStruct{Number: 123, Message: "no message"}, 15)
+	}, "no matching expected call", "The expected argument of index: 0 of this call",
+		"Actual argument: is equal to {123 hello}, expected: {123 no message}")
+
+	reporter.assertFatal(func() {
+		// the method argument (of TestStruct type) has 2 unexpected values (for both fields)
+		ctrl.Call(subject, "ActOnTestStructMethod", TestStruct{Number: 11, Message: "no message"}, 15)
+	}, "no matching expected call", "The expected argument of index: 0 of this call",
+		"Actual argument: is equal to {123 hello}, expected: {11 no message}")
+
+	reporter.assertFatal(func() {
+		// The expected call wasn't made.
+		ctrl.Finish()
+	})
+}
+
+func TestUnexpectedArgValue_SecondtArg(t *testing.T) {
+	reporter, ctrl := createFixtures(t)
+	defer reporter.recoverUnexpectedFatal()
+	subject := new(Subject)
+
+	expectedArg0 := TestStruct{Number: 123, Message: "hello"}
+	ctrl.RecordCall(subject, "ActOnTestStructMethod", expectedArg0, 15)
+
+	reporter.assertFatal(func() {
+		// the method argument (of TestStruct type) has 1 (Number) unexpected value
+		ctrl.Call(subject, "ActOnTestStructMethod", TestStruct{Number: 123, Message: "hello"}, 3)
+	}, "no matching expected call", "The expected argument of index: 1 of this call",
+		"Actual argument: is equal to 15, expected: 3")
+
 	reporter.assertFatal(func() {
 		// The expected call wasn't made.
 		ctrl.Finish()
@@ -394,10 +503,10 @@ func TestOrderedCallsInCorrect(t *testing.T) {
 	ctrl.Call(subjectOne, "FooMethod", "1")
 	reporter.assertFatal(func() {
 		ctrl.Call(subjectTwo, "BarMethod", "3")
-	})
+	}, "no matching expected call", "Subject.BarMethod([3])")
 }
 
-// Test that calls that are prerequites to other calls but have maxCalls >
+// Test that calls that are prerequisites to other calls but have maxCalls >
 // minCalls are removed from the expected call set.
 func TestOrderedCallsWithPreReqMaxUnbounded(t *testing.T) {
 	reporter, ctrl, subjectOne, subjectTwo := commonTestOrderedCalls(t)
@@ -416,6 +525,20 @@ func TestOrderedCallsWithPreReqMaxUnbounded(t *testing.T) {
 	reporter.assertFatal(func() {
 		ctrl.Call(subjectOne, "FooMethod", "1")
 	})
+}
+
+func TestPrerequisiteCallNotSatisfied(t *testing.T) {
+	reporter, ctrl := createFixtures(t)
+	subject := new(Subject)
+
+	firstCall := ctrl.RecordCall(subject, "FooMethod", "1")
+	secondCall := ctrl.RecordCall(subject, "FooMethod", "2")
+	secondCall.After(firstCall)
+
+	reporter.assertFatal(func() {
+		// FooMethod(1) should be called before FooMethod(2), but it wasn't
+		ctrl.Call(subject, "FooMethod", "2")
+	}, "A prerequisite call was not satisfied")
 }
 
 func TestCallAfterLoopPanic(t *testing.T) {

@@ -17,6 +17,7 @@ package gomock
 import (
 	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 )
 
@@ -172,7 +173,7 @@ func (c *Call) After(preReq *Call) *Call {
 	return c
 }
 
-// Returns true iff the minimum number of calls have been made.
+// Returns true if the minimum number of calls have been made.
 func (c *Call) satisfied() bool {
 	return c.numCalls >= c.minCalls
 }
@@ -192,27 +193,30 @@ func (c *Call) String() string {
 }
 
 // Tests if the given call matches the expected call.
-func (c *Call) matches(args []interface{}) bool {
+// If yes, returns nil. If no, returns error with message explaining why it does not match.
+func (c *Call) matches(args []interface{}) error {
 	if len(args) != len(c.args) {
-		return false
+		return fmt.Errorf("Invalid number of arguments of call: %s. Set: %s, while this call takes: %s",
+			c.origin, strconv.Itoa(len(args)), strconv.Itoa(len(c.args)))
 	}
 	for i, m := range c.args {
 		if !m.Matches(args[i]) {
-			return false
+			return fmt.Errorf("The expected argument of index: %s of this call: %s did not match the actual argument.\nActual argument: %s, expected: %v\n",
+				strconv.Itoa(i), c.origin, m, args[i])
 		}
 	}
 
 	// Check that all prerequisite calls have been satisfied.
 	for _, preReqCall := range c.preReqs {
 		if !preReqCall.satisfied() {
-			return false
+			return fmt.Errorf("A prerequisite call was not satisfied:\n%v\nshould be called before:\n%v", preReqCall, c)
 		}
 	}
 
-	return true
+	return nil
 }
 
-// dropPrereqs tells the expected Call to not re-check prerequite calls any
+// dropPrereqs tells the expected Call to not re-check prerequisite calls any
 // longer, and to return its current set.
 func (c *Call) dropPrereqs() (preReqs []*Call) {
 	preReqs = c.preReqs
