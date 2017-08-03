@@ -189,7 +189,7 @@ func (c *Call) String() string {
 		args[i] = arg.String()
 	}
 	arguments := strings.Join(args, ", ")
-	return fmt.Sprintf("%T.%v(%s) [%s]", c.receiver, c.method, arguments, c.origin)
+	return fmt.Sprintf("%T.%v(%s) %s", c.receiver, c.method, arguments, c.origin)
 }
 
 // Tests if the given call matches the expected call.
