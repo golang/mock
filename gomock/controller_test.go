@@ -75,7 +75,7 @@ func (e *ErrorReporter) assertFatal(fn func(), expectedErrMsgs ...string) {
 				actualErrMsg := e.log[len(e.log)-1]
 				for _, expectedErrMsg := range expectedErrMsgs {
 					if !strings.Contains(actualErrMsg, expectedErrMsg) {
-						e.t.Errorf("Expected the actual error message:\n'%s'\nto contain expected error message:\n'%s'\n", actualErrMsg, expectedErrMsg)
+						e.t.Errorf("Error message:\ngot: %q\nwant to contain: %q\n", actualErrMsg, expectedErrMsg)
 					}
 				}
 			}
@@ -142,11 +142,6 @@ func (s *Subject) ActOnTestStructMethod(arg TestStruct, arg1 int) int {
 	return 0
 }
 
-// Without this method the string representation of a TestStruct object would be e.g. {%!!(MISSING)s(int=123) no message}
-func (tStruct TestStruct) String() string {
-	return fmt.Sprintf("{%v %s}", tStruct.Number, tStruct.Message)
-}
-
 func assertEqual(t *testing.T, expected interface{}, actual interface{}) {
 	if !reflect.DeepEqual(expected, actual) {
 		t.Errorf("Expected %+v, but got %+v", expected, actual)
@@ -174,7 +169,7 @@ func TestNoRecordedCallsForAReceiver(t *testing.T) {
 
 	reporter.assertFatal(func() {
 		ctrl.Call(subject, "NotRecordedMethod", "argument")
-	}, "No expected method calls for that receiver")
+	}, "Unexpected call to", "there are no expected method calls for that receiver")
 	ctrl.Finish()
 }
 
@@ -185,13 +180,14 @@ func TestNoRecordedMatchingMethodNameForAReceiver(t *testing.T) {
 	ctrl.RecordCall(subject, "FooMethod", "argument")
 	reporter.assertFatal(func() {
 		ctrl.Call(subject, "NotRecordedMethod", "argument")
-	}, "No expected calls of the method: NotRecordedMethod for that receiver")
+	}, "Unexpected call to", "there are no expected calls of the method: NotRecordedMethod for that receiver")
 	reporter.assertFatal(func() {
 		// The expected call wasn't made.
 		ctrl.Finish()
 	})
 }
 
+// This tests that a call with an arguments of some primitive type matches a recorded call.
 func TestExpectedMethodCall(t *testing.T) {
 	reporter, ctrl := createFixtures(t)
 	subject := new(Subject)
@@ -239,17 +235,18 @@ func TestUnexpectedArgCount(t *testing.T) {
 	reporter.assertFatal(func() {
 		// This call is made with the wrong number of arguments...
 		ctrl.Call(subject, "FooMethod", "argument", "extra_argument")
-	}, "no matching expected call", "Invalid number of arguments of call", "Set: 2, while this call takes: 1")
+	}, "Unexpected call to", "wrong number of arguments", "Got: 2, want: 1")
 	reporter.assertFatal(func() {
 		// ... so is this.
 		ctrl.Call(subject, "FooMethod")
-	}, "no matching expected call", "Invalid number of arguments of call", "Set: 0, while this call takes: 1")
+	}, "Unexpected call to", "wrong number of arguments", "Got: 0, want: 1")
 	reporter.assertFatal(func() {
 		// The expected call wasn't made.
 		ctrl.Finish()
 	})
 }
 
+// This tests that a call with complex arguments (a struct and some primitive type) matches a recorded call.
 func TestExpectedMethodCall_CustomStruct(t *testing.T) {
 	reporter, ctrl := createFixtures(t)
 	subject := new(Subject)
@@ -270,16 +267,16 @@ func TestUnexpectedArgValue_FirstArg(t *testing.T) {
 	ctrl.RecordCall(subject, "ActOnTestStructMethod", expectedArg0, 15)
 
 	reporter.assertFatal(func() {
-		// the method argument (of TestStruct type) has 1 unexpected value (for the Number field)
+		// the method argument (of TestStruct type) has 1 unexpected value (for the Message field)
 		ctrl.Call(subject, "ActOnTestStructMethod", TestStruct{Number: 123, Message: "no message"}, 15)
-	}, "no matching expected call", "The expected argument of index: 0 of this call",
-		"Actual argument: is equal to {123 hello}, expected: {123 no message}")
+	}, "Unexpected call to", "doesn't match the argument at index 0",
+		"Got: {123 no message}\nWant: is equal to {123 hello}")
 
 	reporter.assertFatal(func() {
 		// the method argument (of TestStruct type) has 2 unexpected values (for both fields)
 		ctrl.Call(subject, "ActOnTestStructMethod", TestStruct{Number: 11, Message: "no message"}, 15)
-	}, "no matching expected call", "The expected argument of index: 0 of this call",
-		"Actual argument: is equal to {123 hello}, expected: {11 no message}")
+	}, "Unexpected call to", "doesn't match the argument at index 0",
+		"Got: {11 no message}\nWant: is equal to {123 hello}")
 
 	reporter.assertFatal(func() {
 		// The expected call wasn't made.
@@ -296,10 +293,9 @@ func TestUnexpectedArgValue_SecondtArg(t *testing.T) {
 	ctrl.RecordCall(subject, "ActOnTestStructMethod", expectedArg0, 15)
 
 	reporter.assertFatal(func() {
-		// the method argument (of TestStruct type) has 1 (Number) unexpected value
 		ctrl.Call(subject, "ActOnTestStructMethod", TestStruct{Number: 123, Message: "hello"}, 3)
-	}, "no matching expected call", "The expected argument of index: 1 of this call",
-		"Actual argument: is equal to 15, expected: 3")
+	}, "Unexpected call to", "doesn't match the argument at index 1",
+		"Got: 3\nWant: is equal to 15")
 
 	reporter.assertFatal(func() {
 		// The expected call wasn't made.
@@ -502,8 +498,9 @@ func TestOrderedCallsInCorrect(t *testing.T) {
 
 	ctrl.Call(subjectOne, "FooMethod", "1")
 	reporter.assertFatal(func() {
+		// FooMethod(2) should be called before BarMethod(3)
 		ctrl.Call(subjectTwo, "BarMethod", "3")
-	}, "no matching expected call", "Subject.BarMethod([3])")
+	}, "Unexpected call to", "Subject.BarMethod([3])", "doesn't have a prerequisite call satisfied")
 }
 
 // Test that calls that are prerequisites to other calls but have maxCalls >
@@ -525,20 +522,6 @@ func TestOrderedCallsWithPreReqMaxUnbounded(t *testing.T) {
 	reporter.assertFatal(func() {
 		ctrl.Call(subjectOne, "FooMethod", "1")
 	})
-}
-
-func TestPrerequisiteCallNotSatisfied(t *testing.T) {
-	reporter, ctrl := createFixtures(t)
-	subject := new(Subject)
-
-	firstCall := ctrl.RecordCall(subject, "FooMethod", "1")
-	secondCall := ctrl.RecordCall(subject, "FooMethod", "2")
-	secondCall.After(firstCall)
-
-	reporter.assertFatal(func() {
-		// FooMethod(1) should be called before FooMethod(2), but it wasn't
-		ctrl.Call(subject, "FooMethod", "2")
-	}, "A prerequisite call was not satisfied")
 }
 
 func TestCallAfterLoopPanic(t *testing.T) {

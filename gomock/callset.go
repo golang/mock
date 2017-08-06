@@ -56,11 +56,11 @@ func (cs callSet) Remove(call *Call) {
 func (cs callSet) FindMatch(receiver interface{}, method string, args []interface{}) (*Call, error) {
 	methodMap, ok := cs[receiver]
 	if !ok {
-		return nil, errors.New("No expected method calls for that receiver")
+		return nil, errors.New("there are no expected method calls for that receiver")
 	}
 	calls, ok := methodMap[method]
 	if !ok {
-		return nil, fmt.Errorf("No expected calls of the method: %s for that receiver", method)
+		return nil, fmt.Errorf("there are no expected calls of the method: %s for that receiver", method)
 	}
 
 	// Search through the unordered set of calls expected on a method on a
@@ -71,6 +71,7 @@ func (cs callSet) FindMatch(receiver interface{}, method string, args []interfac
 		// but it can happen if, for instance, .Times(0) was used.
 		// Pretend the call doesn't match.
 		if call.exhausted() {
+			callsErrors += "\nThe call was exhausted."
 			continue
 		}
 		err := call.matches(args)

@@ -163,7 +163,7 @@ func (c *Call) isPreReq(other *Call) bool {
 // After declares that the call may only match after preReq has been exhausted.
 func (c *Call) After(preReq *Call) *Call {
 	if c == preReq {
-		c.t.Fatalf("A call isn't allowed to be it's own prerequisite")
+		c.t.Fatalf("A call isn't allowed to be its own prerequisite")
 	}
 	if preReq.isPreReq(c) {
 		c.t.Fatalf("Loop in call order: %v is a prerequisite to %v (possibly indirectly).", c, preReq)
@@ -196,20 +196,21 @@ func (c *Call) String() string {
 // If yes, returns nil. If no, returns error with message explaining why it does not match.
 func (c *Call) matches(args []interface{}) error {
 	if len(args) != len(c.args) {
-		return fmt.Errorf("Invalid number of arguments of call: %s. Set: %s, while this call takes: %s",
+		return fmt.Errorf("Expected call at %s has the wrong number of arguments. Got: %s, want: %s",
 			c.origin, strconv.Itoa(len(args)), strconv.Itoa(len(c.args)))
 	}
 	for i, m := range c.args {
 		if !m.Matches(args[i]) {
-			return fmt.Errorf("The expected argument of index: %s of this call: %s did not match the actual argument.\nActual argument: %s, expected: %v\n",
-				strconv.Itoa(i), c.origin, m, args[i])
+			return fmt.Errorf("Expected call at %s doesn't match the argument at index %s.\nGot: %v\nWant: %v\n",
+				c.origin, strconv.Itoa(i), args[i], m)
 		}
 	}
 
 	// Check that all prerequisite calls have been satisfied.
 	for _, preReqCall := range c.preReqs {
 		if !preReqCall.satisfied() {
-			return fmt.Errorf("A prerequisite call was not satisfied:\n%v\nshould be called before:\n%v", preReqCall, c)
+			return fmt.Errorf("Expected call at %s doesn't have a prerequisite call satisfied:\n%v\nshould be called before:\n%v",
+				c.origin, preReqCall, c)
 		}
 	}
 
