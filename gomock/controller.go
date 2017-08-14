@@ -58,6 +58,7 @@ package gomock
 import (
 	"fmt"
 	"reflect"
+	"runtime"
 	"sync"
 )
 
@@ -114,7 +115,8 @@ func (ctrl *Controller) RecordCallWithMethodType(receiver interface{}, method st
 	ctrl.mu.Lock()
 	defer ctrl.mu.Unlock()
 
-	call := &Call{t: ctrl.t, receiver: receiver, method: method, methodType: methodType, args: margs, minCalls: 1, maxCalls: 1}
+	origin := callerInfo(2)
+	call := &Call{t: ctrl.t, receiver: receiver, method: method, methodType: methodType, args: margs, origin: origin, minCalls: 1, maxCalls: 1}
 
 	ctrl.expectedCalls.Add(call)
 	return call
@@ -124,9 +126,10 @@ func (ctrl *Controller) Call(receiver interface{}, method string, args ...interf
 	ctrl.mu.Lock()
 	defer ctrl.mu.Unlock()
 
-	expected := ctrl.expectedCalls.FindMatch(receiver, method, args)
-	if expected == nil {
-		ctrl.t.Fatalf("no matching expected call: %T.%v(%v)", receiver, method, args)
+	expected, err := ctrl.expectedCalls.FindMatch(receiver, method, args)
+	if err != nil {
+		origin := callerInfo(2)
+		ctrl.t.Fatalf("Unexpected call to %T.%v(%v) at %s because: %s", receiver, method, args, origin, err)
 	}
 
 	// Two things happen here:
@@ -180,4 +183,11 @@ func (ctrl *Controller) Finish() {
 	if failures {
 		ctrl.t.Fatalf("aborting test due to missing call(s)")
 	}
+}
+
+func callerInfo(skip int) string {
+	if _, file, line, ok := runtime.Caller(skip + 1); ok {
+		return fmt.Sprintf("%s:%d", file, line)
+	}
+	return "unknown file"
 }

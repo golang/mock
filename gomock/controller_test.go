@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"strings"
 )
 
 type ErrorReporter struct {
@@ -53,7 +54,7 @@ func (e *ErrorReporter) assertFail(msg string) {
 }
 
 // Use to check that code triggers a fatal test failure.
-func (e *ErrorReporter) assertFatal(fn func()) {
+func (e *ErrorReporter) assertFatal(fn func(), expectedErrMsgs ...string) {
 	defer func() {
 		err := recover()
 		if err == nil {
@@ -66,6 +67,18 @@ func (e *ErrorReporter) assertFatal(fn func()) {
 			e.t.Error("Expected fatal failure, but got a", actual)
 		} else if token, ok := err.(*struct{}); ok && token == &e.fatalToken {
 			// This is okay - the panic is from Fatalf().
+			if expectedErrMsgs != nil {
+				// assert that the actual error message
+				// contains expectedErrMsgs
+
+				// check the last actualErrMsg, because the previous messages come from previous errors
+				actualErrMsg := e.log[len(e.log)-1]
+				for _, expectedErrMsg := range expectedErrMsgs {
+					if !strings.Contains(actualErrMsg, expectedErrMsg) {
+						e.t.Errorf("Error message:\ngot: %q\nwant to contain: %q\n", actualErrMsg, expectedErrMsg)
+					}
+				}
+			}
 			return
 		} else {
 			// Some other panic.
@@ -119,6 +132,16 @@ func (s *Subject) BarMethod(arg string) int {
 	return 0
 }
 
+// A type purely for ActOnTestStructMethod
+type TestStruct struct {
+	Number  int
+	Message string
+}
+
+func (s *Subject) ActOnTestStructMethod(arg TestStruct, arg1 int) int {
+	return 0
+}
+
 func assertEqual(t *testing.T, expected interface{}, actual interface{}) {
 	if !reflect.DeepEqual(expected, actual) {
 		t.Errorf("Expected %+v, but got %+v", expected, actual)
@@ -140,6 +163,31 @@ func TestNoCalls(t *testing.T) {
 	reporter.assertPass("No calls expected or made.")
 }
 
+func TestNoRecordedCallsForAReceiver(t *testing.T) {
+	reporter, ctrl := createFixtures(t)
+	subject := new(Subject)
+
+	reporter.assertFatal(func() {
+		ctrl.Call(subject, "NotRecordedMethod", "argument")
+	}, "Unexpected call to", "there are no expected method calls for that receiver")
+	ctrl.Finish()
+}
+
+func TestNoRecordedMatchingMethodNameForAReceiver(t *testing.T) {
+	reporter, ctrl := createFixtures(t)
+	subject := new(Subject)
+
+	ctrl.RecordCall(subject, "FooMethod", "argument")
+	reporter.assertFatal(func() {
+		ctrl.Call(subject, "NotRecordedMethod", "argument")
+	}, "Unexpected call to", "there are no expected calls of the method: NotRecordedMethod for that receiver")
+	reporter.assertFatal(func() {
+		// The expected call wasn't made.
+		ctrl.Finish()
+	})
+}
+
+// This tests that a call with an arguments of some primitive type matches a recorded call.
 func TestExpectedMethodCall(t *testing.T) {
 	reporter, ctrl := createFixtures(t)
 	subject := new(Subject)
@@ -187,11 +235,68 @@ func TestUnexpectedArgCount(t *testing.T) {
 	reporter.assertFatal(func() {
 		// This call is made with the wrong number of arguments...
 		ctrl.Call(subject, "FooMethod", "argument", "extra_argument")
-	})
+	}, "Unexpected call to", "wrong number of arguments", "Got: 2, want: 1")
 	reporter.assertFatal(func() {
 		// ... so is this.
 		ctrl.Call(subject, "FooMethod")
+	}, "Unexpected call to", "wrong number of arguments", "Got: 0, want: 1")
+	reporter.assertFatal(func() {
+		// The expected call wasn't made.
+		ctrl.Finish()
 	})
+}
+
+// This tests that a call with complex arguments (a struct and some primitive type) matches a recorded call.
+func TestExpectedMethodCall_CustomStruct(t *testing.T) {
+	reporter, ctrl := createFixtures(t)
+	subject := new(Subject)
+
+	expectedArg0 := TestStruct{Number: 123, Message: "hello"}
+	ctrl.RecordCall(subject, "ActOnTestStructMethod", expectedArg0, 15)
+	ctrl.Call(subject, "ActOnTestStructMethod", expectedArg0, 15)
+
+	reporter.assertPass("Expected method call made.")
+}
+
+func TestUnexpectedArgValue_FirstArg(t *testing.T) {
+	reporter, ctrl := createFixtures(t)
+	defer reporter.recoverUnexpectedFatal()
+	subject := new(Subject)
+
+	expectedArg0 := TestStruct{Number: 123, Message: "hello"}
+	ctrl.RecordCall(subject, "ActOnTestStructMethod", expectedArg0, 15)
+
+	reporter.assertFatal(func() {
+		// the method argument (of TestStruct type) has 1 unexpected value (for the Message field)
+		ctrl.Call(subject, "ActOnTestStructMethod", TestStruct{Number: 123, Message: "no message"}, 15)
+	}, "Unexpected call to", "doesn't match the argument at index 0",
+		"Got: {123 no message}\nWant: is equal to {123 hello}")
+
+	reporter.assertFatal(func() {
+		// the method argument (of TestStruct type) has 2 unexpected values (for both fields)
+		ctrl.Call(subject, "ActOnTestStructMethod", TestStruct{Number: 11, Message: "no message"}, 15)
+	}, "Unexpected call to", "doesn't match the argument at index 0",
+		"Got: {11 no message}\nWant: is equal to {123 hello}")
+
+	reporter.assertFatal(func() {
+		// The expected call wasn't made.
+		ctrl.Finish()
+	})
+}
+
+func TestUnexpectedArgValue_SecondtArg(t *testing.T) {
+	reporter, ctrl := createFixtures(t)
+	defer reporter.recoverUnexpectedFatal()
+	subject := new(Subject)
+
+	expectedArg0 := TestStruct{Number: 123, Message: "hello"}
+	ctrl.RecordCall(subject, "ActOnTestStructMethod", expectedArg0, 15)
+
+	reporter.assertFatal(func() {
+		ctrl.Call(subject, "ActOnTestStructMethod", TestStruct{Number: 123, Message: "hello"}, 3)
+	}, "Unexpected call to", "doesn't match the argument at index 1",
+		"Got: 3\nWant: is equal to 15")
+
 	reporter.assertFatal(func() {
 		// The expected call wasn't made.
 		ctrl.Finish()
@@ -393,11 +498,12 @@ func TestOrderedCallsInCorrect(t *testing.T) {
 
 	ctrl.Call(subjectOne, "FooMethod", "1")
 	reporter.assertFatal(func() {
+		// FooMethod(2) should be called before BarMethod(3)
 		ctrl.Call(subjectTwo, "BarMethod", "3")
-	})
+	}, "Unexpected call to", "Subject.BarMethod([3])", "doesn't have a prerequisite call satisfied")
 }
 
-// Test that calls that are prerequites to other calls but have maxCalls >
+// Test that calls that are prerequisites to other calls but have maxCalls >
 // minCalls are removed from the expected call set.
 func TestOrderedCallsWithPreReqMaxUnbounded(t *testing.T) {
 	reporter, ctrl, subjectOne, subjectTwo := commonTestOrderedCalls(t)
