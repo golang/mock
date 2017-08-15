@@ -118,7 +118,8 @@ func (c *Call) Times(n int) *Call {
 }
 
 // SetArg declares an action that will set the nth argument's value,
-// indirected through a pointer.
+// indirected through a pointer. Or, in the case of a slice, SetArg
+// will copy value's elements into the nth argument.
 func (c *Call) SetArg(n int, value interface{}) *Call {
 	if c.setArgs == nil {
 		c.setArgs = make(map[int]reflect.Value)
