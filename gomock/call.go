@@ -118,7 +118,8 @@ func (c *Call) Times(n int) *Call {
 }
 
 // SetArg declares an action that will set the nth argument's value,
-// indirected through a pointer.
+// indirected through a pointer. Or, in the case of a slice, SetArg
+// will copy value's elements into the nth argument.
 func (c *Call) SetArg(n int, value interface{}) *Call {
 	if c.setArgs == nil {
 		c.setArgs = make(map[int]reflect.Value)
@@ -142,8 +143,10 @@ func (c *Call) SetArg(n int, value interface{}) *Call {
 		}
 	case reflect.Interface:
 		// nothing to do
+	case reflect.Slice:
+		// nothing to do
 	default:
-		c.t.Fatalf("SetArg(%d, ...) referring to argument of non-pointer non-interface type %v [%s]",
+		c.t.Fatalf("SetArg(%d, ...) referring to argument of non-pointer non-interface non-slice type %v",
 			n, at, c.origin)
 	}
 	c.setArgs[n] = reflect.ValueOf(value)
@@ -243,7 +246,12 @@ func (c *Call) call(args []interface{}) (rets []interface{}, action func()) {
 		action = func() { c.doFunc.Call(doArgs) }
 	}
 	for n, v := range c.setArgs {
-		reflect.ValueOf(args[n]).Elem().Set(v)
+		switch reflect.TypeOf(args[n]).Kind() {
+		case reflect.Slice:
+			setSlice(args[n], v)
+		default:
+			reflect.ValueOf(args[n]).Elem().Set(v)
+		}
 	}
 
 	rets = c.rets
@@ -263,5 +271,12 @@ func (c *Call) call(args []interface{}) (rets []interface{}, action func()) {
 func InOrder(calls ...*Call) {
 	for i := 1; i < len(calls); i++ {
 		calls[i].After(calls[i-1])
+	}
+}
+
+func setSlice(arg interface{}, v reflect.Value) {
+	va := reflect.ValueOf(arg)
+	for i := 0; i < v.Len(); i++ {
+		va.Index(i).Set(v.Index(i))
 	}
 }
