@@ -41,10 +41,11 @@ const (
 )
 
 var (
-	source      = flag.String("source", "", "(source mode) Input Go source file; enables source mode.")
-	destination = flag.String("destination", "", "Output file; defaults to stdout.")
-	packageOut  = flag.String("package", "", "Package of the generated code; defaults to the package of the input with a 'mock_' prefix.")
-	selfPackage = flag.String("self_package", "", "If set, the package this mock will be part of.")
+	source          = flag.String("source", "", "(source mode) Input Go source file; enables source mode.")
+	destination     = flag.String("destination", "", "Output file; defaults to stdout.")
+	packageOut      = flag.String("package", "", "Package of the generated code; defaults to the package of the input with a 'mock_' prefix.")
+	selfPackage     = flag.String("self_package", "", "If set, the package this mock will be part of.")
+	writePkgComment = flag.Bool("write_package_comment", true, "Writes package documentation comment (godoc) if true.")
 
 	debugParser = flag.Bool("debug_parser", false, "Print out parser results only.")
 )
@@ -225,6 +226,9 @@ func (g *generator) Generate(pkg *model.Package, pkgName string) error {
 		localNames[pkgName] = true
 	}
 
+	if *writePkgComment {
+		g.p("// Package %v is a generated GoMock package.", pkgName)
+	}
 	g.p("package %v", pkgName)
 	g.p("")
 	g.p("import (")
