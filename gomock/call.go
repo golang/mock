@@ -213,7 +213,7 @@ func (c *Call) matches(args []interface{}) error {
 		}
 	} else {
 		if len(args) != len(c.args) {
-			return fmt.Errorf("Expected call at %s has the wrong number of arguments. Got: %d, want %d",
+			return fmt.Errorf("Expected call at %s has the wrong number of arguments. Got: %d, want: %d",
 				c.origin, len(args), len(c.args))
 		}
 	}
