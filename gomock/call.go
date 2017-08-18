@@ -218,11 +218,8 @@ func (c *Call) matches(args []interface{}) error {
 		}
 	}
 
-	if len(args) < len(c.args) {
-		args = append(args, nil)
-	}
 	for i, m := range c.args {
-		if i == len(c.args) && c.methodType.IsVariadic() {
+		if i == len(c.args)-1 && c.methodType.IsVariadic() {
 			if !c.args[i].Matches(args[i:]) && !(len(c.args) == len(args) && c.args[i].Matches(args[i])) {
 				return fmt.Errorf("Expected call at %s doesn't match the argument at index %s.\nGot: %v\nWant: %v\n",
 					c.origin, strconv.Itoa(i), args[i:], c.args[i])
