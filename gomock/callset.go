@@ -15,6 +15,7 @@
 package gomock
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 )
@@ -65,22 +66,22 @@ func (cs callSet) FindMatch(receiver interface{}, method string, args []interfac
 
 	// Search through the unordered set of calls expected on a method on a
 	// receiver.
-	callsErrors := ""
+	var callsErrors bytes.Buffer
 	for _, call := range calls {
 		// A call should not normally still be here if exhausted,
 		// but it can happen if, for instance, .Times(0) was used.
 		// Pretend the call doesn't match.
 		if call.exhausted() {
-			callsErrors += "\nThe call was exhausted."
+			callsErrors.WriteString("\nThe call was exhausted.")
 			continue
 		}
 		err := call.matches(args)
 		if err != nil {
-			callsErrors += "\n" + err.Error()
+			fmt.Fprintf(&callsErrors, "\n%v", err)
 		} else {
 			return call, nil
 		}
 	}
 
-	return nil, fmt.Errorf(callsErrors)
+	return nil, fmt.Errorf(callsErrors.String())
 }
