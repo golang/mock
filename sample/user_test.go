@@ -120,3 +120,34 @@ func TestExpectTrueNil(t *testing.T) {
 	mockIndex.EXPECT().Ptr(nil) // this nil is a nil interface{}
 	mockIndex.Ptr(nil)          // this nil is a nil *int
 }
+
+func TestFunctionReturnValue(t *testing.T) {
+	ctlr := gomock.NewController(t)
+	defer ctlr.Finish()
+
+	mockIndex := mock_user.NewMockIndex(ctlr)
+
+	var expected interface{} = "expected"
+	mockIndex.EXPECT().Get("get").Do(func(i interface{}) interface{} {
+		return expected
+	})
+
+	actual := mockIndex.Get("get")
+	if actual != expected {
+		t.Fatal("unexpected value returned: %v != %v", actual, expected)
+	}
+
+	var expectedA, expectedB interface{} = "expectedA", "expectedB"
+	mockIndex.EXPECT().GetTwo("A", "B").Do(func(i, j interface{}) (interface{}, interface{}) {
+		return expectedA, expectedB
+	})
+
+	actualA, actualB := mockIndex.GetTwo("A", "B")
+	if actualA != expectedA {
+		t.Fatal("unexpected value returned: %v != %v", actualA, expectedA)
+	}
+
+	if actualB != expectedB {
+		t.Fatal("unexpected value returned: %v != %v", actualB, expectedB)
+	}
+}

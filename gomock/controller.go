@@ -152,7 +152,7 @@ func (ctrl *Controller) Call(receiver interface{}, method string, args ...interf
 	ctrl.mu.Unlock()
 	defer ctrl.mu.Lock()
 	if action != nil {
-		action()
+		rets = action()
 	}
 
 	return rets
