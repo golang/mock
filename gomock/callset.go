@@ -43,11 +43,8 @@ func (cs callSet) Remove(call *Call) {
 	sl := methodMap[call.method]
 	for i, c := range sl {
 		if c == call {
-			// quick removal; we don't need to maintain call order
-			if len(sl) > 1 {
-				sl[i] = sl[len(sl)-1]
-			}
-			methodMap[call.method] = sl[:len(sl)-1]
+			// maintain order for remaining calls
+			methodMap[call.method] = append(sl[:i], sl[i+1:]...)
 			break
 		}
 	}
