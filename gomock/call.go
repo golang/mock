@@ -78,6 +78,7 @@ func (c *Call) Do(f interface{}) *Call {
 	return c
 }
 
+// Return declares the values to be returned by the mocked function call.
 func (c *Call) Return(rets ...interface{}) *Call {
 	mt := c.methodType
 	if len(rets) != mt.NumOut() {
@@ -112,6 +113,7 @@ func (c *Call) Return(rets ...interface{}) *Call {
 	return c
 }
 
+// Times declares the exact number of times a function call is expected to be executed.
 func (c *Call) Times(n int) *Call {
 	c.minCalls, c.maxCalls = n, n
 	return c
@@ -146,7 +148,7 @@ func (c *Call) SetArg(n int, value interface{}) *Call {
 	case reflect.Slice:
 		// nothing to do
 	default:
-		c.t.Fatalf("SetArg(%d, ...) referring to argument of non-pointer non-interface non-slice type %v",
+		c.t.Fatalf("SetArg(%d, ...) referring to argument of non-pointer non-interface non-slice type %v [%s]",
 			n, at, c.origin)
 	}
 	c.setArgs[n] = reflect.ValueOf(value)
@@ -204,7 +206,7 @@ func (c *Call) matches(args []interface{}) error {
 	}
 	for i, m := range c.args {
 		if !m.Matches(args[i]) {
-			return fmt.Errorf("Expected call at %s doesn't match the argument at index %s.\nGot: %v\nWant: %v\n",
+			return fmt.Errorf("Expected call at %s doesn't match the argument at index %s.\nGot: %v\nWant: %v",
 				c.origin, strconv.Itoa(i), args[i], m)
 		}
 	}
