@@ -22,10 +22,10 @@ func call(ctx context.Context, m Math) (int, error) {
 	}
 }
 
-// TestConcurrentFails is expected to fail. It demonstrates how to use
-// gomock.WithContext to interrupt the test from a different
-// goroutine.
-func TestConcurrentFails(t *testing.T) {
+// testConcurrentFails is expected to fail (and is disabled). It
+// demonstrates how to use gomock.WithContext to interrupt the test
+// from a different goroutine.
+func testConcurrentFails(t *testing.T) {
 	ctrl, ctx := gomock.WithContext(context.Background(), t)
 	defer ctrl.Finish()
 	m := mock.NewMockMath(ctrl)
