@@ -43,7 +43,7 @@ const (
 var (
 	source          = flag.String("source", "", "(source mode) Input Go source file; enables source mode.")
 	destination     = flag.String("destination", "", "Output file; defaults to stdout.")
-	mockNames       = flag.String("mockNames", "", "Comma-separated interfaceName=mockName pairs of explicit mock names to use. Mock names default to Mock+'<interfaceName>'")
+	mockNames       = flag.String("mockNames", "", "Comma-separated interfaceName=mockName pairs of explicit mock names to use. Mock names default to 'Mock'+ interfaceName suffix.")
 	packageOut      = flag.String("package", "", "Package of the generated code; defaults to the package of the input with a 'mock_' prefix.")
 	selfPackage     = flag.String("self_package", "", "If set, the package this mock will be part of.")
 	writePkgComment = flag.Bool("write_package_comment", true, "Writes package documentation comment (godoc) if true.")
