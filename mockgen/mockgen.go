@@ -164,13 +164,13 @@ func (g *generator) in() {
 
 func (g *generator) out() {
 	if len(g.indent) > 0 {
-		g.indent = g.indent[0: len(g.indent)-1]
+		g.indent = g.indent[0 : len(g.indent)-1]
 	}
 }
 
 func removeDot(s string) string {
 	if len(s) > 0 && s[len(s)-1] == '.' {
-		return s[0: len(s)-1]
+		return s[0 : len(s)-1]
 	}
 	return s
 }
