@@ -18,6 +18,8 @@ func (o *mockTestReporter) Fatalf(format string, args ...interface{}) {
 	o.fatalCalls++
 }
 
+func (o *mockTestReporter) Helper() {}
+
 func TestCall_After(t *testing.T) {
 	t.Run("SelfPrereqCallsFatalf", func(t *testing.T) {
 		tr1 := &mockTestReporter{}
@@ -53,6 +55,7 @@ func TestCall_SetArg(t *testing.T) {
 	t.Run("SetArgSlice", func(t *testing.T) {
 		c := &Call{
 			methodType: reflect.TypeOf(func([]byte) {}),
+			t:          &mockTestReporter{},
 		}
 		c.SetArg(0, []byte{1, 2, 3})
 
@@ -67,6 +70,7 @@ func TestCall_SetArg(t *testing.T) {
 	t.Run("SetArgPointer", func(t *testing.T) {
 		c := &Call{
 			methodType: reflect.TypeOf(func(*int) {}),
+			t:          &mockTestReporter{},
 		}
 		c.SetArg(0, 42)
 

@@ -86,6 +86,10 @@ func NewController(t TestReporter) *Controller {
 }
 
 func (ctrl *Controller) RecordCall(receiver interface{}, method string, args ...interface{}) *Call {
+	if h, ok := ctrl.t.(testHelper); ok {
+		h.Helper()
+	}
+
 	recv := reflect.ValueOf(receiver)
 	for i := 0; i < recv.Type().NumMethod(); i++ {
 		if recv.Type().Method(i).Name == method {
@@ -123,6 +127,10 @@ func (ctrl *Controller) RecordCallWithMethodType(receiver interface{}, method st
 }
 
 func (ctrl *Controller) Call(receiver interface{}, method string, args ...interface{}) []interface{} {
+	if h, ok := ctrl.t.(testHelper); ok {
+		h.Helper()
+	}
+
 	ctrl.mu.Lock()
 	defer ctrl.mu.Unlock()
 
@@ -159,6 +167,10 @@ func (ctrl *Controller) Call(receiver interface{}, method string, args ...interf
 }
 
 func (ctrl *Controller) Finish() {
+	if h, ok := ctrl.t.(testHelper); ok {
+		h.Helper()
+	}
+
 	ctrl.mu.Lock()
 	defer ctrl.mu.Unlock()
 
@@ -190,4 +202,9 @@ func callerInfo(skip int) string {
 		return fmt.Sprintf("%s:%d", file, line)
 	}
 	return "unknown file"
+}
+
+type testHelper interface {
+	TestReporter
+	Helper()
 }
