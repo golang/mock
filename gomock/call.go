@@ -80,6 +80,10 @@ func (c *Call) Do(f interface{}) *Call {
 
 // Return declares the values to be returned by the mocked function call.
 func (c *Call) Return(rets ...interface{}) *Call {
+	if h, ok := c.t.(testHelper); ok {
+		h.Helper()
+	}
+
 	mt := c.methodType
 	if len(rets) != mt.NumOut() {
 		c.t.Fatalf("wrong number of arguments to Return for %T.%v: got %d, want %d [%s]",
@@ -123,6 +127,10 @@ func (c *Call) Times(n int) *Call {
 // indirected through a pointer. Or, in the case of a slice, SetArg
 // will copy value's elements into the nth argument.
 func (c *Call) SetArg(n int, value interface{}) *Call {
+	if h, ok := c.t.(testHelper); ok {
+		h.Helper()
+	}
+
 	if c.setArgs == nil {
 		c.setArgs = make(map[int]reflect.Value)
 	}
@@ -167,6 +175,10 @@ func (c *Call) isPreReq(other *Call) bool {
 
 // After declares that the call may only match after preReq has been exhausted.
 func (c *Call) After(preReq *Call) *Call {
+	if h, ok := c.t.(testHelper); ok {
+		h.Helper()
+	}
+
 	if c == preReq {
 		c.t.Fatalf("A call isn't allowed to be its own prerequisite")
 	}
