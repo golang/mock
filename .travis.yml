@@ -4,6 +4,7 @@ go:
   # we intend to support only the latest version and perhaps the previous one
   - 1.7
   - 1.8
+  - 1.9
 
 script:
   - go build ./...
