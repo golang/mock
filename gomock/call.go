@@ -78,7 +78,12 @@ func (c *Call) Do(f interface{}) *Call {
 	return c
 }
 
+// Return declares the values to be returned by the mocked function call.
 func (c *Call) Return(rets ...interface{}) *Call {
+	if h, ok := c.t.(testHelper); ok {
+		h.Helper()
+	}
+
 	mt := c.methodType
 	if len(rets) != mt.NumOut() {
 		c.t.Fatalf("wrong number of arguments to Return for %T.%v: got %d, want %d [%s]",
@@ -112,6 +117,7 @@ func (c *Call) Return(rets ...interface{}) *Call {
 	return c
 }
 
+// Times declares the exact number of times a function call is expected to be executed.
 func (c *Call) Times(n int) *Call {
 	c.minCalls, c.maxCalls = n, n
 	return c
@@ -121,6 +127,10 @@ func (c *Call) Times(n int) *Call {
 // indirected through a pointer. Or, in the case of a slice, SetArg
 // will copy value's elements into the nth argument.
 func (c *Call) SetArg(n int, value interface{}) *Call {
+	if h, ok := c.t.(testHelper); ok {
+		h.Helper()
+	}
+
 	if c.setArgs == nil {
 		c.setArgs = make(map[int]reflect.Value)
 	}
@@ -146,7 +156,7 @@ func (c *Call) SetArg(n int, value interface{}) *Call {
 	case reflect.Slice:
 		// nothing to do
 	default:
-		c.t.Fatalf("SetArg(%d, ...) referring to argument of non-pointer non-interface non-slice type %v",
+		c.t.Fatalf("SetArg(%d, ...) referring to argument of non-pointer non-interface non-slice type %v [%s]",
 			n, at, c.origin)
 	}
 	c.setArgs[n] = reflect.ValueOf(value)
@@ -165,6 +175,10 @@ func (c *Call) isPreReq(other *Call) bool {
 
 // After declares that the call may only match after preReq has been exhausted.
 func (c *Call) After(preReq *Call) *Call {
+	if h, ok := c.t.(testHelper); ok {
+		h.Helper()
+	}
+
 	if c == preReq {
 		c.t.Fatalf("A call isn't allowed to be its own prerequisite")
 	}
@@ -206,7 +220,7 @@ func (c *Call) matches(args []interface{}) error {
 
 		for i, m := range c.args {
 			if !m.Matches(args[i]) {
-				return fmt.Errorf("Expected call at %s doesn't match the argument at index %s.\nGot: %v\nWant: %v\n",
+				return fmt.Errorf("Expected call at %s doesn't match the argument at index %s.\nGot: %v\nWant: %v",
 					c.origin, strconv.Itoa(i), args[i], m)
 			}
 		}
@@ -252,12 +266,12 @@ func (c *Call) matches(args []interface{}) error {
 				// Got Foo(a, b, c, d) want Foo(matcherA, matcherB, matcherC, matcherD, matcherE)
 				// Got Foo(a, b, c, d, e) want Foo(matcherA, matcherB, matcherC, matcherD)
 				// Got Foo(a, b, c) want Foo(matcherA, matcherB)
-				return fmt.Errorf("Expected call at %s doesn't match the argument at index %s.\nGot: %v\nWant: %v\n",
+				return fmt.Errorf("Expected call at %s doesn't match the argument at index %s.\nGot: %v\nWant: %v",
 					c.origin, strconv.Itoa(i), args[i:], c.args[i])
 			}
 
 			if !m.Matches(args[i]) {
-				return fmt.Errorf("Expected call at %s doesn't match the argument at index %s.\nGot: %v\nWant: %v\n",
+				return fmt.Errorf("Expected call at %s doesn't match the argument at index %s.\nGot: %v\nWant: %v",
 					c.origin, strconv.Itoa(i), args[i], m)
 			}
 		}

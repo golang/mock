@@ -41,10 +41,11 @@ const (
 )
 
 var (
-	source      = flag.String("source", "", "(source mode) Input Go source file; enables source mode.")
-	destination = flag.String("destination", "", "Output file; defaults to stdout.")
-	packageOut  = flag.String("package", "", "Package of the generated code; defaults to the package of the input with a 'mock_' prefix.")
-	selfPackage = flag.String("self_package", "", "If set, the package this mock will be part of.")
+	source          = flag.String("source", "", "(source mode) Input Go source file; enables source mode.")
+	destination     = flag.String("destination", "", "Output file; defaults to stdout.")
+	packageOut      = flag.String("package", "", "Package of the generated code; defaults to the package of the input with a 'mock_' prefix.")
+	selfPackage     = flag.String("self_package", "", "If set, the package this mock will be part of.")
+	writePkgComment = flag.Bool("write_package_comment", true, "Writes package documentation comment (godoc) if true.")
 
 	debugParser = flag.Bool("debug_parser", false, "Print out parser results only.")
 )
@@ -225,6 +226,9 @@ func (g *generator) Generate(pkg *model.Package, pkgName string) error {
 		localNames[pkgName] = true
 	}
 
+	if *writePkgComment {
+		g.p("// Package %v is a generated GoMock package.", pkgName)
+	}
 	g.p("package %v", pkgName)
 	g.p("")
 	g.p("import (")
@@ -293,9 +297,9 @@ func (g *generator) GenerateMockInterface(intf *model.Interface) error {
 
 	// XXX: possible name collision here if someone has EXPECT in their interface.
 	g.p("// EXPECT returns an object that allows the caller to indicate expected use")
-	g.p("func (_m *%v) EXPECT() *%vMockRecorder {", mockType, mockType)
+	g.p("func (m *%v) EXPECT() *%vMockRecorder {", mockType, mockType)
 	g.in()
-	g.p("return _m.recorder")
+	g.p("return m.recorder")
 	g.out()
 	g.p("}")
 
@@ -313,30 +317,25 @@ func (g *generator) GenerateMockMethods(mockType string, intf *model.Interface, 
 	}
 }
 
+func makeArgString(argNames, argTypes []string) string {
+	args := make([]string, len(argNames))
+	for i, name := range argNames {
+		// specify the type only once for consecutive args of the same type
+		if i+1 < len(argTypes) && argTypes[i] == argTypes[i+1] {
+			args[i] = name
+		} else {
+			args[i] = name + " " + argTypes[i]
+		}
+	}
+	return strings.Join(args, ", ")
+}
+
 // GenerateMockMethod generates a mock method implementation.
 // If non-empty, pkgOverride is the package in which unqualified types reside.
 func (g *generator) GenerateMockMethod(mockType string, m *model.Method, pkgOverride string) error {
-	args := make([]string, len(m.In))
-	argNames := make([]string, len(m.In))
-	for i, p := range m.In {
-		name := p.Name
-		if name == "" {
-			name = fmt.Sprintf("_param%d", i)
-		}
-		ts := p.Type.String(g.packageMap, pkgOverride)
-		args[i] = name + " " + ts
-		argNames[i] = name
-	}
-	if m.Variadic != nil {
-		name := m.Variadic.Name
-		if name == "" {
-			name = fmt.Sprintf("_param%d", len(m.In))
-		}
-		ts := m.Variadic.Type.String(g.packageMap, pkgOverride)
-		args = append(args, name+" ..."+ts)
-		argNames = append(argNames, name)
-	}
-	argString := strings.Join(args, ", ")
+	argNames := g.getArgNames(m)
+	argTypes := g.getArgTypes(m, pkgOverride)
+	argString := makeArgString(argNames, argTypes)
 
 	rets := make([]string, len(m.Out))
 	for i, p := range m.Out {
@@ -350,37 +349,44 @@ func (g *generator) GenerateMockMethod(mockType string, m *model.Method, pkgOver
 		retString = " " + retString
 	}
 
+	ia := newIdentifierAllocator(argNames)
+	idRecv := ia.allocateIdentifier("m")
+
 	g.p("// %v mocks base method", m.Name)
-	g.p("func (_m *%v) %v(%v)%v {", mockType, m.Name, argString, retString)
+	g.p("func (%v *%v) %v(%v)%v {", idRecv, mockType, m.Name, argString, retString)
 	g.in()
 
-	callArgs := strings.Join(argNames, ", ")
-	if callArgs != "" {
-		callArgs = ", " + callArgs
-	}
-	if m.Variadic != nil {
+	var callArgs string
+	if m.Variadic == nil {
+		if len(argNames) > 0 {
+			callArgs = ", " + strings.Join(argNames, ", ")
+		}
+	} else {
 		// Non-trivial. The generated code must build a []interface{},
 		// but the variadic argument may be any type.
-		g.p("_s := []interface{}{%s}", strings.Join(argNames[:len(argNames)-1], ", "))
-		g.p("for _, _x := range %s {", argNames[len(argNames)-1])
+		idVarArgs := ia.allocateIdentifier("varargs")
+		idVArg := ia.allocateIdentifier("a")
+		g.p("%s := []interface{}{%s}", idVarArgs, strings.Join(argNames[:len(argNames)-1], ", "))
+		g.p("for _, %s := range %s {", idVArg, argNames[len(argNames)-1])
 		g.in()
-		g.p("_s = append(_s, _x)")
+		g.p("%s = append(%s, %s)", idVarArgs, idVarArgs, idVArg)
 		g.out()
 		g.p("}")
-		callArgs = ", _s..."
+		callArgs = ", " + idVarArgs + "..."
 	}
 	if len(m.Out) == 0 {
-		g.p(`_m.ctrl.Call(_m, "%v"%v)`, m.Name, callArgs)
+		g.p(`%v.ctrl.Call(%v, %q%v)`, idRecv, idRecv, m.Name, callArgs)
 	} else {
-		g.p(`ret := _m.ctrl.Call(_m, "%v"%v)`, m.Name, callArgs)
+		idRet := ia.allocateIdentifier("ret")
+		g.p(`%v := %v.ctrl.Call(%v, %q%v)`, idRet, idRecv, idRecv, m.Name, callArgs)
 
 		// Go does not allow "naked" type assertions on nil values, so we use the two-value form here.
 		// The value of that is either (x.(T), true) or (Z, false), where Z is the zero value for T.
 		// Happily, this coincides with the semantics we want here.
 		retNames := make([]string, len(rets))
 		for i, t := range rets {
-			retNames[i] = fmt.Sprintf("ret%d", i)
-			g.p("%s, _ := ret[%d].(%s)", retNames[i], i, t)
+			retNames[i] = ia.allocateIdentifier(fmt.Sprintf("ret%d", i))
+			g.p("%s, _ := %s[%d].(%s)", retNames[i], idRet, i, t)
 		}
 		g.p("return " + strings.Join(retNames, ", "))
 	}
@@ -391,45 +397,107 @@ func (g *generator) GenerateMockMethod(mockType string, m *model.Method, pkgOver
 }
 
 func (g *generator) GenerateMockRecorderMethod(mockType string, m *model.Method) error {
-	nargs := len(m.In)
-	args := make([]string, nargs)
-	for i := 0; i < nargs; i++ {
-		args[i] = "arg" + strconv.Itoa(i)
+	argNames := g.getArgNames(m)
+
+	var argString string
+	if m.Variadic == nil {
+		argString = strings.Join(argNames, ", ")
+	} else {
+		argString = strings.Join(argNames[:len(argNames)-1], ", ")
 	}
-	argString := strings.Join(args, ", ")
-	if nargs > 0 {
+	if argString != "" {
 		argString += " interface{}"
 	}
+
 	if m.Variadic != nil {
-		if nargs > 0 {
+		if argString != "" {
 			argString += ", "
 		}
-		argString += fmt.Sprintf("arg%d ...interface{}", nargs)
+		argString += fmt.Sprintf("%s ...interface{}", argNames[len(argNames)-1])
 	}
+
+	ia := newIdentifierAllocator(argNames)
+	idRecv := ia.allocateIdentifier("mr")
 
 	g.p("// %v indicates an expected call of %v", m.Name, m.Name)
-	g.p("func (_mr *%vMockRecorder) %v(%v) *gomock.Call {", mockType, m.Name, argString)
+	g.p("func (%s *%vMockRecorder) %v(%v) *gomock.Call {", idRecv, mockType, m.Name, argString)
 	g.in()
 
-	callArgs := strings.Join(args, ", ")
-	if nargs > 0 {
-		callArgs = ", " + callArgs
-	}
-	if m.Variadic != nil {
-		if nargs == 0 {
+	var callArgs string
+	if m.Variadic == nil {
+		if len(argNames) > 0 {
+			callArgs = ", " + strings.Join(argNames, ", ")
+		}
+	} else {
+		if len(argNames) == 1 {
 			// Easy: just use ... to push the arguments through.
-			callArgs = ", arg0..."
+			callArgs = ", " + argNames[0] + "..."
 		} else {
 			// Hard: create a temporary slice.
-			g.p("_s := append([]interface{}{%s}, arg%d...)", strings.Join(args, ", "), nargs)
-			callArgs = ", _s..."
+			idVarArgs := ia.allocateIdentifier("varargs")
+			g.p("%s := append([]interface{}{%s}, %s...)",
+				idVarArgs,
+				strings.Join(argNames[:len(argNames)-1], ", "),
+				argNames[len(argNames)-1])
+			callArgs = ", " + idVarArgs + "..."
 		}
 	}
-	g.p(`return _mr.mock.ctrl.RecordCallWithMethodType(_mr.mock, "%s", reflect.TypeOf((*%s)(nil).%s)%s)`, m.Name, mockType, m.Name, callArgs)
+	g.p(`return %s.mock.ctrl.RecordCallWithMethodType(%s.mock, "%s", reflect.TypeOf((*%s)(nil).%s)%s)`, idRecv, idRecv, m.Name, mockType, m.Name, callArgs)
 
 	g.out()
 	g.p("}")
 	return nil
+}
+
+func (g *generator) getArgNames(m *model.Method) []string {
+	argNames := make([]string, len(m.In))
+	for i, p := range m.In {
+		name := p.Name
+		if name == "" {
+			name = fmt.Sprintf("arg%d", i)
+		}
+		argNames[i] = name
+	}
+	if m.Variadic != nil {
+		name := m.Variadic.Name
+		if name == "" {
+			name = fmt.Sprintf("arg%d", len(m.In))
+		}
+		argNames = append(argNames, name)
+	}
+	return argNames
+}
+
+func (g *generator) getArgTypes(m *model.Method, pkgOverride string) []string {
+	argTypes := make([]string, len(m.In))
+	for i, p := range m.In {
+		argTypes[i] = p.Type.String(g.packageMap, pkgOverride)
+	}
+	if m.Variadic != nil {
+		argTypes = append(argTypes, "..."+m.Variadic.Type.String(g.packageMap, pkgOverride))
+	}
+	return argTypes
+}
+
+type identifierAllocator map[string]struct{}
+
+func newIdentifierAllocator(taken []string) identifierAllocator {
+	a := make(identifierAllocator, len(taken))
+	for _, s := range taken {
+		a[s] = struct{}{}
+	}
+	return a
+}
+
+func (o identifierAllocator) allocateIdentifier(want string) string {
+	id := want
+	for i := 2; ; i++ {
+		if _, ok := o[id]; !ok {
+			o[id] = struct{}{}
+			return id
+		}
+		id = want + "_" + strconv.Itoa(i)
+	}
 }
 
 // Output returns the generator's output, formatted in the standard Go style.
