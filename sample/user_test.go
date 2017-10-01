@@ -68,8 +68,7 @@ func TestVariadicFunction(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockIndex := mock_user.NewMockIndex(ctrl)
-	m := mockIndex.EXPECT().Ellip("%d", 0, 1, 1, 2, 3)
-	m.Do(func(format string, nums ...int) {
+	mockIndex.EXPECT().Ellip("%d", 0, 1, 1, 2, 3).Do(func(format string, nums ...int) {
 		sum := 0
 		for _, value := range nums {
 			sum += value
@@ -78,8 +77,48 @@ func TestVariadicFunction(t *testing.T) {
 			t.Errorf("Expected 7, got %d", sum)
 		}
 	})
+	mockIndex.EXPECT().Ellip("%d", gomock.Any()).Do(func(format string, nums ...int) {
+		sum := 0
+		for _, value := range nums {
+			sum += value
+		}
+		if sum != 7 {
+			t.Errorf("Expected 7, got %d", sum)
+		}
+	})
+	mockIndex.EXPECT().Ellip("%d", gomock.Any()).Do(func(format string, nums ...int) {
+		sum := 0
+		for _, value := range nums {
+			sum += value
+		}
+		if sum != 0 {
+			t.Errorf("Expected 0, got %d", sum)
+		}
+	})
+	mockIndex.EXPECT().Ellip("%d", gomock.Any()).Do(func(format string, nums ...int) {
+		sum := 0
+		for _, value := range nums {
+			sum += value
+		}
+		if sum != 0 {
+			t.Errorf("Expected 0, got %d", sum)
+		}
+	})
+	mockIndex.EXPECT().Ellip("%d").Do(func(format string, nums ...int) {
+		sum := 0
+		for _, value := range nums {
+			sum += value
+		}
+		if sum != 0 {
+			t.Errorf("Expected 0, got %d", sum)
+		}
+	})
 
 	mockIndex.Ellip("%d", 0, 1, 1, 2, 3)
+	mockIndex.Ellip("%d", 0, 1, 1, 2, 3)
+	mockIndex.Ellip("%d", 0)
+	mockIndex.Ellip("%d")
+	mockIndex.Ellip("%d")
 }
 
 func TestGrabPointer(t *testing.T) {
