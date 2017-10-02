@@ -80,6 +80,10 @@ func (c *Call) Do(f interface{}) *Call {
 
 // Return declares the values to be returned by the mocked function call.
 func (c *Call) Return(rets ...interface{}) *Call {
+	if h, ok := c.t.(testHelper); ok {
+		h.Helper()
+	}
+
 	mt := c.methodType
 	if len(rets) != mt.NumOut() {
 		c.t.Fatalf("wrong number of arguments to Return for %T.%v: got %d, want %d [%s]",
@@ -123,6 +127,10 @@ func (c *Call) Times(n int) *Call {
 // indirected through a pointer. Or, in the case of a slice, SetArg
 // will copy value's elements into the nth argument.
 func (c *Call) SetArg(n int, value interface{}) *Call {
+	if h, ok := c.t.(testHelper); ok {
+		h.Helper()
+	}
+
 	if c.setArgs == nil {
 		c.setArgs = make(map[int]reflect.Value)
 	}
@@ -167,6 +175,10 @@ func (c *Call) isPreReq(other *Call) bool {
 
 // After declares that the call may only match after preReq has been exhausted.
 func (c *Call) After(preReq *Call) *Call {
+	if h, ok := c.t.(testHelper); ok {
+		h.Helper()
+	}
+
 	if c == preReq {
 		c.t.Fatalf("A call isn't allowed to be its own prerequisite")
 	}
@@ -200,14 +212,68 @@ func (c *Call) String() string {
 // Tests if the given call matches the expected call.
 // If yes, returns nil. If no, returns error with message explaining why it does not match.
 func (c *Call) matches(args []interface{}) error {
-	if len(args) != len(c.args) {
-		return fmt.Errorf("Expected call at %s has the wrong number of arguments. Got: %s, want: %s",
-			c.origin, strconv.Itoa(len(args)), strconv.Itoa(len(c.args)))
-	}
-	for i, m := range c.args {
-		if !m.Matches(args[i]) {
-			return fmt.Errorf("Expected call at %s doesn't match the argument at index %s.\nGot: %v\nWant: %v",
-				c.origin, strconv.Itoa(i), args[i], m)
+	if !c.methodType.IsVariadic() {
+		if len(args) != len(c.args) {
+			return fmt.Errorf("Expected call at %s has the wrong number of arguments. Got: %d, want: %d",
+				c.origin, len(args), len(c.args))
+		}
+
+		for i, m := range c.args {
+			if !m.Matches(args[i]) {
+				return fmt.Errorf("Expected call at %s doesn't match the argument at index %s.\nGot: %v\nWant: %v",
+					c.origin, strconv.Itoa(i), args[i], m)
+			}
+		}
+	} else {
+		if len(c.args) < c.methodType.NumIn()-1 {
+			return fmt.Errorf("Expected call at %s has the wrong number of matchers. Got: %d, want: %d",
+				c.origin, len(c.args), c.methodType.NumIn()-1)
+		}
+		if len(c.args) != c.methodType.NumIn() && len(args) != len(c.args) {
+			return fmt.Errorf("Expected call at %s has the wrong number of arguments. Got: %d, want: %d",
+				c.origin, len(args), len(c.args))
+		}
+		if len(args) < len(c.args)-1 {
+			return fmt.Errorf("Expected call at %s has the wrong number of arguments. Got: %d, want: greater than or equal to %d",
+				c.origin, len(args), len(c.args)-1)
+		}
+
+		for i, m := range c.args {
+			if i == len(c.args)-1 {
+				// The last arg has a possibility of a variadic argument, so let it branch
+
+				// sample: Foo(a int, b int, c ...int)
+
+				if len(c.args) == len(args) {
+					if c.args[i].Matches(args[i]) {
+						// Got Foo(a, b, c) want Foo(matcherA, matcherB, gomock.Any())
+						// Got Foo(a, b, c) want Foo(matcherA, matcherB, someSliceMatcher)
+						// Got Foo(a, b, c) want Foo(matcherA, matcherB, matcherC)
+						// Got Foo(a, b) want Foo(matcherA, matcherB)
+						// Got Foo(a, b, c, d) want Foo(matcherA, matcherB, matcherC, matcherD)
+						break
+					}
+				} else if c.args[i].Matches(args[i:]) {
+					// Got Foo(a, b, c, d, e) want Foo(matcherA, matcherB, gomock.Any())
+					// Got Foo(a, b, c, d, e) want Foo(matcherA, matcherB, someSliceMatcher)
+					// Got Foo(a, b) want Foo(matcherA, matcherB, gomock.Any())
+					// Got Foo(a, b) want Foo(matcherA, matcherB, someEmptySliceMatcher)
+					break
+				}
+				// Wrong number of matchers or not match. Fail.
+				// Got Foo(a, b) want Foo(matcherA, matcherB, matcherC, matcherD)
+				// Got Foo(a, b, c) want Foo(matcherA, matcherB, matcherC, matcherD)
+				// Got Foo(a, b, c, d) want Foo(matcherA, matcherB, matcherC, matcherD, matcherE)
+				// Got Foo(a, b, c, d, e) want Foo(matcherA, matcherB, matcherC, matcherD)
+				// Got Foo(a, b, c) want Foo(matcherA, matcherB)
+				return fmt.Errorf("Expected call at %s doesn't match the argument at index %s.\nGot: %v\nWant: %v",
+					c.origin, strconv.Itoa(i), args[i:], c.args[i])
+			}
+
+			if !m.Matches(args[i]) {
+				return fmt.Errorf("Expected call at %s doesn't match the argument at index %s.\nGot: %v\nWant: %v",
+					c.origin, strconv.Itoa(i), args[i], m)
+			}
 		}
 	}
 
