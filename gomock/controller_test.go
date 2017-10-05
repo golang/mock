@@ -20,8 +20,8 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"strings"
 	"strconv"
+	"strings"
 )
 
 type ErrorReporter struct {
