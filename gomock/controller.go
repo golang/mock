@@ -56,6 +56,7 @@
 package gomock
 
 import (
+	"context"
 	"fmt"
 	"reflect"
 	"runtime"
@@ -83,6 +84,24 @@ func NewController(t TestReporter) *Controller {
 		t:             t,
 		expectedCalls: make(callSet),
 	}
+}
+
+type cancelReporter struct {
+	t      TestReporter
+	cancel func()
+}
+
+func (r *cancelReporter) Errorf(format string, args ...interface{}) { r.t.Errorf(format, args...) }
+func (r *cancelReporter) Fatalf(format string, args ...interface{}) {
+	defer r.cancel()
+	r.t.Fatalf(format, args...)
+}
+
+// WithContext returns a new Controller and a Context, which is cancelled on any
+// fatal failure.
+func WithContext(ctx context.Context, t TestReporter) (*Controller, context.Context) {
+	ctx, cancel := context.WithCancel(ctx)
+	return NewController(&cancelReporter{t, cancel}), ctx
 }
 
 func (ctrl *Controller) RecordCall(receiver interface{}, method string, args ...interface{}) *Call {
