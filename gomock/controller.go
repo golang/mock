@@ -167,7 +167,7 @@ func (ctrl *Controller) Call(receiver interface{}, method string, args ...interf
 		ctrl.expectedCalls.Remove(preReqCall)
 	}
 
-	rets, action := expected.call(args)
+	action := expected.call(args)
 	if expected.exhausted() {
 		ctrl.expectedCalls.Remove(expected)
 	}
@@ -182,7 +182,7 @@ func (ctrl *Controller) Call(receiver interface{}, method string, args ...interf
 		action()
 	}
 
-	return rets
+	return expected.rets
 }
 
 func (ctrl *Controller) Finish() {

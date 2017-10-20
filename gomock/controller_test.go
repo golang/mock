@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"strconv"
 	"strings"
 )
 
@@ -417,6 +418,38 @@ func TestDo(t *testing.T) {
 	}
 	if "argument" != argument {
 		t.Error("Do callback received wrong argument.")
+	}
+
+	ctrl.Finish()
+}
+
+func TestDoAndReturn(t *testing.T) {
+	_, ctrl := createFixtures(t)
+	subject := new(Subject)
+
+	doCalled := false
+	mc := ctrl.RecordCall(subject, "FooMethod", gomock.Any()).Return(1).Times(2)
+	mc.Do(
+		func(arg string) {
+			doCalled = true
+			intArg, _ := strconv.Atoi(arg)
+			mc.Return(2 * intArg)
+		})
+
+	// Call once
+	assertEqual(
+		t,
+		[]interface{}{2 * 1},
+		ctrl.Call(subject, "FooMethod", "1"))
+
+	// Call twice
+	assertEqual(
+		t,
+		[]interface{}{2 * 2},
+		ctrl.Call(subject, "FooMethod", "2"))
+
+	if !doCalled {
+		t.Error("Do() callback not called.")
 	}
 
 	ctrl.Finish()
