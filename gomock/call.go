@@ -116,8 +116,8 @@ func (c *Call) Do(f interface{}) *Call {
 				// Use the zero value for the arg.
 				vargs[i] = reflect.Zero(ft.In(i))
 			}
-			v.Call(vargs)
 		}
+		v.Call(vargs)
 		return nil
 	})
 	return c
