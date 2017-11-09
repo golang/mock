@@ -25,12 +25,11 @@ import (
 type Call struct {
 	t TestReporter // for triggering test failures on invalid call setup
 
-	receiver   interface{}   // the receiver of the method call
-	method     string        // the name of the method
-	methodType reflect.Type  // the type of the method
-	args       []Matcher     // the args
-	rets       []interface{} // the return values (if any)
-	origin     string        // file and line number of call setup
+	receiver   interface{}  // the receiver of the method call
+	method     string       // the name of the method
+	methodType reflect.Type // the type of the method
+	args       []Matcher    // the args
+	origin     string       // file and line number of call setup
 
 	preReqs []*Call // prerequisite calls
 
@@ -39,9 +38,10 @@ type Call struct {
 
 	numCalls int // actual number made
 
-	// Actions
-	doFunc  reflect.Value
-	setArgs map[int]reflect.Value
+	// actions are called when this Call is called. Each action gets the args and
+	// can set the return values by returning a non-nil slice. Actions run in the
+	// order they are created.
+	actions []func([]interface{}) []interface{}
 }
 
 // AnyTimes allows the expectation to be called 0 or more times
@@ -70,11 +70,56 @@ func (c *Call) MaxTimes(n int) *Call {
 	return c
 }
 
-// Do declares the action to run when the call is matched.
+// DoAndReturn declares the action to run when the call is matched.
+// The return values from this function are returned by the mocked function.
+// It takes an interface{} argument to support n-arity functions.
+func (c *Call) DoAndReturn(f interface{}) *Call {
+	// TODO: Check arity and types here, rather than dying badly elsewhere.
+	v := reflect.ValueOf(f)
+
+	c.addAction(func(args []interface{}) []interface{} {
+		vargs := make([]reflect.Value, len(args))
+		ft := v.Type()
+		for i := 0; i < len(args); i++ {
+			if args[i] != nil {
+				vargs[i] = reflect.ValueOf(args[i])
+			} else {
+				// Use the zero value for the arg.
+				vargs[i] = reflect.Zero(ft.In(i))
+			}
+		}
+		vrets := v.Call(vargs)
+		rets := make([]interface{}, len(vrets))
+		for i, ret := range vrets {
+			rets[i] = ret.Interface()
+		}
+		return rets
+	})
+	return c
+}
+
+// Do declares the action to run when the call is matched. The function's
+// return values are ignored to retain backward compatibility. To use the
+// return values call DoAndReturn.
 // It takes an interface{} argument to support n-arity functions.
 func (c *Call) Do(f interface{}) *Call {
 	// TODO: Check arity and types here, rather than dying badly elsewhere.
-	c.doFunc = reflect.ValueOf(f)
+	v := reflect.ValueOf(f)
+
+	c.addAction(func(args []interface{}) []interface{} {
+		vargs := make([]reflect.Value, len(args))
+		ft := v.Type()
+		for i := 0; i < len(args); i++ {
+			if args[i] != nil {
+				vargs[i] = reflect.ValueOf(args[i])
+			} else {
+				// Use the zero value for the arg.
+				vargs[i] = reflect.Zero(ft.In(i))
+			}
+			v.Call(vargs)
+		}
+		return nil
+	})
 	return c
 }
 
@@ -113,7 +158,10 @@ func (c *Call) Return(rets ...interface{}) *Call {
 		}
 	}
 
-	c.rets = rets
+	c.addAction(func([]interface{}) []interface{} {
+		return rets
+	})
+
 	return c
 }
 
@@ -131,9 +179,6 @@ func (c *Call) SetArg(n int, value interface{}) *Call {
 		h.Helper()
 	}
 
-	if c.setArgs == nil {
-		c.setArgs = make(map[int]reflect.Value)
-	}
 	mt := c.methodType
 	// TODO: This will break on variadic methods.
 	// We will need to check those at invocation time.
@@ -159,7 +204,17 @@ func (c *Call) SetArg(n int, value interface{}) *Call {
 		c.t.Fatalf("SetArg(%d, ...) referring to argument of non-pointer non-interface non-slice type %v [%s]",
 			n, at, c.origin)
 	}
-	c.setArgs[n] = reflect.ValueOf(value)
+
+	c.addAction(func(args []interface{}) []interface{} {
+		v := reflect.ValueOf(value)
+		switch reflect.TypeOf(args[n]).Kind() {
+		case reflect.Slice:
+			setSlice(args[n], v)
+		default:
+			reflect.ValueOf(args[n]).Elem().Set(v)
+		}
+		return nil
+	})
 	return c
 }
 
@@ -296,43 +351,21 @@ func (c *Call) dropPrereqs() (preReqs []*Call) {
 	return
 }
 
-func (c *Call) call(args []interface{}) (rets []interface{}, action func()) {
-	c.numCalls++
-
-	// Actions
-	if c.doFunc.IsValid() {
-		doArgs := make([]reflect.Value, len(args))
-		ft := c.doFunc.Type()
-		for i := 0; i < len(args); i++ {
-			if args[i] != nil {
-				doArgs[i] = reflect.ValueOf(args[i])
-			} else {
-				// Use the zero value for the arg.
-				doArgs[i] = reflect.Zero(ft.In(i))
-			}
-		}
-		action = func() { c.doFunc.Call(doArgs) }
-	}
-	for n, v := range c.setArgs {
-		switch reflect.TypeOf(args[n]).Kind() {
-		case reflect.Slice:
-			setSlice(args[n], v)
-		default:
-			reflect.ValueOf(args[n]).Elem().Set(v)
-		}
-	}
-
-	rets = c.rets
-	if rets == nil {
+func (c *Call) defaultActions() []func([]interface{}) []interface{} {
+	return []func([]interface{}) []interface{}{func([]interface{}) []interface{} {
 		// Synthesize the zero value for each of the return args' types.
 		mt := c.methodType
-		rets = make([]interface{}, mt.NumOut())
+		rets := make([]interface{}, mt.NumOut())
 		for i := 0; i < mt.NumOut(); i++ {
 			rets[i] = reflect.Zero(mt.Out(i)).Interface()
 		}
-	}
+		return rets
+	}}
+}
 
-	return
+func (c *Call) call(args []interface{}) []func([]interface{}) []interface{} {
+	c.numCalls++
+	return c.actions
 }
 
 // InOrder declares that the given calls should occur in order.
@@ -347,4 +380,8 @@ func setSlice(arg interface{}, v reflect.Value) {
 	for i := 0; i < v.Len(); i++ {
 		va.Index(i).Set(v.Index(i))
 	}
+}
+
+func (c *Call) addAction(action func([]interface{}) []interface{}) {
+	c.actions = append(c.actions, action)
 }
