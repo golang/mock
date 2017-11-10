@@ -245,7 +245,7 @@ func (c *Call) matches(args []interface{}) error {
 				// sample: Foo(a int, b int, c ...int)
 
 				if len(c.args) == len(args) {
-					if c.args[i].Matches(args[i]) {
+					if m.Matches(args[i]) {
 						// Got Foo(a, b, c) want Foo(matcherA, matcherB, gomock.Any())
 						// Got Foo(a, b, c) want Foo(matcherA, matcherB, someSliceMatcher)
 						// Got Foo(a, b, c) want Foo(matcherA, matcherB, matcherC)
@@ -253,7 +253,18 @@ func (c *Call) matches(args []interface{}) error {
 						// Got Foo(a, b, c, d) want Foo(matcherA, matcherB, matcherC, matcherD)
 						break
 					}
-				} else if c.args[i].Matches(args[i:]) {
+				}
+				// The number of actual args don't match the number of matchers.
+				// If this function still matches it is because the last matcher
+				// matches all the remaining arguments or the lack of any.
+				// Convert the remaining arguments, if any, into a slice of the
+				// expected type.
+				vargsType := c.methodType.In(c.methodType.NumIn() - 1)
+				vargs := reflect.MakeSlice(vargsType, 0, len(args)-i)
+				for _, arg := range args[i:] {
+					vargs = reflect.Append(vargs, reflect.ValueOf(arg))
+				}
+				if m.Matches(vargs.Interface()) {
 					// Got Foo(a, b, c, d, e) want Foo(matcherA, matcherB, gomock.Any())
 					// Got Foo(a, b, c, d, e) want Foo(matcherA, matcherB, someSliceMatcher)
 					// Got Foo(a, b) want Foo(matcherA, matcherB, gomock.Any())

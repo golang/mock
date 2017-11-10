@@ -132,6 +132,8 @@ func (s *Subject) BarMethod(arg string) int {
 	return 0
 }
 
+func (s *Subject) VariadicMethod(arg ...string) {}
+
 // A type purely for ActOnTestStructMethod
 type TestStruct struct {
 	Number  int
@@ -578,4 +580,37 @@ func TestTimes0(t *testing.T) {
 	rep.assertFatal(func() {
 		ctrl.Call(s, "FooMethod", "arg")
 	})
+}
+
+func TestVariadicMatching(t *testing.T) {
+	rep, ctrl := createFixtures(t)
+	defer rep.recoverUnexpectedFatal()
+
+	s := new(Subject)
+	ctrl.RecordCall(s, "VariadicMethod", "1", "2")
+	ctrl.Call(s, "VariadicMethod", "1", "2")
+	ctrl.Finish()
+	rep.assertPass("variadic matching works")
+}
+
+func TestVariadicMatchingWithSlice(t *testing.T) {
+	testCases := [][]string{
+		{"1"}, {"1", "2"},
+	}
+	for _, tc := range testCases {
+		t.Run(fmt.Sprintf("%d arguments", len(tc)), func(t *testing.T) {
+			rep, ctrl := createFixtures(t)
+			defer rep.recoverUnexpectedFatal()
+
+			s := new(Subject)
+			ctrl.RecordCall(s, "VariadicMethod", tc)
+			args := make([]interface{}, len(tc))
+			for i, arg := range tc {
+				args[i] = arg
+			}
+			ctrl.Call(s, "VariadicMethod", args...)
+			ctrl.Finish()
+			rep.assertPass("slices can be used as matchers for variadic arguments")
+		})
+	}
 }
