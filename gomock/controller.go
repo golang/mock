@@ -76,13 +76,13 @@ type TestReporter interface {
 type Controller struct {
 	mu            sync.Mutex
 	t             TestReporter
-	expectedCalls callSet
+	expectedCalls *callSet
 }
 
 func NewController(t TestReporter) *Controller {
 	return &Controller{
 		t:             t,
-		expectedCalls: make(callSet),
+		expectedCalls: newCallSet(),
 	}
 }
 
@@ -121,27 +121,16 @@ func (ctrl *Controller) RecordCall(receiver interface{}, method string, args ...
 }
 
 func (ctrl *Controller) RecordCallWithMethodType(receiver interface{}, method string, methodType reflect.Type, args ...interface{}) *Call {
-	// TODO: check arity, types.
-	margs := make([]Matcher, len(args))
-	for i, arg := range args {
-		if m, ok := arg.(Matcher); ok {
-			margs[i] = m
-		} else if arg == nil {
-			// Handle nil specially so that passing a nil interface value
-			// will match the typed nils of concrete args.
-			margs[i] = Nil()
-		} else {
-			margs[i] = Eq(arg)
-		}
+	if h, ok := ctrl.t.(testHelper); ok {
+		h.Helper()
 	}
+
+	call := newCall(ctrl.t, receiver, method, methodType, args...)
 
 	ctrl.mu.Lock()
 	defer ctrl.mu.Unlock()
-
-	origin := callerInfo(2)
-	call := &Call{t: ctrl.t, receiver: receiver, method: method, methodType: methodType, args: margs, origin: origin, minCalls: 1, maxCalls: 1}
-
 	ctrl.expectedCalls.Add(call)
+
 	return call
 }
 
@@ -200,18 +189,11 @@ func (ctrl *Controller) Finish() {
 	}
 
 	// Check that all remaining expected calls are satisfied.
-	failures := false
-	for _, methodMap := range ctrl.expectedCalls {
-		for _, calls := range methodMap {
-			for _, call := range calls {
-				if !call.satisfied() {
-					ctrl.t.Errorf("missing call(s) to %v", call)
-					failures = true
-				}
-			}
-		}
+	failures := ctrl.expectedCalls.Failures()
+	for _, call := range failures {
+		ctrl.t.Errorf("missing call(s) to %v", call)
 	}
-	if failures {
+	if len(failures) != 0 {
 		ctrl.t.Fatalf("aborting test due to missing call(s)")
 	}
 }

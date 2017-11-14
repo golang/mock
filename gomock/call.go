@@ -44,6 +44,31 @@ type Call struct {
 	setArgs map[int]reflect.Value
 }
 
+// newCall creates a *Call. It requires the method type in order to support
+// unexported methods.
+func newCall(t TestReporter, receiver interface{}, method string, methodType reflect.Type, args ...interface{}) *Call {
+	if h, ok := t.(testHelper); ok {
+		h.Helper()
+	}
+
+	// TODO: check arity, types.
+	margs := make([]Matcher, len(args))
+	for i, arg := range args {
+		if m, ok := arg.(Matcher); ok {
+			margs[i] = m
+		} else if arg == nil {
+			// Handle nil specially so that passing a nil interface value
+			// will match the typed nils of concrete args.
+			margs[i] = Nil()
+		} else {
+			margs[i] = Eq(arg)
+		}
+	}
+
+	origin := callerInfo(3)
+	return &Call{t: t, receiver: receiver, method: method, methodType: methodType, args: margs, origin: origin, minCalls: 1, maxCalls: 1}
+}
+
 // AnyTimes allows the expectation to be called 0 or more times
 func (c *Call) AnyTimes() *Call {
 	c.minCalls, c.maxCalls = 0, 1e8 // close enough to infinity
@@ -283,6 +308,11 @@ func (c *Call) matches(args []interface{}) error {
 			return fmt.Errorf("Expected call at %s doesn't have a prerequisite call satisfied:\n%v\nshould be called before:\n%v",
 				c.origin, preReqCall, c)
 		}
+	}
+
+	// Check that the call is not exhausted.
+	if c.exhausted() {
+		return fmt.Errorf("Expected call at %s has already been called the max number of times.", c.origin)
 	}
 
 	return nil

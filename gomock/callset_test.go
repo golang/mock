@@ -14,40 +14,45 @@
 
 package gomock
 
-import "testing"
+import (
+	"reflect"
+	"testing"
+)
+
+type receiverType struct{}
+
+func (receiverType) Func() {}
 
 func TestCallSetAdd(t *testing.T) {
-	methodVal := "TestMethod"
-	var receiverVal interface{} = "TestReceiver"
-	cs := make(callSet)
+	method := "TestMethod"
+	var receiver interface{} = "TestReceiver"
+	cs := newCallSet()
 
 	numCalls := 10
 	for i := 0; i < numCalls; i++ {
-		cs.Add(&Call{receiver: receiverVal, method: methodVal})
+		cs.Add(newCall(t, receiver, method, reflect.TypeOf(receiverType{}.Func)))
 	}
 
-	if len(cs) != 1 {
-		t.Errorf("expected only one reciever in callSet")
+	call, err := cs.FindMatch(receiver, method, []interface{}{})
+	if err != nil {
+		t.Fatalf("FindMatch: %v", err)
 	}
-	if numActualMethods := len(cs[receiverVal]); numActualMethods != 1 {
-		t.Errorf("expected only method on the reciever in callSet, found %d", numActualMethods)
-	}
-	if numActualCalls := len(cs[receiverVal][methodVal]); numActualCalls != numCalls {
-		t.Errorf("expected all %d calls in callSet, found %d", numCalls, numActualCalls)
+	if call == nil {
+		t.Fatalf("FindMatch: Got nil, want non-nil *Call")
 	}
 }
 
 func TestCallSetRemove(t *testing.T) {
-	methodVal := "TestMethod"
-	var receiverVal interface{} = "TestReceiver"
+	method := "TestMethod"
+	var receiver interface{} = "TestReceiver"
 
-	cs := make(callSet)
+	cs := newCallSet()
 	ourCalls := []*Call{}
 
 	numCalls := 10
 	for i := 0; i < numCalls; i++ {
 		// NOTE: abuse the `numCalls` value to convey initial ordering of mocked calls
-		generatedCall := &Call{receiver: receiverVal, method: methodVal, numCalls: i}
+		generatedCall := &Call{receiver: receiver, method: method, numCalls: i}
 		cs.Add(generatedCall)
 		ourCalls = append(ourCalls, generatedCall)
 	}
@@ -65,7 +70,7 @@ func TestCallSetRemove(t *testing.T) {
 	}
 
 	for _, c := range ourCalls {
-		validateOrder(cs[receiverVal][methodVal])
+		validateOrder(cs.expected[callSetKey{receiver, method}])
 		cs.Remove(c)
 	}
 }
