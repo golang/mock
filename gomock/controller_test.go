@@ -142,6 +142,8 @@ func (s *Subject) ActOnTestStructMethod(arg TestStruct, arg1 int) int {
 	return 0
 }
 
+func (s *Subject) SetArgMethod(sliceArg []byte, ptrArg *int) {}
+
 func assertEqual(t *testing.T, expected interface{}, actual interface{}) {
 	if !reflect.DeepEqual(expected, actual) {
 		t.Errorf("Expected %+v, but got %+v", expected, actual)
@@ -417,6 +419,74 @@ func TestDo(t *testing.T) {
 	}
 	if "argument" != argument {
 		t.Error("Do callback received wrong argument.")
+	}
+
+	ctrl.Finish()
+}
+
+func TestDoAndReturn(t *testing.T) {
+	_, ctrl := createFixtures(t)
+	subject := new(Subject)
+
+	doCalled := false
+	var argument string
+	ctrl.RecordCall(subject, "FooMethod", "argument").DoAndReturn(
+		func(arg string) int {
+			doCalled = true
+			argument = arg
+			return 5
+		})
+	if doCalled {
+		t.Error("Do() callback called too early.")
+	}
+
+	rets := ctrl.Call(subject, "FooMethod", "argument")
+
+	if !doCalled {
+		t.Error("Do() callback not called.")
+	}
+	if "argument" != argument {
+		t.Error("Do callback received wrong argument.")
+	}
+	if len(rets) != 1 {
+		t.Fatalf("Return values from Call: got %d, want 1", len(rets))
+	}
+	if ret, ok := rets[0].(int); !ok {
+		t.Fatalf("Return value is not an int")
+	} else if ret != 5 {
+		t.Errorf("DoAndReturn return value: got %d, want 5", ret)
+	}
+
+	ctrl.Finish()
+}
+
+func TestSetArgSlice(t *testing.T) {
+	_, ctrl := createFixtures(t)
+	subject := new(Subject)
+
+	var in = []byte{4, 5, 6}
+	var set = []byte{1, 2, 3}
+	ctrl.RecordCall(subject, "SetArgMethod", in, nil).SetArg(0, set)
+	ctrl.Call(subject, "SetArgMethod", in, nil)
+
+	if !reflect.DeepEqual(in, set) {
+		t.Error("Expected SetArg() to modify input slice argument")
+	}
+
+	ctrl.Finish()
+}
+
+func TestSetArgPtr(t *testing.T) {
+	_, ctrl := createFixtures(t)
+	subject := new(Subject)
+
+	var in int = 43
+	const set = 42
+	ctrl.RecordCall(subject, "SetArgMethod", nil, &in).SetArg(1, set)
+	ctrl.Call(subject, "SetArgMethod", nil, &in)
+
+	if in != set {
+		t.Error("Expected SetArg() to modify value pointed to by argument")
 	}
 
 	ctrl.Finish()

@@ -1,7 +1,6 @@
 package gomock
 
 import (
-	"reflect"
 	"testing"
 )
 
@@ -47,37 +46,6 @@ func TestCall_After(t *testing.T) {
 
 		if tr2.fatalCalls != 1 {
 			t.Errorf("number of fatal calls == %v, want 1", tr2.fatalCalls)
-		}
-	})
-}
-
-func TestCall_SetArg(t *testing.T) {
-	t.Run("SetArgSlice", func(t *testing.T) {
-		c := &Call{
-			methodType: reflect.TypeOf(func([]byte) {}),
-			t:          &mockTestReporter{},
-		}
-		c.SetArg(0, []byte{1, 2, 3})
-
-		in := []byte{4, 5, 6}
-		c.call([]interface{}{in})
-
-		if in[0] != 1 || in[1] != 2 || in[2] != 3 {
-			t.Error("Expected SetArg() to modify input slice argument")
-		}
-	})
-
-	t.Run("SetArgPointer", func(t *testing.T) {
-		c := &Call{
-			methodType: reflect.TypeOf(func(*int) {}),
-			t:          &mockTestReporter{},
-		}
-		c.SetArg(0, 42)
-
-		in := 43
-		c.call([]interface{}{&in})
-		if in != 42 {
-			t.Error("Expected SetArg() to modify value pointed to by argument")
 		}
 	})
 }

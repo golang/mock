@@ -116,8 +116,7 @@ func (ctrl *Controller) RecordCall(receiver interface{}, method string, args ...
 		}
 	}
 	ctrl.t.Fatalf("gomock: failed finding method %s on %T", method, receiver)
-	// In case t.Fatalf does not panic.
-	panic(fmt.Sprintf("gomock: failed finding method %s on %T", method, receiver))
+	panic("unreachable")
 }
 
 func (ctrl *Controller) RecordCallWithMethodType(receiver interface{}, method string, methodType reflect.Type, args ...interface{}) *Call {
@@ -140,6 +139,7 @@ func (ctrl *Controller) RecordCallWithMethodType(receiver interface{}, method st
 
 	origin := callerInfo(2)
 	call := &Call{t: ctrl.t, receiver: receiver, method: method, methodType: methodType, args: margs, origin: origin, minCalls: 1, maxCalls: 1}
+	call.actions = call.defaultActions()
 
 	ctrl.expectedCalls.Add(call)
 	return call
@@ -150,36 +150,37 @@ func (ctrl *Controller) Call(receiver interface{}, method string, args ...interf
 		h.Helper()
 	}
 
-	ctrl.mu.Lock()
-	defer ctrl.mu.Unlock()
+	// Nest this code so we can use defer to make sure the lock is released.
+	actions := func() []func([]interface{}) []interface{} {
+		ctrl.mu.Lock()
+		defer ctrl.mu.Unlock()
 
-	expected, err := ctrl.expectedCalls.FindMatch(receiver, method, args)
-	if err != nil {
-		origin := callerInfo(2)
-		ctrl.t.Fatalf("Unexpected call to %T.%v(%v) at %s because: %s", receiver, method, args, origin, err)
-	}
+		expected, err := ctrl.expectedCalls.FindMatch(receiver, method, args)
+		if err != nil {
+			origin := callerInfo(2)
+			ctrl.t.Fatalf("Unexpected call to %T.%v(%v) at %s because: %s", receiver, method, args, origin, err)
+		}
 
-	// Two things happen here:
-	// * the matching call no longer needs to check prerequite calls,
-	// * and the prerequite calls are no longer expected, so remove them.
-	preReqCalls := expected.dropPrereqs()
-	for _, preReqCall := range preReqCalls {
-		ctrl.expectedCalls.Remove(preReqCall)
-	}
+		// Two things happen here:
+		// * the matching call no longer needs to check prerequite calls,
+		// * and the prerequite calls are no longer expected, so remove them.
+		preReqCalls := expected.dropPrereqs()
+		for _, preReqCall := range preReqCalls {
+			ctrl.expectedCalls.Remove(preReqCall)
+		}
 
-	rets, action := expected.call(args)
-	if expected.exhausted() {
-		ctrl.expectedCalls.Remove(expected)
-	}
+		actions := expected.call(args)
+		if expected.exhausted() {
+			ctrl.expectedCalls.Remove(expected)
+		}
+		return actions
+	}()
 
-	// Don't hold the lock while doing the call's action (if any)
-	// so that actions may execute concurrently.
-	// We use the deferred Unlock to capture any panics that happen above;
-	// here we add a deferred Lock to balance it.
-	ctrl.mu.Unlock()
-	defer ctrl.mu.Lock()
-	if action != nil {
-		action()
+	var rets []interface{}
+	for _, action := range actions {
+		if r := action(args); r != nil {
+			rets = r
+		}
 	}
 
 	return rets
