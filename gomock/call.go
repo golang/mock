@@ -44,6 +44,40 @@ type Call struct {
 	actions []func([]interface{}) []interface{}
 }
 
+// newCall creates a *Call. It requires the method type in order to support
+// unexported methods.
+func newCall(t TestReporter, receiver interface{}, method string, methodType reflect.Type, args ...interface{}) *Call {
+	if h, ok := t.(testHelper); ok {
+		h.Helper()
+	}
+
+	// TODO: check arity, types.
+	margs := make([]Matcher, len(args))
+	for i, arg := range args {
+		if m, ok := arg.(Matcher); ok {
+			margs[i] = m
+		} else if arg == nil {
+			// Handle nil specially so that passing a nil interface value
+			// will match the typed nils of concrete args.
+			margs[i] = Nil()
+		} else {
+			margs[i] = Eq(arg)
+		}
+	}
+
+	origin := callerInfo(3)
+	actions := []func([]interface{}) []interface{}{func([]interface{}) []interface{} {
+		// Synthesize the zero value for each of the return args' types.
+		rets := make([]interface{}, methodType.NumOut())
+		for i := 0; i < methodType.NumOut(); i++ {
+			rets[i] = reflect.Zero(methodType.Out(i)).Interface()
+		}
+		return rets
+	}}
+	return &Call{t: t, receiver: receiver, method: method, methodType: methodType,
+		args: margs, origin: origin, minCalls: 1, maxCalls: 1, actions: actions}
+}
+
 // AnyTimes allows the expectation to be called 0 or more times
 func (c *Call) AnyTimes() *Call {
 	c.minCalls, c.maxCalls = 0, 1e8 // close enough to infinity
@@ -351,6 +385,11 @@ func (c *Call) matches(args []interface{}) error {
 		}
 	}
 
+	// Check that the call is not exhausted.
+	if c.exhausted() {
+		return fmt.Errorf("Expected call at %s has already been called the max number of times.", c.origin)
+	}
+
 	return nil
 }
 
@@ -360,18 +399,6 @@ func (c *Call) dropPrereqs() (preReqs []*Call) {
 	preReqs = c.preReqs
 	c.preReqs = nil
 	return
-}
-
-func (c *Call) defaultActions() []func([]interface{}) []interface{} {
-	return []func([]interface{}) []interface{}{func([]interface{}) []interface{} {
-		// Synthesize the zero value for each of the return args' types.
-		mt := c.methodType
-		rets := make([]interface{}, mt.NumOut())
-		for i := 0; i < mt.NumOut(); i++ {
-			rets[i] = reflect.Zero(mt.Out(i)).Interface()
-		}
-		return rets
-	}}
 }
 
 func (c *Call) call(args []interface{}) []func([]interface{}) []interface{} {

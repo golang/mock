@@ -173,7 +173,7 @@ func TestNoRecordedCallsForAReceiver(t *testing.T) {
 
 	reporter.assertFatal(func() {
 		ctrl.Call(subject, "NotRecordedMethod", "argument")
-	}, "Unexpected call to", "there are no expected method calls for that receiver")
+	}, "Unexpected call to", "there are no expected calls of the method \"NotRecordedMethod\" for that receiver")
 	ctrl.Finish()
 }
 
@@ -184,7 +184,7 @@ func TestNoRecordedMatchingMethodNameForAReceiver(t *testing.T) {
 	ctrl.RecordCall(subject, "FooMethod", "argument")
 	reporter.assertFatal(func() {
 		ctrl.Call(subject, "NotRecordedMethod", "argument")
-	}, "Unexpected call to", "there are no expected calls of the method: NotRecordedMethod for that receiver")
+	}, "Unexpected call to", "there are no expected calls of the method \"NotRecordedMethod\" for that receiver")
 	reporter.assertFatal(func() {
 		// The expected call wasn't made.
 		ctrl.Finish()
