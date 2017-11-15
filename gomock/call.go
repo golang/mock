@@ -66,7 +66,16 @@ func newCall(t TestReporter, receiver interface{}, method string, methodType ref
 	}
 
 	origin := callerInfo(3)
-	return &Call{t: t, receiver: receiver, method: method, methodType: methodType, args: margs, origin: origin, minCalls: 1, maxCalls: 1}
+	actions := []func([]interface{}) []interface{}{func([]interface{}) []interface{} {
+		// Synthesize the zero value for each of the return args' types.
+		rets := make([]interface{}, methodType.NumOut())
+		for i := 0; i < methodType.NumOut(); i++ {
+			rets[i] = reflect.Zero(methodType.Out(i)).Interface()
+		}
+		return rets
+	}}
+	return &Call{t: t, receiver: receiver, method: method, methodType: methodType,
+		args: margs, origin: origin, minCalls: 1, maxCalls: 1, actions: actions}
 }
 
 // AnyTimes allows the expectation to be called 0 or more times
@@ -390,18 +399,6 @@ func (c *Call) dropPrereqs() (preReqs []*Call) {
 	preReqs = c.preReqs
 	c.preReqs = nil
 	return
-}
-
-func (c *Call) defaultActions() []func([]interface{}) []interface{} {
-	return []func([]interface{}) []interface{}{func([]interface{}) []interface{} {
-		// Synthesize the zero value for each of the return args' types.
-		mt := c.methodType
-		rets := make([]interface{}, mt.NumOut())
-		for i := 0; i < mt.NumOut(); i++ {
-			rets[i] = reflect.Zero(mt.Out(i)).Interface()
-		}
-		return rets
-	}}
 }
 
 func (c *Call) call(args []interface{}) []func([]interface{}) []interface{} {
