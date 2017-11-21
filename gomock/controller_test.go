@@ -19,8 +19,9 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"strings"
+
+	"github.com/golang/mock/gomock"
 )
 
 type ErrorReporter struct {
@@ -132,7 +133,7 @@ func (s *Subject) BarMethod(arg string) int {
 	return 0
 }
 
-func (s *Subject) VariadicMethod(arg ...string) {}
+func (s *Subject) VariadicMethod(arg int, vararg ...string) {}
 
 // A type purely for ActOnTestStructMethod
 type TestStruct struct {
@@ -657,15 +658,29 @@ func TestVariadicMatching(t *testing.T) {
 	defer rep.recoverUnexpectedFatal()
 
 	s := new(Subject)
-	ctrl.RecordCall(s, "VariadicMethod", "1", "2")
-	ctrl.Call(s, "VariadicMethod", "1", "2")
+	ctrl.RecordCall(s, "VariadicMethod", 0, "1", "2")
+	ctrl.Call(s, "VariadicMethod", 0, "1", "2")
 	ctrl.Finish()
 	rep.assertPass("variadic matching works")
 }
 
+func TestVariadicNoMatch(t *testing.T) {
+	rep, ctrl := createFixtures(t)
+	defer rep.recoverUnexpectedFatal()
+
+	s := new(Subject)
+	ctrl.RecordCall(s, "VariadicMethod", 0)
+	rep.assertFatal(func() {
+		ctrl.Call(s, "VariadicMethod", 1)
+	}, "Expected call at", "doesn't match the argument at index 0",
+		"Got: 1\nWant: is equal to 0")
+	ctrl.Call(s, "VariadicMethod", 0)
+	ctrl.Finish()
+}
+
 func TestVariadicMatchingWithSlice(t *testing.T) {
 	testCases := [][]string{
-		{"1"}, {"1", "2"},
+		{"1", "2"},
 	}
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("%d arguments", len(tc)), func(t *testing.T) {
@@ -673,10 +688,11 @@ func TestVariadicMatchingWithSlice(t *testing.T) {
 			defer rep.recoverUnexpectedFatal()
 
 			s := new(Subject)
-			ctrl.RecordCall(s, "VariadicMethod", tc)
-			args := make([]interface{}, len(tc))
+			ctrl.RecordCall(s, "VariadicMethod", 1, tc)
+			args := make([]interface{}, len(tc)+1)
+			args[0] = 1
 			for i, arg := range tc {
-				args[i] = arg
+				args[i+1] = arg
 			}
 			ctrl.Call(s, "VariadicMethod", args...)
 			ctrl.Finish()

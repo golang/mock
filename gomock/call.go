@@ -341,6 +341,9 @@ func (c *Call) matches(args []interface{}) error {
 						// Got Foo(a, b) want Foo(matcherA, matcherB)
 						// Got Foo(a, b, c, d) want Foo(matcherA, matcherB, matcherC, matcherD)
 						break
+					} else {
+						return fmt.Errorf("Expected call at %s doesn't match the argument at index %s.\nGot: %v\nWant: %v",
+							c.origin, strconv.Itoa(i), args[i], m)
 					}
 				}
 				// The number of actual args don't match the number of matchers.
