@@ -74,6 +74,14 @@ It supports the following flags:
 
 *  `-build_flags`: (reflect mode only) Flags passed verbatim to `go build`.
 
+* `-mock_names`: A list of custom names for generated mocks. This is specified 
+	as a comma-separated list of elements of the form
+	`Repository=MockSensorRepository,Endpoint=MockSensorEndpoint`, where 
+	`Repository` is the interface name and `MockSensorRepository` is the desired
+	mock name (mock factory method and mock recorder will be named after the mock).
+	If one of the interfaces has no custom name specified, then default naming
+	convention will be used.
+
 For an example of the use of `mockgen`, see the `sample/` directory. In simple
 cases, you will need only the `-source` flag.
 

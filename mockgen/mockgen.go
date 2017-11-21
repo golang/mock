@@ -43,6 +43,7 @@ const (
 var (
 	source          = flag.String("source", "", "(source mode) Input Go source file; enables source mode.")
 	destination     = flag.String("destination", "", "Output file; defaults to stdout.")
+	mockNames       = flag.String("mock_names", "", "Comma-separated interfaceName=mockName pairs of explicit mock names to use. Mock names default to 'Mock'+ interfaceName suffix.")
 	packageOut      = flag.String("package", "", "Package of the generated code; defaults to the package of the input with a 'mock_' prefix.")
 	selfPackage     = flag.String("self_package", "", "If set, the package this mock will be part of.")
 	writePkgComment = flag.Bool("write_package_comment", true, "Writes package documentation comment (godoc) if true.")
@@ -98,12 +99,27 @@ func main() {
 		g.srcPackage = flag.Arg(0)
 		g.srcInterfaces = flag.Arg(1)
 	}
+
+	if *mockNames != "" {
+		g.mockNames = parseMockNames(*mockNames)
+	}
 	if err := g.Generate(pkg, packageName); err != nil {
 		log.Fatalf("Failed generating mock: %v", err)
 	}
 	if _, err := dst.Write(g.Output()); err != nil {
 		log.Fatalf("Failed writing to destination: %v", err)
 	}
+}
+func parseMockNames(names string) map[string]string {
+	mocksMap := make(map[string]string)
+	for _, kv := range strings.Split(names, ",") {
+		parts := strings.SplitN(kv, "=", 2)
+		if len(parts) != 2 || parts[1] == "" {
+			log.Fatalf("bad mock names spec: %v", kv)
+		}
+		mocksMap[parts[0]] = parts[1]
+	}
+	return mocksMap
 }
 
 func usage() {
@@ -129,11 +145,11 @@ Example:
 `
 
 type generator struct {
-	buf    bytes.Buffer
-	indent string
-
-	filename                  string // may be empty
-	srcPackage, srcInterfaces string // may be empty
+	buf                       bytes.Buffer
+	indent                    string
+	mockNames                 map[string]string //may be empty
+	filename                  string            // may be empty
+	srcPackage, srcInterfaces string            // may be empty
 
 	packageMap map[string]string // map from import path to package name
 }
@@ -255,12 +271,16 @@ func (g *generator) Generate(pkg *model.Package, pkgName string) error {
 }
 
 // The name of the mock type to use for the given interface identifier.
-func mockName(typeName string) string {
+func (g *generator) mockName(typeName string) string {
+	if mockName, ok := g.mockNames[typeName]; ok {
+		return mockName
+	}
+
 	return "Mock" + typeName
 }
 
 func (g *generator) GenerateMockInterface(intf *model.Interface) error {
-	mockType := mockName(intf.Name)
+	mockType := g.mockName(intf.Name)
 
 	g.p("")
 	g.p("// %v is a mock of %v interface", mockType, intf.Name)
