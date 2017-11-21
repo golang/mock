@@ -328,52 +328,55 @@ func (c *Call) matches(args []interface{}) error {
 		}
 
 		for i, m := range c.args {
-			if i == len(c.args)-1 {
-				// The last arg has a possibility of a variadic argument, so let it branch
-
-				// sample: Foo(a int, b int, c ...int)
-
-				if len(c.args) == len(args) {
-					if m.Matches(args[i]) {
-						// Got Foo(a, b, c) want Foo(matcherA, matcherB, gomock.Any())
-						// Got Foo(a, b, c) want Foo(matcherA, matcherB, someSliceMatcher)
-						// Got Foo(a, b, c) want Foo(matcherA, matcherB, matcherC)
-						// Got Foo(a, b) want Foo(matcherA, matcherB)
-						// Got Foo(a, b, c, d) want Foo(matcherA, matcherB, matcherC, matcherD)
-						break
-					}
+			if i < c.methodType.NumIn()-1 {
+				// Non-variadic args
+				if !m.Matches(args[i]) {
+					return fmt.Errorf("Expected call at %s doesn't match the argument at index %s.\nGot: %v\nWant: %v",
+						c.origin, strconv.Itoa(i), args[i], m)
 				}
-				// The number of actual args don't match the number of matchers.
-				// If this function still matches it is because the last matcher
-				// matches all the remaining arguments or the lack of any.
-				// Convert the remaining arguments, if any, into a slice of the
-				// expected type.
-				vargsType := c.methodType.In(c.methodType.NumIn() - 1)
-				vargs := reflect.MakeSlice(vargsType, 0, len(args)-i)
-				for _, arg := range args[i:] {
-					vargs = reflect.Append(vargs, reflect.ValueOf(arg))
-				}
-				if m.Matches(vargs.Interface()) {
-					// Got Foo(a, b, c, d, e) want Foo(matcherA, matcherB, gomock.Any())
-					// Got Foo(a, b, c, d, e) want Foo(matcherA, matcherB, someSliceMatcher)
-					// Got Foo(a, b) want Foo(matcherA, matcherB, gomock.Any())
-					// Got Foo(a, b) want Foo(matcherA, matcherB, someEmptySliceMatcher)
+				continue
+			}
+			// The last arg has a possibility of a variadic argument, so let it branch
+
+			// sample: Foo(a int, b int, c ...int)
+			if len(c.args) == len(args) {
+				if m.Matches(args[i]) {
+					// Got Foo(a, b, c) want Foo(matcherA, matcherB, gomock.Any())
+					// Got Foo(a, b, c) want Foo(matcherA, matcherB, someSliceMatcher)
+					// Got Foo(a, b, c) want Foo(matcherA, matcherB, matcherC)
+					// Got Foo(a, b) want Foo(matcherA, matcherB)
+					// Got Foo(a, b, c, d) want Foo(matcherA, matcherB, matcherC, matcherD)
 					break
 				}
-				// Wrong number of matchers or not match. Fail.
-				// Got Foo(a, b) want Foo(matcherA, matcherB, matcherC, matcherD)
-				// Got Foo(a, b, c) want Foo(matcherA, matcherB, matcherC, matcherD)
-				// Got Foo(a, b, c, d) want Foo(matcherA, matcherB, matcherC, matcherD, matcherE)
-				// Got Foo(a, b, c, d, e) want Foo(matcherA, matcherB, matcherC, matcherD)
-				// Got Foo(a, b, c) want Foo(matcherA, matcherB)
-				return fmt.Errorf("Expected call at %s doesn't match the argument at index %s.\nGot: %v\nWant: %v",
-					c.origin, strconv.Itoa(i), args[i:], c.args[i])
 			}
 
-			if !m.Matches(args[i]) {
-				return fmt.Errorf("Expected call at %s doesn't match the argument at index %s.\nGot: %v\nWant: %v",
-					c.origin, strconv.Itoa(i), args[i], m)
+			// The number of actual args don't match the number of matchers,
+			// or the last matcher is a slice and the last arg is not.
+			// If this function still matches it is because the last matcher
+			// matches all the remaining arguments or the lack of any.
+			// Convert the remaining arguments, if any, into a slice of the
+			// expected type.
+			vargsType := c.methodType.In(c.methodType.NumIn() - 1)
+			vargs := reflect.MakeSlice(vargsType, 0, len(args)-i)
+			for _, arg := range args[i:] {
+				vargs = reflect.Append(vargs, reflect.ValueOf(arg))
 			}
+			if m.Matches(vargs.Interface()) {
+				// Got Foo(a, b, c, d, e) want Foo(matcherA, matcherB, gomock.Any())
+				// Got Foo(a, b, c, d, e) want Foo(matcherA, matcherB, someSliceMatcher)
+				// Got Foo(a, b) want Foo(matcherA, matcherB, gomock.Any())
+				// Got Foo(a, b) want Foo(matcherA, matcherB, someEmptySliceMatcher)
+				break
+			}
+			// Wrong number of matchers or not match. Fail.
+			// Got Foo(a, b) want Foo(matcherA, matcherB, matcherC, matcherD)
+			// Got Foo(a, b, c) want Foo(matcherA, matcherB, matcherC, matcherD)
+			// Got Foo(a, b, c, d) want Foo(matcherA, matcherB, matcherC, matcherD, matcherE)
+			// Got Foo(a, b, c, d, e) want Foo(matcherA, matcherB, matcherC, matcherD)
+			// Got Foo(a, b, c) want Foo(matcherA, matcherB)
+			return fmt.Errorf("Expected call at %s doesn't match the argument at index %s.\nGot: %v\nWant: %v",
+				c.origin, strconv.Itoa(i), args[i:], c.args[i])
+
 		}
 	}
 
