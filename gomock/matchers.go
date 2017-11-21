@@ -103,6 +103,7 @@ func (m assignableToMatcher) String() string {
 func Any() Matcher             { return anyMatcher{} }
 func Eq(x interface{}) Matcher { return eqMatcher{x} }
 func Nil() Matcher             { return nilMatcher{} }
+
 // May pass either a value or another Matcher
 func Not(x interface{}) Matcher {
 	if m, ok := x.(Matcher); ok {
