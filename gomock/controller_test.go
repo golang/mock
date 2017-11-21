@@ -680,6 +680,7 @@ func TestVariadicNoMatch(t *testing.T) {
 
 func TestVariadicMatchingWithSlice(t *testing.T) {
 	testCases := [][]string{
+		{"1"},
 		{"1", "2"},
 	}
 	for _, tc := range testCases {
