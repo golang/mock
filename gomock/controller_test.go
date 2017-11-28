@@ -701,3 +701,12 @@ func TestVariadicMatchingWithSlice(t *testing.T) {
 		})
 	}
 }
+
+func TestDuplicateFinishCallFails(t *testing.T) {
+	rep, ctrl := createFixtures(t)
+
+	ctrl.Finish()
+	rep.assertPass("the first Finish call should succeed")
+
+	rep.assertFatal(ctrl.Finish, "Controller.Finish was called more than once. It has to be called exactly once.")
+}
