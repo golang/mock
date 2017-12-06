@@ -42,8 +42,11 @@ func Reflect(importPath string, symbols []string) (*model.Package, error) {
 
 	progPath := *execOnly
 	if *execOnly == "" {
+		pwd, _ := os.Getwd()
 		// We use TempDir instead of TempFile so we can control the filename.
-		tmpDir, err := ioutil.TempDir("", "gomock_reflect_")
+		// Try to place the TempDir under pwd, so that if there is some package in
+		// vendor directory, 'go build' can also load/mock it.
+		tmpDir, err := ioutil.TempDir(pwd, "gomock_reflect_")
 		if err != nil {
 			return nil, err
 		}
