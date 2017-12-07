@@ -6,7 +6,7 @@ package bugreport
 
 import (
 	gomock "github.com/golang/mock/gomock"
-	aux "github.com/golang/mock/mockgen/tests/aux_imports_embedded_interface/aux"
+	faux "github.com/golang/mock/mockgen/tests/aux_imports_embedded_interface/faux"
 	reflect "reflect"
 )
 
@@ -34,9 +34,9 @@ func (m *MockSource) EXPECT() *MockSourceMockRecorder {
 }
 
 // Method mocks base method
-func (m *MockSource) Method() aux.Return {
+func (m *MockSource) Method() faux.Return {
 	ret := m.ctrl.Call(m, "Method")
-	ret0, _ := ret[0].(aux.Return)
+	ret0, _ := ret[0].(faux.Return)
 	return ret0
 }
 

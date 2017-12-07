@@ -1,4 +1,4 @@
-package aux
+package faux
 
 type Foreign interface {
 	Method() Return
