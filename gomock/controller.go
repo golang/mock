@@ -77,6 +77,7 @@ type Controller struct {
 	mu            sync.Mutex
 	t             TestReporter
 	expectedCalls *callSet
+	finished      bool
 }
 
 func NewController(t TestReporter) *Controller {
@@ -181,6 +182,11 @@ func (ctrl *Controller) Finish() {
 
 	ctrl.mu.Lock()
 	defer ctrl.mu.Unlock()
+
+	if ctrl.finished {
+		ctrl.t.Fatalf("Controller.Finish was called more than once. It has to be called exactly once.")
+	}
+	ctrl.finished = true
 
 	// If we're currently panicking, probably because this is a deferred call,
 	// pass through the panic.
