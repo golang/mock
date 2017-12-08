@@ -32,8 +32,9 @@ import (
 )
 
 var (
-	progOnly = flag.Bool("prog_only", false, "(reflect mode) Only generate the reflection program; write it to stdout.")
-	execOnly = flag.String("exec_only", "", "(reflect mode) If set, execute this reflection program.")
+	progOnly   = flag.Bool("prog_only", false, "(reflect mode) Only generate the reflection program; write it to stdout.")
+	execOnly   = flag.String("exec_only", "", "(reflect mode) If set, execute this reflection program.")
+	buildFlags = flag.String("build_flags", "", "(reflect mode) Additional flags for go build.")
 )
 
 func Reflect(importPath string, symbols []string) (*model.Package, error) {
@@ -41,8 +42,11 @@ func Reflect(importPath string, symbols []string) (*model.Package, error) {
 
 	progPath := *execOnly
 	if *execOnly == "" {
+		pwd, _ := os.Getwd()
 		// We use TempDir instead of TempFile so we can control the filename.
-		tmpDir, err := ioutil.TempDir("", "gomock_reflect_")
+		// Try to place the TempDir under pwd, so that if there is some package in
+		// vendor directory, 'go build' can also load/mock it.
+		tmpDir, err := ioutil.TempDir(pwd, "gomock_reflect_")
 		if err != nil {
 			return nil, err
 		}
@@ -71,8 +75,15 @@ func Reflect(importPath string, symbols []string) (*model.Package, error) {
 			return nil, err
 		}
 
+		cmdArgs := []string{}
+		cmdArgs = append(cmdArgs, "build")
+		if *buildFlags != "" {
+			cmdArgs = append(cmdArgs, *buildFlags)
+		}
+		cmdArgs = append(cmdArgs, "-o", progBinary, progSource)
+
 		// Build the program.
-		cmd := exec.Command("go", "build", "-o", progBinary, progSource)
+		cmd := exec.Command("go", cmdArgs...)
 		cmd.Dir = tmpDir
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr

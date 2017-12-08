@@ -1,3 +1,6 @@
+gomock [![Build Status](https://travis-ci.org/golang/mock.svg?branch=master)](https://travis-ci.org/golang/mock)
+======
+
 GoMock is a mocking framework for the [Go programming language][golang]. It
 integrates well with Go's built-in `testing` package, but can be used in other
 contexts too.
@@ -68,6 +71,16 @@ It supports the following flags:
     specified as a comma-separated list of elements of the form
     `foo=bar/baz.go`, where `bar/baz.go` is the source file and `foo` is the
     package name of that file used by the -source file.
+
+*  `-build_flags`: (reflect mode only) Flags passed verbatim to `go build`.
+
+* `-mock_names`: A list of custom names for generated mocks. This is specified 
+	as a comma-separated list of elements of the form
+	`Repository=MockSensorRepository,Endpoint=MockSensorEndpoint`, where 
+	`Repository` is the interface name and `MockSensorRepository` is the desired
+	mock name (mock factory method and mock recorder will be named after the mock).
+	If one of the interfaces has no custom name specified, then default naming
+	convention will be used.
 
 For an example of the use of `mockgen`, see the `sample/` directory. In simple
 cases, you will need only the `-source` flag.

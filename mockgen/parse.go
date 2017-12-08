@@ -213,7 +213,7 @@ func (p *fileParser) parseInterface(name, pkg string, it *ast.InterfaceType) (*m
 			intf.Methods = append(intf.Methods, m)
 		case *ast.Ident:
 			// Embedded interface in this package.
-			ei := p.auxInterfaces[""][v.String()]
+			ei := p.auxInterfaces[pkg][v.String()]
 			if ei == nil {
 				if ei = p.importedInterfaces[pkg][v.String()]; ei == nil {
 					return nil, p.errorf(v.Pos(), "unknown embedded interface %s", v.String())
@@ -237,6 +237,7 @@ func (p *fileParser) parseInterface(name, pkg string, it *ast.InterfaceType) (*m
 			}
 			ei := p.auxInterfaces[fpkg][sel]
 			if ei == nil {
+				fpkg = epkg
 				if _, ok = p.importedInterfaces[epkg]; !ok {
 					if err := p.parsePackage(epkg); err != nil {
 						return nil, p.errorf(v.Pos(), "could not parse package %s: %v", fpkg, err)
@@ -246,7 +247,7 @@ func (p *fileParser) parseInterface(name, pkg string, it *ast.InterfaceType) (*m
 					return nil, p.errorf(v.Pos(), "unknown embedded interface %s.%s", fpkg, sel)
 				}
 			}
-			eintf, err := p.parseInterface(sel, epkg, ei)
+			eintf, err := p.parseInterface(sel, fpkg, ei)
 			if err != nil {
 				return nil, err
 			}
@@ -363,6 +364,12 @@ func (p *fileParser) parseType(pkg string, typ ast.Expr) (model.Type, error) {
 		return &model.FuncType{In: in, Out: out, Variadic: variadic}, nil
 	case *ast.Ident:
 		if v.IsExported() {
+			// `pkg` may be an aliased imported pkg
+			// if so, patch the import w/ the fully qualified import
+			maybeImportedPkg, ok := p.imports[pkg]
+			if ok {
+				pkg = maybeImportedPkg
+			}
 			// assume type in this package
 			return &model.NamedType{Package: pkg, Type: v.Name}, nil
 		} else {

@@ -1,0 +1,25 @@
+language: go
+
+go:
+  # this will flag backwards compatibility issues creeping in
+  - 1.6
+  - 1.6.x
+  # we intend to support only the latest version and perhaps the previous one
+  - 1.7
+  - 1.7.x
+  - 1.8
+  - 1.8.x
+  - 1.9
+  - 1.9.x
+
+matrix:
+  allow_failures:
+    - go: 1.6
+    - go: 1.6.x
+
+script:
+  - go build ./...
+  - go install github.com/golang/mock/mockgen
+  - ./ci/check_go_fmt.sh
+  - ./ci/check_go_generate.sh
+  - go test -v ./...
