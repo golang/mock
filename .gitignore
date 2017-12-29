@@ -13,5 +13,6 @@
 # The mockgen binary.
 mockgen/mockgen
 
-# A binary produced by gotest.
+# Binaries produced by gotest.
 #gomock/[568]\.out
+*.test
