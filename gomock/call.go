@@ -340,13 +340,14 @@ func (c *Call) matches(args []interface{}) error {
 
 			// sample: Foo(a int, b int, c ...int)
 			if len(c.args) == len(args) {
+				// we have the same number of args, so iterate through them all to make sure they match
 				if m.Matches(args[i]) {
 					// Got Foo(a, b, c) want Foo(matcherA, matcherB, gomock.Any())
 					// Got Foo(a, b, c) want Foo(matcherA, matcherB, someSliceMatcher)
 					// Got Foo(a, b, c) want Foo(matcherA, matcherB, matcherC)
 					// Got Foo(a, b) want Foo(matcherA, matcherB)
 					// Got Foo(a, b, c, d) want Foo(matcherA, matcherB, matcherC, matcherD)
-					break
+					continue
 				}
 			}
 
