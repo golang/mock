@@ -68,3 +68,50 @@ func TestNotMatcher(t *testing.T) {
 		t.Errorf("notMatcher should match 5")
 	}
 }
+
+type Dog struct {
+	Breed, Name string
+}
+
+// A thorough test of assignableToTypeOfMatcher
+func TestAssignableToTypeOfMatcher(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	aStr := "def"
+	anotherStr := "ghi"
+
+	if match := gomock.AssignableToTypeOf("abc").Matches(4); match {
+		t.Errorf(`AssignableToTypeOf("abc") should not match 4`)
+	}
+	if match := gomock.AssignableToTypeOf("abc").Matches(&aStr); match {
+		t.Errorf(`AssignableToTypeOf("abc") should not match &aStr (*string)`)
+	}
+	if match := gomock.AssignableToTypeOf("abc").Matches("def"); !match {
+		t.Errorf(`AssignableToTypeOf("abc") should match "def"`)
+	}
+	if match := gomock.AssignableToTypeOf(&aStr).Matches("abc"); match {
+		t.Errorf(`AssignableToTypeOf(&aStr) should not match "abc"`)
+	}
+	if match := gomock.AssignableToTypeOf(&aStr).Matches(&anotherStr); !match {
+		t.Errorf(`AssignableToTypeOf(&aStr) should match &anotherStr`)
+	}
+	if match := gomock.AssignableToTypeOf(0).Matches(4); !match {
+		t.Errorf(`AssignableToTypeOf(0) should match 4`)
+	}
+	if match := gomock.AssignableToTypeOf(0).Matches("def"); match {
+		t.Errorf(`AssignableToTypeOf(0) should not match "def"`)
+	}
+	if match := gomock.AssignableToTypeOf(Dog{}).Matches(&Dog{}); match {
+		t.Errorf(`AssignableToTypeOf(Dog{}) should not match &Dog{}`)
+	}
+	if match := gomock.AssignableToTypeOf(Dog{}).Matches(Dog{Breed: "pug", Name: "Fido"}); !match {
+		t.Errorf(`AssignableToTypeOf(Dog{}) should match Dog{Breed: "pug", Name: "Fido"}`)
+	}
+	if match := gomock.AssignableToTypeOf(&Dog{}).Matches(Dog{}); match {
+		t.Errorf(`AssignableToTypeOf(&Dog{}) should not match Dog{}`)
+	}
+	if match := gomock.AssignableToTypeOf(&Dog{}).Matches(&Dog{Breed: "pug", Name: "Fido"}); !match {
+		t.Errorf(`AssignableToTypeOf(&Dog{}) should match &Dog{Breed: "pug", Name: "Fido"}`)
+	}
+}
