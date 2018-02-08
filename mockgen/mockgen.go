@@ -110,6 +110,7 @@ func main() {
 		log.Fatalf("Failed writing to destination: %v", err)
 	}
 }
+
 func parseMockNames(names string) map[string]string {
 	mocksMap := make(map[string]string)
 	for _, kv := range strings.Split(names, ",") {
@@ -166,13 +167,6 @@ func (g *generator) out() {
 	if len(g.indent) > 0 {
 		g.indent = g.indent[0 : len(g.indent)-1]
 	}
-}
-
-func removeDot(s string) string {
-	if len(s) > 0 && s[len(s)-1] == '.' {
-		return s[0 : len(s)-1]
-	}
-	return s
 }
 
 // sanitize cleans up a string to make a suitable package name.

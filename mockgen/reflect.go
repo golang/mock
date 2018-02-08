@@ -18,17 +18,12 @@ package main
 
 import (
 	"bytes"
-	"encoding/gob"
 	"flag"
 	"io"
-	"io/ioutil"
 	"os"
-	"os/exec"
-	"path/filepath"
-	"runtime"
-	"text/template"
 
 	"github.com/golang/mock/mockgen/model"
+	"github.com/golang/mock/mockgen/reflect"
 )
 
 var (
@@ -37,130 +32,24 @@ var (
 	buildFlags = flag.String("build_flags", "", "(reflect mode) Additional flags for go build.")
 )
 
-func Reflect(importPath string, symbols []string) (*model.Package, error) {
+func Reflect(importPath string, symbols []string) (pkg *model.Package, err error) {
 	// TODO: sanity check arguments
 
 	progPath := *execOnly
-	if *execOnly == "" {
-		pwd, _ := os.Getwd()
-		// We use TempDir instead of TempFile so we can control the filename.
-		// Try to place the TempDir under pwd, so that if there is some package in
-		// vendor directory, 'go build' can also load/mock it.
-		tmpDir, err := ioutil.TempDir(pwd, "gomock_reflect_")
-		if err != nil {
-			return nil, err
-		}
-		defer func() { os.RemoveAll(tmpDir) }()
-		const progSource = "prog.go"
-		var progBinary = "prog.bin"
-		if runtime.GOOS == "windows" {
-			// Windows won't execute a program unless it has a ".exe" suffix.
-			progBinary += ".exe"
-		}
-
-		// Generate program.
-		var program bytes.Buffer
-		data := reflectData{
-			ImportPath: importPath,
-			Symbols:    symbols,
-		}
-		if err := reflectProgram.Execute(&program, &data); err != nil {
-			return nil, err
+	if progPath == "" {
+		buf := &bytes.Buffer{}
+		if err = reflect.Generate(buf, importPath, symbols); err != nil {
+			return
 		}
 		if *progOnly {
-			io.Copy(os.Stdout, &program)
+			io.Copy(os.Stdout, buf)
 			os.Exit(0)
 		}
-		if err := ioutil.WriteFile(filepath.Join(tmpDir, progSource), program.Bytes(), 0600); err != nil {
-			return nil, err
+		var remover func()
+		if progPath, remover, err = reflect.Write(buf.Bytes(), *buildFlags); err != nil {
+			return
 		}
-
-		cmdArgs := []string{}
-		cmdArgs = append(cmdArgs, "build")
-		if *buildFlags != "" {
-			cmdArgs = append(cmdArgs, *buildFlags)
-		}
-		cmdArgs = append(cmdArgs, "-o", progBinary, progSource)
-
-		// Build the program.
-		cmd := exec.Command("go", cmdArgs...)
-		cmd.Dir = tmpDir
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		if err := cmd.Run(); err != nil {
-			return nil, err
-		}
-		progPath = filepath.Join(tmpDir, progBinary)
+		defer remover()
 	}
-
-	// Run it.
-	cmd := exec.Command(progPath)
-	var stdout bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = os.Stderr
-	if err := cmd.Run(); err != nil {
-		return nil, err
-	}
-
-	// Process output.
-	var pkg model.Package
-	if err := gob.NewDecoder(&stdout).Decode(&pkg); err != nil {
-		return nil, err
-	}
-	return &pkg, nil
+	return reflect.Run(progPath)
 }
-
-type reflectData struct {
-	ImportPath string
-	Symbols    []string
-}
-
-// This program reflects on an interface value, and prints the
-// gob encoding of a model.Package to standard output.
-// JSON doesn't work because of the model.Type interface.
-var reflectProgram = template.Must(template.New("program").Parse(`
-package main
-
-import (
-	"encoding/gob"
-	"fmt"
-	"os"
-	"path"
-	"reflect"
-
-	"github.com/golang/mock/mockgen/model"
-
-	pkg_ {{printf "%q" .ImportPath}}
-)
-
-func main() {
-	its := []struct{
-		sym string
-		typ reflect.Type
-	}{
-		{{range .Symbols}}
-		{ {{printf "%q" .}}, reflect.TypeOf((*pkg_.{{.}})(nil)).Elem()},
-		{{end}}
-	}
-	pkg := &model.Package{
-		// NOTE: This behaves contrary to documented behaviour if the
-		// package name is not the final component of the import path.
-		// The reflect package doesn't expose the package name, though.
-		Name: path.Base({{printf "%q" .ImportPath}}),
-	}
-
-	for _, it := range its {
-		intf, err := model.InterfaceFromInterfaceType(it.typ)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Reflection: %v\n", err)
-			os.Exit(1)
-		}
-		intf.Name = it.sym
-		pkg.Interfaces = append(pkg.Interfaces, intf)
-	}
-	if err := gob.NewEncoder(os.Stdout).Encode(pkg); err != nil {
-		fmt.Fprintf(os.Stderr, "gob encode: %v\n", err)
-		os.Exit(1)
-	}
-}
-`))
