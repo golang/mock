@@ -87,6 +87,29 @@ func (n notMatcher) String() string {
 	return "not(" + n.m.String() + ")"
 }
 
+type ArgumentCaptor struct {
+	values []interface{}
+}
+
+func (a *ArgumentCaptor) GetSingle() interface{} {
+	return a.values[0]
+}
+
+func (a *ArgumentCaptor) GetAll() []interface{} {
+	return a.values
+}
+
+func (a *ArgumentCaptor) Matches(x interface{}) bool {
+	a.values = append(a.values, x)
+	// as we just capture the value
+	return true
+}
+
+func (a *ArgumentCaptor) String() string {
+	// it never happens so just return some dummy value
+	return "ArgumentCaptor"
+}
+
 // Constructors
 func Any() Matcher             { return anyMatcher{} }
 func Eq(x interface{}) Matcher { return eqMatcher{x} }
@@ -97,3 +120,4 @@ func Not(x interface{}) Matcher {
 	}
 	return notMatcher{Eq(x)}
 }
+func CaptureArgument() Matcher { return &ArgumentCaptor{make([]interface{}, 0)} }

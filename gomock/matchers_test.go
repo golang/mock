@@ -68,3 +68,32 @@ func TestNotMatcher(t *testing.T) {
 		t.Errorf("notMatcher should match 5")
 	}
 }
+
+func TestCaptureArgument(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockMatcher := mock_matcher.NewMockMatcher(ctrl)
+	notMatcher := gomock.Not(mockMatcher)
+
+	argumentCaptor := gomock.CaptureArgument().(*gomock.ArgumentCaptor)
+	mockMatcher.EXPECT().Matches(argumentCaptor).Return(true).Times(2)
+
+	arbitraryInput1 := 5
+	arbitraryInput2 := 6
+	notMatcher.Matches(arbitraryInput1)
+	notMatcher.Matches(arbitraryInput2)
+
+	capturedArguments := argumentCaptor.GetAll()
+	if len(capturedArguments) != 2 {
+		t.Errorf("ArgumentCaptor should capture 2 values")
+	}
+	actualArgument1 := argumentCaptor.GetSingle()
+	if actualArgument1 != arbitraryInput1 {
+		t.Errorf("input value [%d] was not captured", arbitraryInput1)
+	}
+	actualArgument2 := capturedArguments[1]
+	if actualArgument2 != arbitraryInput2 {
+		t.Errorf("input value [%d] was not captured", arbitraryInput2)
+	}
+}
