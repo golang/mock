@@ -354,6 +354,13 @@ func typeFromType(t reflect.Type) (Type, error) {
 	}
 
 	if imp := t.PkgPath(); imp != "" {
+		// PkgPath might return a path that includes "vendor"
+		// These paths do not compile, so we need to remove everything
+		// up to and including "/vendor/"
+		// see https://github.com/golang/go/issues/12019
+		if i := strings.LastIndex(imp, "/vendor/"); i != -1 {
+			imp = imp[i+len("/vendor/"):]
+		}
 		return &NamedType{
 			Package: imp,
 			Type:    t.Name(),
