@@ -54,6 +54,12 @@ It supports the following flags:
 
  *  `-source`: A file containing interfaces to be mocked.
 
+ *  `-source_package`: Import path for the package of the `-source` file. If
+    any argument or return type in any method of the interface you are mocking
+    is an exported type from the source package, this field is required to
+    properly import the package to support those type references. This field
+    is ONLY used in conjunction with the `-source` flag.
+
  *  `-destination`: A file to which to write the resulting source code. If you
     don't set this, the code is printed to standard output.
 
@@ -92,3 +98,13 @@ an example.
 [golang]: http://golang.org/
 [golang-install]: http://golang.org/doc/install.html#releases
 [gomock-ref]: http://godoc.org/github.com/golang/mock/gomock
+
+
+Development
+-----------
+
+### Using `go run` with `mockgen`
+```bash
+# From repository root
+go run mockgen/mockgen.go mockgen/parse.go mockgen/reflect.go [args/flags]
+```
