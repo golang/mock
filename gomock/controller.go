@@ -51,8 +51,99 @@
 //         mockObj.EXPECT().SomeMethod(3, "third"),
 //     )
 //
-// TODO:
-//	- Handle different argument/return types (e.g. ..., chan, map, interface).
+// Using custom mock execution.
+// Suppose the defined interface:
+//	type MyInterface interface {
+//		ChangeString(str *string)
+//		GetString() string
+//		DoSomething() error
+//	}
+//
+// Generate mock using mockgen.
+//
+// Use the mock in a test:
+//	func TestMyInterface1(t *testing.T){
+//		mockCtrl := gomock.NewController(t)
+//		defer mockCtrl.Finish()
+//
+//		hello := "hello"
+//		mockObj := something.NewMockMyInterface(mockCtrl)
+//		// override ChangeString execution
+//      mockObj.EXPECT().ChangeString(hello).Do(func(str *string){
+// 			str += " world"
+// 		})
+//
+//		mockObj.ChangeString(hello)
+//		fmt.Println(hello) // print hello world
+//	}
+//
+//	func TestMyInterface2(t *testing.T){
+//		mockCtrl := gomock.NewController(t)
+//      defer mockCtrl.Finish()
+//
+//      mockObj := something.NewMockMyInterface(mockCtrl)
+//		// override GetString execution
+//		mockObj.EXPECT().GetString().Return("hello world")
+//
+//		hello := mockObj.GetString()
+//		fmt.Println(hello) // print hello world
+//	}
+//
+//	func TestMyInterface3(t *testing.T){
+//		mockCtrl := gomock.NewController(t)
+//		defer mockCtrl.Finish()
+//
+//		mockObj := something.NewMockMyInterface(mockCtrl)
+//		// override GetString execution
+//		mockObj.EXPECT().DoSomething().DoAndReturn(func()error{
+// 			fmt.Println("Doing something")
+// 			return fmt.Errorf("Error on doing something")
+//		})
+//
+//		err := mockObj.DoSomething() // print Doing something
+//		fmt.Println(err) // print Error on doing something
+//	}
+//
+// In some cases we can't be sure the exact param would be passed into the function we want to mock.
+// For this case we need to implement our own logic to check if the mock is valid.
+// Suppose we have code like this:
+//	type Metric interface {
+//		PushMetric(duration float64)
+//	}
+//
+//	var metrics Metric
+//
+//	func DoSomething(){
+//		start := time.Now()
+//		// do something
+//		duration := time.Since(start)
+//		metrics.PushMetric(duration.Seconds())
+//	}
+//
+// And here's the test.
+//
+//	// Since we cant be sure how much duration will be passed into PushMetric
+//	// we create our own Matcher
+//	type durationMatcher struct{}
+//
+//	func (durationMatcher) Matches(x interface{}) bool {
+//		dur, ok := x.(float64)
+//		return ok && dur > float64(0)
+//	}
+//
+//	func (durationMatcher) String() string {
+//		return "is float64 and more than 0"
+//	}
+//
+//	func TestMyInterface(t *testing.T){
+//		mockCtrl := gomock.NewController(t)
+//		defer mockCtrl.Finish()
+//		mockObj := something.NewMockMetric(mockCtrl)
+//		mockObj.EXPECT().PushMetric(durationMatcher{})
+//
+//		metrics = mockObj
+//		DoSomething()
+//	}
 package gomock
 
 import (
