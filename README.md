@@ -92,3 +92,25 @@ an example.
 [golang]: http://golang.org/
 [golang-install]: http://golang.org/doc/install.html#releases
 [gomock-ref]: http://godoc.org/github.com/golang/mock/gomock
+
+## grpc
+
+See the [./sample/grpc](./sample/grpc) directory. **NB:** we use the reflect instead of source mode.
+
+```
+$ cd sample/grpc && make
+protoc -I . --go_out=plugins=grpc:. ./route_guide.proto
+mockgen github.com/banaio/mock/sample/grpc RouteGuideClient,RouteGuide_ListFeaturesClient,RouteGuide_RecordRouteClient,RouteGuide_RouteChatClient > mock/route_guide.go
+
+go test ./...
+ok  	github.com/banaio/mock/sample/grpc	(cached)
+?   	github.com/banaio/mock/sample/grpc/mock	[no test files]
+```
+
+If you see errors like below, please try the reflect mode:
+
+```sh
+mockgen -source=./route_guide.pb.go
+2018/04/01 19:44:38 imported package collision: "context" imported twice
+make: *** [all] Error 1
+```
