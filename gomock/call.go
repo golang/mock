@@ -339,14 +339,14 @@ func (c *Call) matches(args []interface{}) error {
 			// The last arg has a possibility of a variadic argument, so let it branch
 
 			// sample: Foo(a int, b int, c ...int)
-			if len(c.args) == len(args) {
+			if i < len(c.args) && i < len(args) {
 				if m.Matches(args[i]) {
 					// Got Foo(a, b, c) want Foo(matcherA, matcherB, gomock.Any())
 					// Got Foo(a, b, c) want Foo(matcherA, matcherB, someSliceMatcher)
 					// Got Foo(a, b, c) want Foo(matcherA, matcherB, matcherC)
 					// Got Foo(a, b) want Foo(matcherA, matcherB)
 					// Got Foo(a, b, c, d) want Foo(matcherA, matcherB, matcherC, matcherD)
-					break
+					continue
 				}
 			}
 

@@ -68,12 +68,12 @@ func TestVariadicFunction(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockIndex := mock_user.NewMockIndex(ctrl)
-	mockIndex.EXPECT().Ellip("%d", 0, 1, 1, 2, 3).Do(func(format string, nums ...int) {
+	mockIndex.EXPECT().Ellip("%d", 5, 6, 7, 8).Do(func(format string, nums ...int) {
 		sum := 0
 		for _, value := range nums {
 			sum += value
 		}
-		if sum != 7 {
+		if sum != 26 {
 			t.Errorf("Expected 7, got %d", sum)
 		}
 	})
@@ -82,7 +82,7 @@ func TestVariadicFunction(t *testing.T) {
 		for _, value := range nums {
 			sum += value
 		}
-		if sum != 7 {
+		if sum != 10 {
 			t.Errorf("Expected 7, got %d", sum)
 		}
 	})
@@ -114,8 +114,8 @@ func TestVariadicFunction(t *testing.T) {
 		}
 	})
 
-	mockIndex.Ellip("%d", 0, 1, 1, 2, 3)
-	mockIndex.Ellip("%d", 0, 1, 1, 2, 3)
+	mockIndex.Ellip("%d", 1, 2, 3, 4) // Match second matcher.
+	mockIndex.Ellip("%d", 5, 6, 7, 8) // Match first matcher.
 	mockIndex.Ellip("%d", 0)
 	mockIndex.Ellip("%d")
 	mockIndex.Ellip("%d")
