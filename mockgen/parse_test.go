@@ -20,7 +20,7 @@ func TestFileParser_ParseFile(t *testing.T) {
 		importedInterfaces: make(map[string]map[string]*ast.InterfaceType),
 	}
 
-	pkg, err := p.parseFile(file)
+	pkg, err := p.parseFile("", file)
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
