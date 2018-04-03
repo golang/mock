@@ -44,6 +44,12 @@ func ParseFile(source string) (*model.Package, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed getting source directory: %v", err)
 	}
+
+	var packageImport string
+	if p, err := build.ImportDir(srcDir, 0); err == nil {
+		packageImport = p.ImportPath
+	} // TODO: should we fail if this returns an error?
+
 	fs := token.NewFileSet()
 	file, err := parser.ParseFile(fs, source, nil, 0)
 	if err != nil {
@@ -78,9 +84,9 @@ func ParseFile(source string) (*model.Package, error) {
 	if err := p.parseAuxFiles(*auxFiles); err != nil {
 		return nil, err
 	}
-	p.addAuxInterfacesFromFile("", file) // this file
+	p.addAuxInterfacesFromFile(packageImport, file) // this file
 
-	pkg, err := p.parseFile(file)
+	pkg, err := p.parseFile(packageImport, file)
 	if err != nil {
 		return nil, err
 	}
@@ -142,7 +148,7 @@ func (p *fileParser) addAuxInterfacesFromFile(pkg string, file *ast.File) {
 
 // parseFile loads all file imports and auxiliary files import into the
 // fileParser, parses all file interfaces and returns package model.
-func (p *fileParser) parseFile(file *ast.File) (*model.Package, error) {
+func (p *fileParser) parseFile(importPath string, file *ast.File) (*model.Package, error) {
 	allImports := importsOfFile(file)
 	// Don't stomp imports provided by -imports. Those should take precedence.
 	for pkg, path := range allImports {
@@ -162,7 +168,7 @@ func (p *fileParser) parseFile(file *ast.File) (*model.Package, error) {
 
 	var is []*model.Interface
 	for ni := range iterInterfaces(file) {
-		i, err := p.parseInterface(ni.name.String(), "", ni.it)
+		i, err := p.parseInterface(ni.name.String(), importPath, ni.it)
 		if err != nil {
 			return nil, err
 		}
