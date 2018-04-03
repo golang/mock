@@ -74,7 +74,16 @@ func TestVariadicFunction(t *testing.T) {
 			sum += value
 		}
 		if sum != 7 {
-			t.Errorf("Expected 7, got %d", sum)
+			t.Errorf("[exact] Expected 7, got %d", sum)
+		}
+	})
+	mockIndex.EXPECT().Ellip("%d", 0, 1, 1, 2, 4).Do(func(format string, nums ...int) {
+		sum := 0
+		for _, value := range nums {
+			sum += value
+		}
+		if sum != 8 {
+			t.Errorf("[exact] Expected 8, got %d", sum)
 		}
 	})
 	mockIndex.EXPECT().Ellip("%d", gomock.Any()).Do(func(format string, nums ...int) {
@@ -83,7 +92,7 @@ func TestVariadicFunction(t *testing.T) {
 			sum += value
 		}
 		if sum != 7 {
-			t.Errorf("Expected 7, got %d", sum)
+			t.Errorf("[any] Expected 7, got %d", sum)
 		}
 	})
 	mockIndex.EXPECT().Ellip("%d", gomock.Any()).Do(func(format string, nums ...int) {
@@ -92,7 +101,7 @@ func TestVariadicFunction(t *testing.T) {
 			sum += value
 		}
 		if sum != 0 {
-			t.Errorf("Expected 0, got %d", sum)
+			t.Errorf("[any] Expected 0, got %d", sum)
 		}
 	})
 	mockIndex.EXPECT().Ellip("%d", gomock.Any()).Do(func(format string, nums ...int) {
@@ -101,7 +110,7 @@ func TestVariadicFunction(t *testing.T) {
 			sum += value
 		}
 		if sum != 0 {
-			t.Errorf("Expected 0, got %d", sum)
+			t.Errorf("[any] Expected 0, got %d", sum)
 		}
 	})
 	mockIndex.EXPECT().Ellip("%d").Do(func(format string, nums ...int) {
@@ -110,10 +119,12 @@ func TestVariadicFunction(t *testing.T) {
 			sum += value
 		}
 		if sum != 0 {
-			t.Errorf("Expected 0, got %d", sum)
+			t.Errorf("[none] Expected 0, got %d", sum)
 		}
 	})
 
+	// NOTE: switch order on first two in order to ensure all variadic arguments are matched when they equal the expectation
+	mockIndex.Ellip("%d", 0, 1, 1, 2, 4)
 	mockIndex.Ellip("%d", 0, 1, 1, 2, 3)
 	mockIndex.Ellip("%d", 0, 1, 1, 2, 3)
 	mockIndex.Ellip("%d", 0)
