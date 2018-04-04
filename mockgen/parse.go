@@ -444,13 +444,13 @@ func importsOfFile(file *ast.File) map[string]string {
 			pkg, err := build.Import(importPath, "", 0)
 			if err != nil {
 				// Fallback to import path suffix. Note that this is uncertain.
-				log.Printf("failed to import package by path %s: %s - fallback to import path suffix", importPath, err.Error())
 				_, last := path.Split(importPath)
 				// If the last path component has dots, the first dot-delimited
 				// field is used as the name.
 				pkgName = strings.SplitN(last, ".", 2)[0]
+			} else {
+				pkgName = pkg.Name
 			}
-			pkgName = pkg.Name
 		}
 
 		if _, ok := m[pkgName]; ok {
