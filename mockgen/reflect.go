@@ -20,7 +20,7 @@ import (
 	"bytes"
 	"encoding/gob"
 	"flag"
-	"io"
+	"go/build"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -32,69 +32,27 @@ import (
 )
 
 var (
-	progOnly   = flag.Bool("prog_only", false, "(reflect mode) Only generate the reflection program; write it to stdout.")
+	progOnly   = flag.Bool("prog_only", false, "(reflect mode) Only generate the reflection program; write it to stdout and exit.")
 	execOnly   = flag.String("exec_only", "", "(reflect mode) If set, execute this reflection program.")
 	buildFlags = flag.String("build_flags", "", "(reflect mode) Additional flags for go build.")
 )
 
-func Reflect(importPath string, symbols []string) (*model.Package, error) {
-	// TODO: sanity check arguments
-
-	progPath := *execOnly
-	if *execOnly == "" {
-		pwd, _ := os.Getwd()
-		// We use TempDir instead of TempFile so we can control the filename.
-		// Try to place the TempDir under pwd, so that if there is some package in
-		// vendor directory, 'go build' can also load/mock it.
-		tmpDir, err := ioutil.TempDir(pwd, "gomock_reflect_")
-		if err != nil {
-			return nil, err
-		}
-		defer func() { os.RemoveAll(tmpDir) }()
-		const progSource = "prog.go"
-		var progBinary = "prog.bin"
-		if runtime.GOOS == "windows" {
-			// Windows won't execute a program unless it has a ".exe" suffix.
-			progBinary += ".exe"
-		}
-
-		// Generate program.
-		var program bytes.Buffer
-		data := reflectData{
-			ImportPath: importPath,
-			Symbols:    symbols,
-		}
-		if err := reflectProgram.Execute(&program, &data); err != nil {
-			return nil, err
-		}
-		if *progOnly {
-			io.Copy(os.Stdout, &program)
-			os.Exit(0)
-		}
-		if err := ioutil.WriteFile(filepath.Join(tmpDir, progSource), program.Bytes(), 0600); err != nil {
-			return nil, err
-		}
-
-		cmdArgs := []string{}
-		cmdArgs = append(cmdArgs, "build")
-		if *buildFlags != "" {
-			cmdArgs = append(cmdArgs, *buildFlags)
-		}
-		cmdArgs = append(cmdArgs, "-o", progBinary, progSource)
-
-		// Build the program.
-		cmd := exec.Command("go", cmdArgs...)
-		cmd.Dir = tmpDir
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		if err := cmd.Run(); err != nil {
-			return nil, err
-		}
-		progPath = filepath.Join(tmpDir, progBinary)
+func writeProgram(importPath string, symbols []string) ([]byte, error) {
+	var program bytes.Buffer
+	data := reflectData{
+		ImportPath: importPath,
+		Symbols:    symbols,
 	}
+	if err := reflectProgram.Execute(&program, &data); err != nil {
+		return nil, err
+	}
+	return program.Bytes(), nil
+}
 
-	// Run it.
-	cmd := exec.Command(progPath)
+// run the given command and parse the output as a model.Package.
+func run(command string) (*model.Package, error) {
+	// Run the program.
+	cmd := exec.Command(command)
 	var stdout bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = os.Stderr
@@ -108,6 +66,79 @@ func Reflect(importPath string, symbols []string) (*model.Package, error) {
 		return nil, err
 	}
 	return &pkg, nil
+}
+
+// runInDir writes the given program into the given dir, runs it there, and
+// parses the output as a model.Package.
+func runInDir(program []byte, dir string) (*model.Package, error) {
+	// We use TempDir instead of TempFile so we can control the filename.
+	tmpDir, err := ioutil.TempDir(dir, "gomock_reflect_")
+	if err != nil {
+		return nil, err
+	}
+	defer func() { os.RemoveAll(tmpDir) }()
+	const progSource = "prog.go"
+	var progBinary = "prog.bin"
+	if runtime.GOOS == "windows" {
+		// Windows won't execute a program unless it has a ".exe" suffix.
+		progBinary += ".exe"
+	}
+
+	if err := ioutil.WriteFile(filepath.Join(tmpDir, progSource), program, 0600); err != nil {
+		return nil, err
+	}
+
+	cmdArgs := []string{}
+	cmdArgs = append(cmdArgs, "build")
+	if *buildFlags != "" {
+		cmdArgs = append(cmdArgs, *buildFlags)
+	}
+	cmdArgs = append(cmdArgs, "-o", progBinary, progSource)
+
+	// Build the program.
+	cmd := exec.Command("go", cmdArgs...)
+	cmd.Dir = tmpDir
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		return nil, err
+	}
+	return run(filepath.Join(tmpDir, progBinary))
+}
+
+func Reflect(importPath string, symbols []string) (*model.Package, error) {
+	// TODO: sanity check arguments
+
+	if *execOnly != "" {
+		return run(*execOnly)
+	}
+
+	program, err := writeProgram(importPath, symbols)
+	if err != nil {
+		return nil, err
+	}
+
+	if *progOnly {
+		os.Stdout.Write(program)
+		os.Exit(0)
+	}
+
+	wd, _ := os.Getwd()
+
+	// Try to run the program in the same directory as the input package.
+	if p, err := build.Import(importPath, wd, build.FindOnly); err == nil {
+		dir := p.Dir
+		if p, err := runInDir(program, dir); err == nil {
+			return p, nil
+		}
+	}
+
+	// Since that didn't work, try to run it in the current working directory.
+	if p, err := runInDir(program, wd); err == nil {
+		return p, nil
+	}
+	// Since that didn't work, try to run it in a standard temp directory.
+	return runInDir(program, "")
 }
 
 type reflectData struct {
