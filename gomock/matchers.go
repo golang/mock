@@ -87,13 +87,30 @@ func (n notMatcher) String() string {
 	return "not(" + n.m.String() + ")"
 }
 
+type assignableToMatcher struct {
+	targetType reflect.Type
+}
+
+func (m assignableToMatcher) Matches(x interface{}) bool {
+	return reflect.TypeOf(x).AssignableTo(m.targetType)
+}
+
+func (m assignableToMatcher) String() string {
+	return "is assignable to " + m.targetType.Name()
+}
+
 // Constructors
 func Any() Matcher             { return anyMatcher{} }
 func Eq(x interface{}) Matcher { return eqMatcher{x} }
 func Nil() Matcher             { return nilMatcher{} }
+
+// May pass either a value or another Matcher
 func Not(x interface{}) Matcher {
 	if m, ok := x.(Matcher); ok {
 		return notMatcher{m}
 	}
 	return notMatcher{Eq(x)}
+}
+func AssignableTo(t interface{}) Matcher {
+	return assignableToMatcher{reflect.TypeOf(t)}
 }
