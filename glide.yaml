@@ -1,0 +1,9 @@
+package: github.com/golang/mock
+ignore:
+- a
+import:
+- package: github.com/pkg/errors
+  version: ^0.8.0
+- package: golang.org/x/net
+  subpackages:
+  - context

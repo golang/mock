@@ -1,0 +1,10 @@
+hash: ab178fc846590d3ea4635ba44b68cffe2d0a97ba39830804b1d6108e5efa897e
+updated: 2018-04-10T12:23:26.692338939-07:00
+imports:
+- name: github.com/pkg/errors
+  version: 645ef00459ed84a119197bfb8d8205042c6df63d
+- name: golang.org/x/net
+  version: 01256db42e5106196a3473ec1620727a383500e8
+  subpackages:
+  - context
+testImports: []
