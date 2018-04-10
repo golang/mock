@@ -37,6 +37,11 @@ func TestMatchers(t *testing.T) {
 			[]e{nil, (error)(nil), (chan bool)(nil), (*int)(nil)},
 			[]e{"", 0, make(chan bool), errors.New("err"), new(int)}},
 		{gomock.Not(gomock.Eq(4)), []e{3, "blah", nil, int64(4)}, []e{4}},
+		{gomock.Not(gomock.Eq(4)), []e{3, "blah", nil, int64(4)}, []e{4}},
+		{gomock.HasPrefix("abc"), []e{"abc", "abcdef", "abcdefghi"}, []e{"", "xyz", "abz"}},
+		{gomock.HasSuffix(".exe"), []e{"calc.exe", "notepad.exe", "calc...exe"}, []e{"", "xyz", "abz"}},
+		{gomock.Regexp("A.*B"), []e{"AB", "A_B", "__A_______B__"}, []e{"", "xyz", "abz"}},
+		{gomock.PredFunc(func(x interface{}) bool { return x.(int)%2 == 0 }, "is even"), []e{2, 4, 6, 8}, []e{1, 3, 5, 7}},
 	}
 	for i, test := range tests {
 		for _, x := range test.yes {

@@ -17,6 +17,8 @@ package gomock
 import (
 	"fmt"
 	"reflect"
+	"regexp"
+	"strings"
 )
 
 // A Matcher is a representation of a class of values.
@@ -97,6 +99,55 @@ func (m assignableToTypeOfMatcher) String() string {
 	return "is assignable to " + m.targetType.Name()
 }
 
+type predFuncMatcher struct {
+	predFunc func(interface{}) bool
+	name     string
+}
+
+func (m predFuncMatcher) Matches(x interface{}) bool {
+	return m.predFunc(x)
+}
+
+func (m predFuncMatcher) String() string {
+	return fmt.Sprintf("pred func: %s", m.name)
+}
+
+type hasPrefixMatcher struct {
+	prefix string
+}
+
+func (m hasPrefixMatcher) Matches(x interface{}) bool {
+	return strings.HasPrefix(x.(string), m.prefix)
+}
+
+func (m hasPrefixMatcher) String() string {
+	return fmt.Sprintf("prefix: %s", m.prefix)
+}
+
+type hasSuffixMatcher struct {
+	suffix string
+}
+
+func (m hasSuffixMatcher) Matches(x interface{}) bool {
+	return strings.HasSuffix(x.(string), m.suffix)
+}
+
+func (m hasSuffixMatcher) String() string {
+	return fmt.Sprintf("suffix: %s", m.suffix)
+}
+
+type regexpMatcher struct {
+	regexp *regexp.Regexp
+}
+
+func (m regexpMatcher) Matches(x interface{}) bool {
+	return m.regexp.MatchString(x.(string))
+}
+
+func (m regexpMatcher) String() string {
+	return fmt.Sprintf("matches regex: %s", m.regexp)
+}
+
 // Constructors
 // Any returns a matcher that always matches.
 func Any() Matcher { return anyMatcher{} }
@@ -138,4 +189,53 @@ func Not(x interface{}) Matcher {
 //   AssignableToTypeOf(s).Matches(99) // returns false
 func AssignableToTypeOf(x interface{}) Matcher {
 	return assignableToTypeOfMatcher{reflect.TypeOf(x)}
+}
+
+// PredFunc is a Matcher that matches if the one argument function parameter
+// returns true for the given input
+//
+// Example usage:
+//
+// 		mock.EXPECT().
+// 			Handle(gomock.PredFunc(func(x interface{}) bool { return x.(int) > 5 })).
+// 			Return(true)
+//
+func PredFunc(f func(interface{}) bool, name string) Matcher {
+	return predFuncMatcher{predFunc: f, name: name}
+}
+
+// HasPrefix is a Matcher that matches if the input has the arg as a prefix
+//
+// Example usage:
+//
+// 		mock.EXPECT().
+// 			Handle(gomock.HasPrefix("abc")).
+// 			Return(true)
+//
+func HasPrefix(prefix string) Matcher {
+	return hasPrefixMatcher{prefix: prefix}
+}
+
+// HasSuffix is a Matcher that matches if the input has the arg as a suffix
+//
+// Example usage:
+//
+// 		mock.EXPECT().
+// 			Handle(gomock.HasSuffix(".exe")).
+// 			Return(true)
+//
+func HasSuffix(suffix string) Matcher {
+	return hasSuffixMatcher{suffix: suffix}
+}
+
+// Regexp is a Matcher that matches if the input matches the regular expression string arg
+//
+// Example usage:
+//
+// 		mock.EXPECT().
+// 			Handle(gomock.Regexp(".exe$")).
+// 			Return(true)
+//
+func Regexp(pattern string) Matcher {
+	return regexpMatcher{regexp: regexp.MustCompile(pattern)}
 }
