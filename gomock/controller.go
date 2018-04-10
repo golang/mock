@@ -135,6 +135,7 @@ type cancelReporter struct {
 func (r *cancelReporter) Errorf(format string, args ...interface{}) {
 	r.TestHelper.Errorf(format, args...)
 }
+
 func (r *cancelReporter) Fatalf(format string, args ...interface{}) {
 	defer r.cancel()
 	r.TestHelper.Fatalf(format, args...)
@@ -197,8 +198,9 @@ func (ctrl *Controller) Call(receiver interface{}, method string, args ...interf
 
 		expected, err := ctrl.expectedCalls.FindMatch(receiver, method, args)
 		if err != nil {
-			origin := callerInfo(2)
-			ctrl.T.Fatalf("Unexpected call to %T.%v(%v) at %s because: %s", receiver, method, args, origin, err)
+			origin := callerInfo(skipFrames)
+			stackTraceStr := "\n\n" + stackTraceStringFromError(err, skipFrames)
+			ctrl.T.Fatalf("Unexpected call to %T.%v(%v) at %s because: %s%+v", receiver, method, args, origin, err, stackTraceStr)
 		}
 
 		// Two things happen here:
@@ -236,7 +238,9 @@ func (ctrl *Controller) Finish() {
 	defer ctrl.mu.Unlock()
 
 	if ctrl.finished {
-		ctrl.T.Fatalf("Controller.Finish was called more than once. It has to be called exactly once.")
+		skipFrames := 1
+		stackTraceStr := "\n\n" + currentStackTrace(skipFrames)
+		ctrl.T.Fatalf("Controller.Finish was called more than once. It has to be called exactly once.%+v", stackTraceStr)
 	}
 	ctrl.finished = true
 

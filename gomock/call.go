@@ -158,11 +158,13 @@ func (c *Call) Do(f interface{}) *Call {
 // Return declares the values to be returned by the mocked function call.
 func (c *Call) Return(rets ...interface{}) *Call {
 	c.t.Helper()
+	skipFrames := 1
 
 	mt := c.methodType
 	if len(rets) != mt.NumOut() {
-		c.t.Fatalf("wrong number of arguments to Return for %T.%v: got %d, want %d [%s]",
-			c.receiver, c.method, len(rets), mt.NumOut(), c.origin)
+		stackTraceStr := "\n\n" + currentStackTrace(skipFrames)
+		c.t.Fatalf("wrong number of arguments to Return for %T.%v: got %d, want %d [%s]%+v",
+			c.receiver, c.method, len(rets), mt.NumOut(), c.origin, stackTraceStr)
 	}
 	for i, ret := range rets {
 		if got, want := reflect.TypeOf(ret), mt.Out(i); got == want {
@@ -173,8 +175,9 @@ func (c *Call) Return(rets ...interface{}) *Call {
 			case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Ptr, reflect.Slice:
 				// ok
 			default:
-				c.t.Fatalf("argument %d to Return for %T.%v is nil, but %v is not nillable [%s]",
-					i, c.receiver, c.method, want, c.origin)
+				stackTraceStr := "\n\n" + currentStackTrace(skipFrames)
+				c.t.Fatalf("argument %d to Return for %T.%v is nil, but %v is not nillable [%s]%+v",
+					i, c.receiver, c.method, want, c.origin, stackTraceStr)
 			}
 		} else if got.AssignableTo(want) {
 			// Assignable type relation. Make the assignment now so that the generated code
@@ -183,8 +186,10 @@ func (c *Call) Return(rets ...interface{}) *Call {
 			v.Set(reflect.ValueOf(ret))
 			rets[i] = v.Interface()
 		} else {
-			c.t.Fatalf("wrong type of argument %d to Return for %T.%v: %v is not assignable to %v [%s]",
-				i, c.receiver, c.method, got, want, c.origin)
+			skipFrames := 1
+			stackTraceStr := "\n\n" + currentStackTrace(skipFrames)
+			c.t.Fatalf("wrong type of argument %d to Return for %T.%v: %v is not assignable to %v [%s]%+v",
+				i, c.receiver, c.method, got, want, c.origin, stackTraceStr)
 		}
 	}
 
@@ -206,13 +211,15 @@ func (c *Call) Times(n int) *Call {
 // will copy value's elements into the nth argument.
 func (c *Call) SetArg(n int, value interface{}) *Call {
 	c.t.Helper()
+	skipFrames := 1
 
 	mt := c.methodType
 	// TODO: This will break on variadic methods.
 	// We will need to check those at invocation time.
 	if n < 0 || n >= mt.NumIn() {
-		c.t.Fatalf("SetArg(%d, ...) called for a method with %d args [%s]",
-			n, mt.NumIn(), c.origin)
+		stackTraceStr := "\n\n" + currentStackTrace(skipFrames)
+		c.t.Fatalf("SetArg(%d, ...) called for a method with %d args [%s]%+v",
+			n, mt.NumIn(), c.origin, stackTraceStr)
 	}
 	// Permit setting argument through an interface.
 	// In the interface case, we don't (nay, can't) check the type here.
@@ -221,16 +228,18 @@ func (c *Call) SetArg(n int, value interface{}) *Call {
 	case reflect.Ptr:
 		dt := at.Elem()
 		if vt := reflect.TypeOf(value); !vt.AssignableTo(dt) {
-			c.t.Fatalf("SetArg(%d, ...) argument is a %v, not assignable to %v [%s]",
-				n, vt, dt, c.origin)
+			stackTraceStr := "\n\n" + currentStackTrace(skipFrames)
+			c.t.Fatalf("SetArg(%d, ...) argument is a %v, not assignable to %v [%s]%+v",
+				n, vt, dt, c.origin, stackTraceStr)
 		}
 	case reflect.Interface:
 		// nothing to do
 	case reflect.Slice:
 		// nothing to do
 	default:
-		c.t.Fatalf("SetArg(%d, ...) referring to argument of non-pointer non-interface non-slice type %v [%s]",
-			n, at, c.origin)
+		stackTraceStr := "\n\n" + currentStackTrace(skipFrames)
+		c.t.Fatalf("SetArg(%d, ...) referring to argument of non-pointer non-interface non-slice type %v [%s]%+v",
+			n, at, c.origin, stackTraceStr)
 	}
 
 	c.addAction(func(args []interface{}) []interface{} {
@@ -259,12 +268,15 @@ func (c *Call) isPreReq(other *Call) bool {
 // After declares that the call may only match after preReq has been exhausted.
 func (c *Call) After(preReq *Call) *Call {
 	c.t.Helper()
+	skipFrames := 1
 
 	if c == preReq {
-		c.t.Fatalf("A call isn't allowed to be its own prerequisite")
+		stackTraceStr := "\n\n" + currentStackTrace(skipFrames)
+		c.t.Fatalf("A call isn't allowed to be its own prerequisite%+v", stackTraceStr)
 	}
 	if preReq.isPreReq(c) {
-		c.t.Fatalf("Loop in call order: %v is a prerequisite to %v (possibly indirectly).", c, preReq)
+		stackTraceStr := "\n\n" + currentStackTrace(skipFrames)
+		c.t.Fatalf("Loop in call order: %v is a prerequisite to %v (possibly indirectly).%+v", c, preReq, stackTraceStr)
 	}
 
 	c.preReqs = append(c.preReqs, preReq)
