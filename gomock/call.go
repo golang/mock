@@ -17,6 +17,7 @@ package gomock
 import (
 	"fmt"
 	"reflect"
+	"runtime"
 	"strconv"
 	"strings"
 )
@@ -149,6 +150,27 @@ func (c *Call) Do(f interface{}) *Call {
 				vargs[i] = reflect.Zero(ft.In(i))
 			}
 		}
+		defer func() {
+			if r := recover(); r != nil {
+				errMsg, ok := r.(string)
+
+				// We only handle a very specific panic
+				// If it's not that one, then we "rethrow" the panic
+				// This allows users to use functions that panic in their tests
+				if !ok {
+					panic(r)
+				}
+				if !strings.Contains(errMsg, "reflect: Call using") &&
+					!strings.Contains(errMsg, "reflect.Set: value of") {
+					panic(r)
+				}
+				skipFrames := 8
+				stackTraceStr := "\n\n" + currentStackTrace(skipFrames)
+				funcPC := v.Pointer()
+				file, line := runtime.FuncForPC(funcPC).FileLine(funcPC)
+				c.t.Fatalf("%s (incorrect func args at %s:%d?)%+v", errMsg, file, line, stackTraceStr)
+			}
+		}()
 		v.Call(vargs)
 		return nil
 	})
@@ -239,6 +261,25 @@ func (c *Call) SetArg(n int, value interface{}) *Call {
 		case reflect.Slice:
 			setSlice(args[n], v)
 		default:
+			defer func() {
+				if r := recover(); r != nil {
+					errMsg, ok := r.(string)
+
+					// We only handle a very specific panic
+					// If it's not that one, then we "rethrow" the panic
+					// This allows users to use functions that panic in their tests
+					if !ok {
+						panic(r)
+					}
+					if !strings.Contains(errMsg, "reflect: Call using") &&
+						!strings.Contains(errMsg, "reflect.Set: value of") {
+						panic(r)
+					}
+					skipFrames := 8
+					stackTraceStr := "\n\n" + currentStackTrace(skipFrames)
+					c.t.Fatalf("%s%+v", errMsg, stackTraceStr)
+				}
+			}()
 			reflect.ValueOf(args[n]).Elem().Set(v)
 		}
 		return nil
@@ -382,7 +423,7 @@ func (c *Call) matches(args []interface{}) error {
 
 	// Check that the call is not exhausted.
 	if c.exhausted() {
-		return fmt.Errorf("Expected call at %s has already been called the max number of times.", c.origin)
+		return fmt.Errorf("Expected call at %s has already been called the max number of times (%d).", c.origin, c.maxCalls)
 	}
 
 	return nil
