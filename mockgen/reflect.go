@@ -26,9 +26,15 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"text/template"
 
 	"github.com/golang/mock/mockgen/model"
+)
+
+const (
+	PKG_CONTENT_START_INDICATOR = "PKG_CONTENT_START_INDICATOR"
+	PKG_CONTENT_END_INDICATOR   = "PKG_CONTENT_END_INDICATOR"
 )
 
 var (
@@ -40,8 +46,10 @@ var (
 func writeProgram(importPath string, symbols []string) ([]byte, error) {
 	var program bytes.Buffer
 	data := reflectData{
-		ImportPath: importPath,
-		Symbols:    symbols,
+		ImportPath:               importPath,
+		Symbols:                  symbols,
+		PkgContentStartIndicator: PKG_CONTENT_START_INDICATOR,
+		PkgContentEndIndicator:   PKG_CONTENT_END_INDICATOR,
 	}
 	if err := reflectProgram.Execute(&program, &data); err != nil {
 		return nil, err
@@ -54,15 +62,26 @@ func run(command string) (*model.Package, error) {
 	// Run the program.
 	cmd := exec.Command(command)
 	var stdout bytes.Buffer
+
 	cmd.Stdout = &stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
 		return nil, err
 	}
 
-	// Process output.
+	var newStdout bytes.Buffer
+
+	stdoutBytes, err := ioutil.ReadAll(&stdout)
+	if err != nil {
+		return nil, err
+	}
+
+	beginPos := strings.Index(string(stdoutBytes), PKG_CONTENT_START_INDICATOR)
+	endPos := strings.Index(string(stdoutBytes), PKG_CONTENT_END_INDICATOR)
+	newStdout.Write(stdoutBytes[beginPos+len(PKG_CONTENT_START_INDICATOR) : endPos])
+
 	var pkg model.Package
-	if err := gob.NewDecoder(&stdout).Decode(&pkg); err != nil {
+	if err := gob.NewDecoder(&newStdout).Decode(&pkg); err != nil {
 		return nil, err
 	}
 	return &pkg, nil
@@ -142,8 +161,10 @@ func Reflect(importPath string, symbols []string) (*model.Package, error) {
 }
 
 type reflectData struct {
-	ImportPath string
-	Symbols    []string
+	ImportPath               string
+	Symbols                  []string
+	PkgContentStartIndicator string
+	PkgContentEndIndicator   string
 }
 
 // This program reflects on an interface value, and prints the
@@ -153,8 +174,10 @@ var reflectProgram = template.Must(template.New("program").Parse(`
 package main
 
 import (
+	"bytes"
 	"encoding/gob"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path"
 	"reflect"
@@ -189,9 +212,20 @@ func main() {
 		intf.Name = it.sym
 		pkg.Interfaces = append(pkg.Interfaces, intf)
 	}
-	if err := gob.NewEncoder(os.Stdout).Encode(pkg); err != nil {
+
+	var pkgContent bytes.Buffer
+	pkgContent.Write([]byte({{printf "%q" .PkgContentStartIndicator}}))
+	if err := gob.NewEncoder(&pkgContent).Encode(pkg); err != nil {
 		fmt.Fprintf(os.Stderr, "gob encode: %v\n", err)
 		os.Exit(1)
 	}
+	pkgContent.Write([]byte({{printf "%q" .PkgContentEndIndicator}}))
+
+	pkgContentBytes, err := ioutil.ReadAll(&pkgContent)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "read pkg content: %v\n", err)
+		os.Exit(1)
+	}
+	os.Stdout.Write(pkgContentBytes)
 }
 `))
