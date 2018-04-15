@@ -69,6 +69,7 @@ func run(command string) (*model.Package, error) {
 		return nil, err
 	}
 
+	// Process output.
 	var newStdout bytes.Buffer
 
 	stdoutBytes, err := ioutil.ReadAll(&stdout)
