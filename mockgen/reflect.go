@@ -35,6 +35,7 @@ import (
 
 const (
 	pkgStartIndicator = "GOMOCK_PKG_CONTENT_START_INDICATOR"
+	pkgEndIndicator   = "GOMOCK_PKG_CONTENT_END_INDICATOR"
 )
 
 var (
@@ -49,6 +50,7 @@ func writeProgram(importPath string, symbols []string) ([]byte, error) {
 		ImportPath:               importPath,
 		Symbols:                  symbols,
 		PkgContentStartIndicator: pkgStartIndicator,
+		PkgContentEndIndicator:   pkgEndIndicator,
 	}
 	if err := reflectProgram.Execute(&program, &data); err != nil {
 		return nil, err
@@ -73,7 +75,14 @@ func run(command string) (*model.Package, error) {
 	if beginPos == -1 {
 		return nil, errors.New("output is missing package start indicator")
 	}
-	reader := bytes.NewReader(stdoutBytes[beginPos+len(pkgStartIndicator):])
+	endPos := strings.Index(string(stdoutBytes), pkgEndIndicator)
+	if endPos == -1 {
+		return nil, errors.New("output is missing package end indicator")
+	}
+	if beginPos >= endPos {
+		return nil, errors.New("package start indicator is after package end indicator")
+	}
+	reader := bytes.NewReader(stdoutBytes[beginPos+len(pkgStartIndicator) : endPos])
 
 	var pkg model.Package
 	if err := gob.NewDecoder(reader).Decode(&pkg); err != nil {
@@ -159,6 +168,7 @@ type reflectData struct {
 	ImportPath               string
 	Symbols                  []string
 	PkgContentStartIndicator string
+	PkgContentEndIndicator   string
 }
 
 // This program reflects on an interface value, and prints the
@@ -168,6 +178,7 @@ var reflectProgram = template.Must(template.New("program").Parse(`
 package main
 
 import (
+	"bytes"
 	"encoding/gob"
 	"fmt"
 	"os"
@@ -205,10 +216,14 @@ func main() {
 		pkg.Interfaces = append(pkg.Interfaces, intf)
 	}
 
-	fmt.Print({{printf "%q" .PkgContentStartIndicator}})
-	if err := gob.NewEncoder(os.Stdout).Encode(pkg); err != nil {
+	var pkgContent bytes.Buffer
+	pkgContent.Write([]byte({{printf "%q" .PkgContentStartIndicator}}))
+	if err := gob.NewEncoder(&pkgContent).Encode(pkg); err != nil {
 		fmt.Fprintf(os.Stderr, "gob encode: %v\n", err)
 		os.Exit(1)
 	}
+	pkgContent.Write([]byte({{printf "%q" .PkgContentEndIndicator}}))
+
+	os.Stdout.Write(pkgContent.Bytes())
 }
 `))
