@@ -25,17 +25,16 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"runtime"
-	"strings"
 	"text/template"
 
 	"github.com/golang/mock/mockgen/model"
 )
 
 const (
-	pkgStartIndicator = "GOMOCK_PKG_CONTENT_START_INDICATOR"
-	pkgEndIndicator   = "GOMOCK_PKG_CONTENT_END_INDICATOR"
+	pkgOutputFileName = "gomock_pkg_content_output"
 )
 
 var (
@@ -49,8 +48,7 @@ func writeProgram(importPath string, symbols []string) ([]byte, error) {
 	data := reflectData{
 		ImportPath:               importPath,
 		Symbols:                  symbols,
-		PkgContentStartIndicator: pkgStartIndicator,
-		PkgContentEndIndicator:   pkgEndIndicator,
+		PkgContentOutputFileName: pkgOutputFileName,
 	}
 	if err := reflectProgram.Execute(&program, &data); err != nil {
 		return nil, err
@@ -70,20 +68,17 @@ func run(command string) (*model.Package, error) {
 	}
 
 	// Process output.
-	stdoutBytes := stdout.Bytes()
-	beginPos := strings.Index(string(stdoutBytes), pkgStartIndicator)
-	if beginPos == -1 {
-		return nil, errors.New("output is missing package start indicator")
-	}
-	endPos := strings.Index(string(stdoutBytes), pkgEndIndicator)
-	if endPos == -1 {
-		return nil, errors.New("output is missing package end indicator")
-	}
-	if beginPos >= endPos {
-		return nil, errors.New("package start indicator is after package end indicator")
-	}
-	reader := bytes.NewReader(stdoutBytes[beginPos+len(pkgStartIndicator) : endPos])
+	progDir, _ := path.Split(command)
+	outputFile := filepath.Join(progDir, pkgOutputFileName)
 
+	pkgBytes, err := ioutil.ReadFile(outputFile)
+	// remove output file explicitly in case temporary output file is not in a tmp dir.
+	defer func() { os.Remove(outputFile) }()
+	if err != nil {
+		return nil, errors.New("read pkg temporary output file failed")
+	}
+
+	reader := bytes.NewReader(pkgBytes)
 	var pkg model.Package
 	if err := gob.NewDecoder(reader).Decode(&pkg); err != nil {
 		return nil, err
@@ -167,8 +162,7 @@ func Reflect(importPath string, symbols []string) (*model.Package, error) {
 type reflectData struct {
 	ImportPath               string
 	Symbols                  []string
-	PkgContentStartIndicator string
-	PkgContentEndIndicator   string
+	PkgContentOutputFileName string
 }
 
 // This program reflects on an interface value, and prints the
@@ -181,14 +175,27 @@ import (
 	"bytes"
 	"encoding/gob"
 	"fmt"
+	"io/ioutil"
 	"os"
+	"os/exec"
 	"path"
+	"path/filepath"
 	"reflect"
 
 	"github.com/golang/mock/mockgen/model"
 
 	pkg_ {{printf "%q" .ImportPath}}
 )
+
+func getProgDir() (string, error) {
+	progBinary, err := exec.LookPath(os.Args[0])
+	if err != nil {
+		return "", err
+	}
+
+	progDir, _ := path.Split(progBinary)
+	return progDir, nil
+}
 
 func main() {
 	its := []struct{
@@ -217,13 +224,19 @@ func main() {
 	}
 
 	var pkgContent bytes.Buffer
-	pkgContent.Write([]byte({{printf "%q" .PkgContentStartIndicator}}))
 	if err := gob.NewEncoder(&pkgContent).Encode(pkg); err != nil {
 		fmt.Fprintf(os.Stderr, "gob encode: %v\n", err)
 		os.Exit(1)
 	}
-	pkgContent.Write([]byte({{printf "%q" .PkgContentEndIndicator}}))
 
-	os.Stdout.Write(pkgContent.Bytes())
+	progDir, err := getProgDir()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "get program path: %v\n", err)
+		os.Exit(1)
+	}
+	if err := ioutil.WriteFile(filepath.Join(progDir, {{printf "%q" .PkgContentOutputFileName}}), pkgContent.Bytes(), 0600); err != nil {
+		fmt.Fprintf(os.Stderr, "write pkg content to temporary output file: %v\n", err)
+		os.Exit(1)
+	}
 }
 `))
