@@ -132,6 +132,57 @@ func (c *Call) DoAndReturn(f interface{}) *Call {
 	return c
 }
 
+// Yield declares a function that will get called inside a goroutine when the call is matched.
+// This function takes an output channel (for mocked function return values) as
+// a parameter, and optionally an input channel (for reading mocked function
+// arguments)
+func (c *Call) Yield(f interface{}) *Call {
+	// TODO: Check arity and types here, rather than dying badly elsewhere.
+	v := reflect.ValueOf(f)
+
+	var out, in chan []interface{}
+
+	c.addAction(func(args []interface{}) []interface{} {
+		funcTakesArgs := len(args) > 0 && v.Type().NumIn() >= 2
+		if out == nil {
+			out = make(chan []interface{}) // channel that user func in goroutine will use to send us return values
+			callArgs := []reflect.Value{reflect.ValueOf(out)}
+			if funcTakesArgs {
+				if in == nil {
+					in = make(chan []interface{}) // channel that we will use to send arguments to the user func in goroutine
+				}
+				callArgs = append(callArgs, reflect.ValueOf(in))
+			}
+			go v.Call(callArgs)
+		}
+		if funcTakesArgs {
+			in <- args
+		}
+		return <-out
+	})
+
+	return c
+}
+
+// YieldValues causes the mocked function to return the values specified as parameters in sequence
+// i.e.:
+//   - The first call to the mocked function returns args[0]
+//   - The second call to the mocked function returns args[1]
+//   - etc.
+func (c *Call) YieldValues(args ...interface{}) *Call {
+	f := func(out chan<- []interface{}) {
+		for _, arg := range args {
+			if sliceArg, ok := arg.([]interface{}); ok {
+				out <- sliceArg
+			} else {
+				out <- []interface{}{arg}
+			}
+		}
+	}
+
+	return c.Times(len(args)).Yield(f)
+}
+
 // Do declares the action to run when the call is matched. The function's
 // return values are ignored to retain backward compatibility. To use the
 // return values call DoAndReturn.

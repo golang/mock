@@ -515,6 +515,94 @@ func TestReturn(t *testing.T) {
 	ctrl.Finish()
 }
 
+func TestYieldValuesInts(t *testing.T) {
+	_, ctrl := createFixtures(t)
+	subject := new(Subject)
+
+	ctrl.RecordCall(subject, "FooMethod").YieldValues(1, 2, 3, 4, 5)
+
+	for i := 1; i <= 5; i++ {
+		assertEqual(t, []interface{}{i}, ctrl.Call(subject, "FooMethod"))
+	}
+
+	ctrl.Finish()
+}
+
+func TestYieldValuesStrings(t *testing.T) {
+	_, ctrl := createFixtures(t)
+	subject := new(Subject)
+
+	ctrl.RecordCall(subject, "FooMethod").YieldValues("a", "b", "c", "d", "e")
+
+	expectedValues := []string{"a", "b", "c", "d", "e"}
+	for i := 0; i < 5; i++ {
+		assertEqual(t, []interface{}{expectedValues[i]}, ctrl.Call(subject, "FooMethod"))
+	}
+
+	ctrl.Finish()
+}
+
+func TestYieldValuesSlices(t *testing.T) {
+	_, ctrl := createFixtures(t)
+	subject := new(Subject)
+
+	ctrl.RecordCall(subject, "FooMethod").YieldValues(
+		[]interface{}{1, 2},
+		[]interface{}{2, 4},
+		[]interface{}{3, 6},
+		[]interface{}{4, 8},
+		[]interface{}{5, 10},
+	)
+
+	for i := 1; i <= 5; i++ {
+		assertEqual(t, []interface{}{i, i * 2}, ctrl.Call(subject, "FooMethod"))
+	}
+
+	ctrl.Finish()
+}
+
+func TestYield(t *testing.T) {
+	_, ctrl := createFixtures(t)
+	subject := new(Subject)
+
+	ctrl.RecordCall(subject, "FooMethod").Times(5).Yield(
+		func(out chan<- []interface{}) {
+			for i := 1; i <= 5; i++ {
+				out <- []interface{}{i}
+			}
+		},
+	)
+
+	for i := 1; i <= 5; i++ {
+		assertEqual(t, []interface{}{i}, ctrl.Call(subject, "FooMethod"))
+	}
+
+	ctrl.Finish()
+}
+
+func TestYieldWithArgs(t *testing.T) {
+	_, ctrl := createFixtures(t)
+	subject := new(Subject)
+
+	ctrl.RecordCall(subject, "FooMethod", gomock.AssignableToTypeOf(1), gomock.AssignableToTypeOf(1)).Times(5).Yield(
+		func(out chan<- []interface{}, in <-chan []interface{}) {
+			for i := 1; i <= 5; i++ {
+				args := <-in
+				x, y := reflect.ValueOf(args[0]).Int(), reflect.ValueOf(args[1]).Int()
+				out <- []interface{}{x + y}
+			}
+		},
+	)
+
+	for i := 1; i <= 5; i++ {
+		expectedValue := []interface{}{int64(i + i*2)} // need int64 because reflect.Value.Int() returns an int64
+		value := ctrl.Call(subject, "FooMethod", i, i*2)
+		assertEqual(t, expectedValue, value)
+	}
+
+	ctrl.Finish()
+}
+
 func TestUnorderedCalls(t *testing.T) {
 	reporter, ctrl := createFixtures(t)
 	defer reporter.recoverUnexpectedFatal()
