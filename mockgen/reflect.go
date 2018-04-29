@@ -19,6 +19,7 @@ package main
 import (
 	"bytes"
 	"encoding/gob"
+	"errors"
 	"flag"
 	"go/build"
 	"io/ioutil"
@@ -26,9 +27,14 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"text/template"
 
 	"github.com/golang/mock/mockgen/model"
+)
+
+const (
+	pkgStartIndicator = "GOMOCK_PKG_CONTENT_START_INDICATOR"
 )
 
 var (
@@ -40,8 +46,9 @@ var (
 func writeProgram(importPath string, symbols []string) ([]byte, error) {
 	var program bytes.Buffer
 	data := reflectData{
-		ImportPath: importPath,
-		Symbols:    symbols,
+		ImportPath:               importPath,
+		Symbols:                  symbols,
+		PkgContentStartIndicator: pkgStartIndicator,
 	}
 	if err := reflectProgram.Execute(&program, &data); err != nil {
 		return nil, err
@@ -61,8 +68,15 @@ func run(command string) (*model.Package, error) {
 	}
 
 	// Process output.
+	stdoutBytes := stdout.Bytes()
+	beginPos := strings.Index(string(stdoutBytes), pkgStartIndicator)
+	if beginPos == -1 {
+		return nil, errors.New("output is missing package start indicator")
+	}
+	reader := bytes.NewReader(stdoutBytes[beginPos+len(pkgStartIndicator):])
+
 	var pkg model.Package
-	if err := gob.NewDecoder(&stdout).Decode(&pkg); err != nil {
+	if err := gob.NewDecoder(reader).Decode(&pkg); err != nil {
 		return nil, err
 	}
 	return &pkg, nil
@@ -142,8 +156,9 @@ func Reflect(importPath string, symbols []string) (*model.Package, error) {
 }
 
 type reflectData struct {
-	ImportPath string
-	Symbols    []string
+	ImportPath               string
+	Symbols                  []string
+	PkgContentStartIndicator string
 }
 
 // This program reflects on an interface value, and prints the
@@ -189,6 +204,8 @@ func main() {
 		intf.Name = it.sym
 		pkg.Interfaces = append(pkg.Interfaces, intf)
 	}
+
+	fmt.Print({{printf "%q" .PkgContentStartIndicator}})
 	if err := gob.NewEncoder(os.Stdout).Encode(pkg); err != nil {
 		fmt.Fprintf(os.Stderr, "gob encode: %v\n", err)
 		os.Exit(1)

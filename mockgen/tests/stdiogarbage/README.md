@@ -1,0 +1,1 @@
+This test verifies that mockgen, in reflect mode, can handle a package that pollutes stdout on init.
