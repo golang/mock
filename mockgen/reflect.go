@@ -19,16 +19,22 @@ package main
 import (
 	"bytes"
 	"encoding/gob"
+	"errors"
 	"flag"
 	"go/build"
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"runtime"
 	"text/template"
 
 	"github.com/golang/mock/mockgen/model"
+)
+
+const (
+	pkgOutputFileName = "gomock_pkg_content_output"
 )
 
 var (
@@ -40,8 +46,9 @@ var (
 func writeProgram(importPath string, symbols []string) ([]byte, error) {
 	var program bytes.Buffer
 	data := reflectData{
-		ImportPath: importPath,
-		Symbols:    symbols,
+		ImportPath:               importPath,
+		Symbols:                  symbols,
+		PkgContentOutputFileName: pkgOutputFileName,
 	}
 	if err := reflectProgram.Execute(&program, &data); err != nil {
 		return nil, err
@@ -61,8 +68,19 @@ func run(command string) (*model.Package, error) {
 	}
 
 	// Process output.
+	progDir, _ := path.Split(command)
+	outputFile := filepath.Join(progDir, pkgOutputFileName)
+
+	pkgBytes, err := ioutil.ReadFile(outputFile)
+	// remove output file explicitly in case temporary output file is not in a tmp dir.
+	defer func() { os.Remove(outputFile) }()
+	if err != nil {
+		return nil, errors.New("read pkg temporary output file failed")
+	}
+
+	reader := bytes.NewReader(pkgBytes)
 	var pkg model.Package
-	if err := gob.NewDecoder(&stdout).Decode(&pkg); err != nil {
+	if err := gob.NewDecoder(reader).Decode(&pkg); err != nil {
 		return nil, err
 	}
 	return &pkg, nil
@@ -142,8 +160,9 @@ func Reflect(importPath string, symbols []string) (*model.Package, error) {
 }
 
 type reflectData struct {
-	ImportPath string
-	Symbols    []string
+	ImportPath               string
+	Symbols                  []string
+	PkgContentOutputFileName string
 }
 
 // This program reflects on an interface value, and prints the
@@ -153,16 +172,30 @@ var reflectProgram = template.Must(template.New("program").Parse(`
 package main
 
 import (
+	"bytes"
 	"encoding/gob"
 	"fmt"
+	"io/ioutil"
 	"os"
+	"os/exec"
 	"path"
+	"path/filepath"
 	"reflect"
 
 	"github.com/golang/mock/mockgen/model"
 
 	pkg_ {{printf "%q" .ImportPath}}
 )
+
+func getProgDir() (string, error) {
+	progBinary, err := exec.LookPath(os.Args[0])
+	if err != nil {
+		return "", err
+	}
+
+	progDir, _ := path.Split(progBinary)
+	return progDir, nil
+}
 
 func main() {
 	its := []struct{
@@ -189,8 +222,20 @@ func main() {
 		intf.Name = it.sym
 		pkg.Interfaces = append(pkg.Interfaces, intf)
 	}
-	if err := gob.NewEncoder(os.Stdout).Encode(pkg); err != nil {
+
+	var pkgContent bytes.Buffer
+	if err := gob.NewEncoder(&pkgContent).Encode(pkg); err != nil {
 		fmt.Fprintf(os.Stderr, "gob encode: %v\n", err)
+		os.Exit(1)
+	}
+
+	progDir, err := getProgDir()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "get program path: %v\n", err)
+		os.Exit(1)
+	}
+	if err := ioutil.WriteFile(filepath.Join(progDir, {{printf "%q" .PkgContentOutputFileName}}), pkgContent.Bytes(), 0600); err != nil {
+		fmt.Fprintf(os.Stderr, "write pkg content to temporary output file: %v\n", err)
 		os.Exit(1)
 	}
 }
