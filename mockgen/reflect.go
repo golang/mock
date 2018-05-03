@@ -49,22 +49,38 @@ func writeProgram(importPath string, symbols []string) ([]byte, error) {
 	return program.Bytes(), nil
 }
 
-// run the given command and parse the output as a model.Package.
-func run(command string) (*model.Package, error) {
+// run the given program and parse the output as a model.Package.
+func run(program string) (*model.Package, error) {
+	f, err := ioutil.TempFile("", "")
+	filename := f.Name()
+	defer os.Remove(filename)
+	if err := f.Close(); err != nil {
+		return nil, err
+	}
+
 	// Run the program.
-	cmd := exec.Command(command)
-	var stdout bytes.Buffer
-	cmd.Stdout = &stdout
+	cmd := exec.Command(program, "-output", filename)
+	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
 		return nil, err
 	}
 
-	// Process output.
-	var pkg model.Package
-	if err := gob.NewDecoder(&stdout).Decode(&pkg); err != nil {
+	f, err = os.Open(filename)
+	if err != nil {
 		return nil, err
 	}
+
+	// Process output.
+	var pkg model.Package
+	if err := gob.NewDecoder(f).Decode(&pkg); err != nil {
+		return nil, err
+	}
+
+	if err := f.Close(); err != nil {
+		return nil, err
+	}
+
 	return &pkg, nil
 }
 
@@ -154,6 +170,7 @@ package main
 
 import (
 	"encoding/gob"
+	"flag"
 	"fmt"
 	"os"
 	"path"
@@ -164,7 +181,11 @@ import (
 	pkg_ {{printf "%q" .ImportPath}}
 )
 
+var output = flag.String("output", "", "The output file name, or empty to use stdout.")
+
 func main() {
+	flag.Parse()
+
 	its := []struct{
 		sym string
 		typ reflect.Type
@@ -189,7 +210,23 @@ func main() {
 		intf.Name = it.sym
 		pkg.Interfaces = append(pkg.Interfaces, intf)
 	}
-	if err := gob.NewEncoder(os.Stdout).Encode(pkg); err != nil {
+
+	outfile := os.Stdout
+	if len(*output) != 0 {
+		var err error
+		outfile, err = os.Create(*output)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "failed to open output file %q", *output)
+		}
+		defer func() {
+			if err := outfile.Close(); err != nil {
+				fmt.Fprintf(os.Stderr, "failed to close output file %q", *output)
+				os.Exit(1)
+			}
+		}()
+	}
+
+	if err := gob.NewEncoder(outfile).Encode(pkg); err != nil {
 		fmt.Fprintf(os.Stderr, "gob encode: %v\n", err)
 		os.Exit(1)
 	}
