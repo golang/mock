@@ -57,10 +57,11 @@ package gomock
 
 import (
 	"fmt"
-	"golang.org/x/net/context"
 	"reflect"
 	"runtime"
 	"sync"
+
+	"golang.org/x/net/context"
 )
 
 // A TestReporter is something that can be used to report test failures.
@@ -78,6 +79,7 @@ type Controller struct {
 	t             TestReporter
 	expectedCalls *callSet
 	finished      bool
+	LooseMode     bool
 }
 
 func NewController(t TestReporter) *Controller {
@@ -144,10 +146,16 @@ func (ctrl *Controller) Call(receiver interface{}, method string, args ...interf
 		ctrl.mu.Lock()
 		defer ctrl.mu.Unlock()
 
+		var actions []func([]interface{}) []interface{}
 		expected, err := ctrl.expectedCalls.FindMatch(receiver, method, args)
-		if err != nil {
+		if err != nil && !ctrl.LooseMode {
 			origin := callerInfo(2)
 			ctrl.t.Fatalf("Unexpected call to %T.%v(%v) at %s because: %s", receiver, method, args, origin, err)
+		}
+		// this is to protect against nil dereference for calls that are not
+		// expected
+		if expected == nil && ctrl.LooseMode {
+			return actions
 		}
 
 		// Two things happen here:
@@ -158,7 +166,8 @@ func (ctrl *Controller) Call(receiver interface{}, method string, args ...interf
 			ctrl.expectedCalls.Remove(preReqCall)
 		}
 
-		actions := expected.call(args)
+		actions = expected.call(args)
+
 		if expected.exhausted() {
 			ctrl.expectedCalls.Remove(expected)
 		}
