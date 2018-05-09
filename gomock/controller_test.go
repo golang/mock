@@ -168,13 +168,25 @@ func TestNoCalls(t *testing.T) {
 	reporter.assertPass("No calls expected or made.")
 }
 
-func TestNoRecordedCallsForAReceiver(t *testing.T) {
+func TestNoRecordedCallsForAReceiverStrictMode(t *testing.T) {
 	reporter, ctrl := createFixtures(t)
+	// ctrl.LooseMode = true
 	subject := new(Subject)
 
 	reporter.assertFatal(func() {
 		ctrl.Call(subject, "NotRecordedMethod", "argument")
 	}, "Unexpected call to", "there are no expected calls of the method \"NotRecordedMethod\" for that receiver")
+	ctrl.Finish()
+}
+
+func TestNoRecordedCallsForAReceiverLooseMode(t *testing.T) {
+	reporter, ctrl := createFixtures(t)
+	ctrl.LooseMode = true
+	subject := new(Subject)
+
+	ctrl.Call(subject, "FooMethod", "argument")
+
+	reporter.assertPass("No calls expected but LooseMode does not cause failures")
 	ctrl.Finish()
 }
 

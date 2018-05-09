@@ -148,10 +148,13 @@ func (ctrl *Controller) Call(receiver interface{}, method string, args ...interf
 
 		var actions []func([]interface{}) []interface{}
 		expected, err := ctrl.expectedCalls.FindMatch(receiver, method, args)
+		fmt.Printf("Here is the result: '%v','%v'\n", expected, err)
 		if err != nil && !ctrl.LooseMode {
+			fmt.Println("where I expect to be")
 			origin := callerInfo(2)
 			ctrl.t.Fatalf("Unexpected call to %T.%v(%v) at %s because: %s", receiver, method, args, origin, err)
 		}
+		fmt.Println("How am I here")
 		// this is to protect against nil dereference for calls that are not
 		// expected
 		if expected == nil && ctrl.LooseMode {
