@@ -58,6 +58,7 @@ package gomock
 import (
 	"fmt"
 	"reflect"
+	"regexp"
 	"runtime"
 	"sync"
 
@@ -148,13 +149,24 @@ func (ctrl *Controller) Call(receiver interface{}, method string, args ...interf
 
 		var actions []func([]interface{}) []interface{}
 		expected, err := ctrl.expectedCalls.FindMatch(receiver, method, args)
-		fmt.Printf("Here is the result: '%v','%v'\n", expected, err)
-		if err != nil && !ctrl.LooseMode {
-			fmt.Println("where I expect to be")
-			origin := callerInfo(2)
-			ctrl.t.Fatalf("Unexpected call to %T.%v(%v) at %s because: %s", receiver, method, args, origin, err)
+		// fmt.Printf("Here is the result: '%v','%v'\n", expected, err)
+		// fmt.Printf("This is: %v!!\n", err.Error() == "there are no expected calls of the method \"FooMethod\" for that receiver")
+		if err != nil {
+			ok, _ := regexp.MatchString("there are no expected calls of the method \".*\" for that receiver", err.Error())
+			if !ok || !ctrl.LooseMode{
+				origin := callerInfo(2)
+				ctrl.t.Fatalf("Unexpected call to %T.%v(%v) at %s because: %s", receiver, method, args, origin, err)
+				// fmt.Println("This is an not unexpected call")
+			}
+			// if 
 		}
-		fmt.Println("How am I here")
+
+		// if err != nil && !ctrl.LooseMode {
+		// 	// fmt.Println("where I expect to be")
+		// 	origin := callerInfo(2)
+		// 	ctrl.t.Fatalf("Unexpected call to %T.%v(%v) at %s because: %s", receiver, method, args, origin, err)
+		// }
+		// fmt.Println("How am I here")
 		// this is to protect against nil dereference for calls that are not
 		// expected
 		if expected == nil && ctrl.LooseMode {

@@ -159,6 +159,16 @@ func createFixtures(t *testing.T) (reporter *ErrorReporter, ctrl *gomock.Control
 	// successful or failed.
 	reporter = NewErrorReporter(t)
 	ctrl = gomock.NewController(reporter)
+	ctrl.LooseMode = false
+	return
+}
+
+func createLooseFixtures(t *testing.T) (reporter *ErrorReporter, ctrl *gomock.Controller) {
+	// Same as above only this one enables LooseMode which won't 
+	// fail for unexpected calls
+	reporter = NewErrorReporter(t)
+	ctrl = gomock.NewController(reporter)
+	ctrl.LooseMode = true
 	return
 }
 
@@ -170,7 +180,7 @@ func TestNoCalls(t *testing.T) {
 
 func TestNoRecordedCallsForAReceiverStrictMode(t *testing.T) {
 	reporter, ctrl := createFixtures(t)
-	// ctrl.LooseMode = true
+	ctrl.LooseMode = false
 	subject := new(Subject)
 
 	reporter.assertFatal(func() {
@@ -180,24 +190,38 @@ func TestNoRecordedCallsForAReceiverStrictMode(t *testing.T) {
 }
 
 func TestNoRecordedCallsForAReceiverLooseMode(t *testing.T) {
-	reporter, ctrl := createFixtures(t)
-	ctrl.LooseMode = true
+	reporter, ctrl := createLooseFixtures(t)
 	subject := new(Subject)
 
-	ctrl.Call(subject, "FooMethod", "argument")
+	ctrl.Call(subject, "NotRecordedMethod", "argument")
+	ctrl.Finish()
 
 	reporter.assertPass("No calls expected but LooseMode does not cause failures")
-	ctrl.Finish()
 }
 
-func TestNoRecordedMatchingMethodNameForAReceiver(t *testing.T) {
+func TestNoRecordedMatchingMethodNameForAReceiverStrictMode(t *testing.T) {
 	reporter, ctrl := createFixtures(t)
+	ctrl.LooseMode = false
 	subject := new(Subject)
 
 	ctrl.RecordCall(subject, "FooMethod", "argument")
 	reporter.assertFatal(func() {
 		ctrl.Call(subject, "NotRecordedMethod", "argument")
 	}, "Unexpected call to", "there are no expected calls of the method \"NotRecordedMethod\" for that receiver")
+	reporter.assertFatal(func() {
+		// The expected call wasn't made.
+		ctrl.Finish()
+	})
+}
+
+func TestNoRecordedMatchingMethodNameForAReceiverLooseMode(t *testing.T) {
+	reporter, ctrl := createLooseFixtures(t)
+	subject := new(Subject)
+
+	ctrl.RecordCall(subject, "FooMethod", "argument")
+	// reporter.assertFatal(func() {
+	ctrl.Call(subject, "NotRecordedMethod", "argument")
+	// }, "Unexpected call to", "there are no expected calls of the method \"NotRecordedMethod\" for that receiver")
 	reporter.assertFatal(func() {
 		// The expected call wasn't made.
 		ctrl.Finish()
@@ -216,8 +240,9 @@ func TestExpectedMethodCall(t *testing.T) {
 	reporter.assertPass("Expected method call made.")
 }
 
-func TestUnexpectedMethodCall(t *testing.T) {
+func TestUnexpectedMethodCallStrict(t *testing.T) {
 	reporter, ctrl := createFixtures(t)
+	ctrl.LooseMode = false
 	subject := new(Subject)
 
 	reporter.assertFatal(func() {
@@ -227,8 +252,34 @@ func TestUnexpectedMethodCall(t *testing.T) {
 	ctrl.Finish()
 }
 
-func TestRepeatedCall(t *testing.T) {
+func TestUnexpectedMethodCallLoose(t *testing.T) {
+	reporter, ctrl := createLooseFixtures(t)
+	subject := new(Subject)
+
+	ctrl.Call(subject, "FooMethod", "argument")
+	reporter.assertPass("No expected calls in loose mode are allowed")
+
+	ctrl.Finish()
+}
+
+func TestRepeatedCallStrict(t *testing.T) {
 	reporter, ctrl := createFixtures(t)
+	subject := new(Subject)
+
+	ctrl.RecordCall(subject, "FooMethod", "argument").Times(3)
+	ctrl.Call(subject, "FooMethod", "argument")
+	ctrl.Call(subject, "FooMethod", "argument")
+	ctrl.Call(subject, "FooMethod", "argument")
+	reporter.assertPass("After expected repeated method calls.")
+	reporter.assertFatal(func() {
+		ctrl.Call(subject, "FooMethod", "argument")
+	})
+	ctrl.Finish()
+	reporter.assertFail("After calling one too many times.")
+}
+
+func TestRepeatedCallLoose(t *testing.T) {
+	reporter, ctrl := createLooseFixtures(t)
 	subject := new(Subject)
 
 	ctrl.RecordCall(subject, "FooMethod", "argument").Times(3)
