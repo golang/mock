@@ -167,6 +167,7 @@ func (ctrl *Controller) Call(receiver interface{}, method string, args ...interf
 		// 	ctrl.t.Fatalf("Unexpected call to %T.%v(%v) at %s because: %s", receiver, method, args, origin, err)
 		// }
 		// fmt.Println("How am I here")
+
 		// this is to protect against nil dereference for calls that are not
 		// expected
 		if expected == nil && ctrl.LooseMode {

@@ -180,7 +180,6 @@ func TestNoCalls(t *testing.T) {
 
 func TestNoRecordedCallsForAReceiverStrictMode(t *testing.T) {
 	reporter, ctrl := createFixtures(t)
-	ctrl.LooseMode = false
 	subject := new(Subject)
 
 	reporter.assertFatal(func() {
@@ -201,7 +200,6 @@ func TestNoRecordedCallsForAReceiverLooseMode(t *testing.T) {
 
 func TestNoRecordedMatchingMethodNameForAReceiverStrictMode(t *testing.T) {
 	reporter, ctrl := createFixtures(t)
-	ctrl.LooseMode = false
 	subject := new(Subject)
 
 	ctrl.RecordCall(subject, "FooMethod", "argument")
@@ -219,9 +217,7 @@ func TestNoRecordedMatchingMethodNameForAReceiverLooseMode(t *testing.T) {
 	subject := new(Subject)
 
 	ctrl.RecordCall(subject, "FooMethod", "argument")
-	// reporter.assertFatal(func() {
 	ctrl.Call(subject, "NotRecordedMethod", "argument")
-	// }, "Unexpected call to", "there are no expected calls of the method \"NotRecordedMethod\" for that receiver")
 	reporter.assertFatal(func() {
 		// The expected call wasn't made.
 		ctrl.Finish()
@@ -242,7 +238,6 @@ func TestExpectedMethodCall(t *testing.T) {
 
 func TestUnexpectedMethodCallStrict(t *testing.T) {
 	reporter, ctrl := createFixtures(t)
-	ctrl.LooseMode = false
 	subject := new(Subject)
 
 	reporter.assertFatal(func() {
