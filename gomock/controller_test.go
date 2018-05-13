@@ -164,7 +164,7 @@ func createFixtures(t *testing.T) (reporter *ErrorReporter, ctrl *gomock.Control
 }
 
 func createLooseFixtures(t *testing.T) (reporter *ErrorReporter, ctrl *gomock.Controller) {
-	// Same as above only this one enables LooseMode which won't 
+	// Same as above only this one enables LooseMode which won't
 	// fail for unexpected calls
 	reporter = NewErrorReporter(t)
 	ctrl = gomock.NewController(reporter)
