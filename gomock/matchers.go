@@ -19,6 +19,7 @@ package gomock
 import (
 	"fmt"
 	"reflect"
+	"strings"
 )
 
 // A Matcher is a representation of a class of values.
@@ -121,4 +122,87 @@ func Not(x interface{}) Matcher {
 //
 func AssignableToTypeOf(x interface{}) Matcher {
 	return assignableToTypeOfMatcher{reflect.TypeOf(x)}
+}
+
+type compositeMatcher struct {
+	Matchers []Matcher
+}
+
+func (m compositeMatcher) Matches(x interface{}) bool {
+	for _, _m := range m.Matchers {
+		if !_m.Matches(x) {
+			return false
+		}
+	}
+	return true
+}
+
+func (m compositeMatcher) String() string {
+	ss := make([]string, 0, len(m.Matchers))
+	for _, matcher := range m.Matchers {
+		ss = append(ss, matcher.String())
+	}
+	return strings.Join(ss, "; ")
+}
+
+// All returns a composite Matcher that returns true if and only if all element
+// Matchers are satisfied for a given parameter to the mock function.
+func All(ms ...Matcher) Matcher {
+	return compositeMatcher{ms}
+}
+
+type lenMatcher struct {
+	n int
+}
+
+func (m lenMatcher) Matches(x interface{}) bool {
+	return reflect.TypeOf(x).Kind() == reflect.Slice &&
+		m.n == reflect.ValueOf(x).Cap()
+}
+
+func (m lenMatcher) String() string {
+	return fmt.Sprintf("is of length %v", m.n)
+}
+
+// Len returns a Matcher that matches on length. The returned Matcher returns
+// false if its input is not a slice.
+func Len(l int) Matcher {
+	return lenMatcher{l}
+}
+
+// Contains returns a Matcher that asserts that its input contains the requisite
+// elements, in any order. The returned Matcher returns false if its input is
+// not a slice. It is useful for variadic parameters where you only care that
+// specific values are represented, not their specific ordering.
+func Contains(vs ...interface{}) Matcher {
+	return containsElementsMatcher{vs}
+}
+
+type containsElementsMatcher struct {
+	Elements []interface{}
+}
+
+func (m containsElementsMatcher) Matches(x interface{}) bool {
+	if reflect.TypeOf(x).Kind() != reflect.Slice {
+		return false
+	}
+
+	xv := reflect.ValueOf(x)
+
+	eq := true
+Elements:
+	for i := 0; i < len(m.Elements) && eq; i++ {
+		e := m.Elements[i]
+		for j := 0; j < xv.Cap(); j++ {
+			if reflect.DeepEqual(xv.Index(j).Interface(), e) {
+				continue Elements
+			}
+		}
+		eq = false
+	}
+	return eq
+}
+
+func (m containsElementsMatcher) String() string {
+	return fmt.Sprintf("contains elements: %v", m.Elements)
 }

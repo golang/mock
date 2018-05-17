@@ -35,6 +35,29 @@ func TestMatchers(t *testing.T) {
 			[]e{nil, (error)(nil), (chan bool)(nil), (*int)(nil)},
 			[]e{"", 0, make(chan bool), errors.New("err"), new(int)}},
 		testCase{gomock.Not(gomock.Eq(4)), []e{3, "blah", nil, int64(4)}, []e{4}},
+		testCase{gomock.Len(2),
+			[]e{[]int{1, 2}, []string{"foo", "bar"}},
+			[]e{[]interface{}{nil, nil, nil}},
+		},
+		testCase{gomock.Contains([]int{1, 2, 3}, []int{4, 5, 6}),
+			[]e{[][]int{{4, 5, 6}, {1, 2, 3}}},
+			[]e{[][]int{{1, 2, 4}, {3, 5, 6}, {1, 2, 3}}},
+		},
+		testCase{gomock.Contains("foo", "bar", "baz"),
+			[]e{
+				[]string{"foo", "bar", "baz"},
+				[]string{"foo", "bar", "baz", "qux"},
+			},
+			[]e{
+				1,
+				[]int{1, 2, 3},
+				[]string{"foo", "bar"},
+			},
+		},
+		testCase{gomock.All(gomock.Len(3), gomock.Contains(1, 2)),
+			[]e{[]int{1, 2, 3}, []int{10, 2, 1}},
+			[]e{[]int{4, 5, 6}, []int{1, 2, 3, 4}},
+		},
 	}
 	for i, test := range tests {
 		for _, x := range test.yes {
