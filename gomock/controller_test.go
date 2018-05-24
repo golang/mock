@@ -711,22 +711,23 @@ func TestDuplicateFinishCallFails(t *testing.T) {
 	rep.assertFatal(ctrl.Finish, "Controller.Finish was called more than once. It has to be called exactly once.")
 }
 
-// Test fallback call that is used to define a default behavior and catches any call for a method that could not be matched
+// Test WillByDefault call that is used to define a default behavior
 
-func TestFallbackOnly(t *testing.T) {
+func TestWillByDefaultOnly(t *testing.T) {
 	// no call
 	reporter, ctrl := createFixtures(t)
 	subject := new(Subject)
 
-	ctrl.RecordCall(subject, "FooMethod", "fallback").Fallback().Return(5)
-	reporter.assertPass("not calling a function with fallback is ok")
+	ctrl.RecordCall(subject, "FooMethod", "something").WillByDefault().Return(5)
 	ctrl.Finish()
+
+	reporter.assertPass("not calling a function with defined default is ok")
 
 	// multiple arbitrary calls
 	reporter, ctrl = createFixtures(t)
 	subject = new(Subject)
 
-	ctrl.RecordCall(subject, "FooMethod", "isIgnored", "for", "fallback").Fallback().Return(5)
+	ctrl.RecordCall(subject, "FooMethod", gomock.Any()).WillByDefault().Return(5)
 
 	rets := ctrl.Call(subject, "FooMethod", "123")
 	if ret, ok := rets[0].(int); !ok {
@@ -742,38 +743,38 @@ func TestFallbackOnly(t *testing.T) {
 		t.Errorf("Return value is %v want 5", ret)
 	}
 
-	reporter.assertPass("calling a function with fallback n times with arbitrary parameters is ok")
 	ctrl.Finish()
+	reporter.assertPass("calling a function with defined default n times with arbitrary parameters is ok")
 }
 
-func TestFallbackAndExpectationWithMissingCall(t *testing.T) {
+func TestWillByDefaultAndExpectationWithMissingCall(t *testing.T) {
 	reporter, ctrl := createFixtures(t)
 	subject := new(Subject)
 
-	ctrl.RecordCall(subject, "FooMethod", "fallback").Fallback().Return(5)
+	ctrl.RecordCall(subject, "FooMethod", gomock.Any()).WillByDefault().Return(5)
 	ctrl.RecordCall(subject, "FooMethod", "123").Return(123)
 
-	// does fallback but not match expectation
-	ctrl.Call(subject, "FooMethod", "should fallback")
+	// does call default and not match expectation
+	ctrl.Call(subject, "FooMethod", "should default")
 
-	// does fallback but not match expectation
-	ctrl.Call(subject, "FooMethod", "also fallback")
+	// does call default and not match expectation
+	ctrl.Call(subject, "FooMethod", "also default")
 
 	reporter.assertFatal(func() {
 		ctrl.Finish()
 	}, "aborting test due to missing call(s)")
 }
 
-func TestFallbackAndExpectationWithAllExpectationsMet(t *testing.T) {
+func TestWillByDefaultAndExpectationWithAllExpectationsMet(t *testing.T) {
 	reporter, ctrl := createFixtures(t)
 	subject := new(Subject)
 
-	// every expectation should have precedence over fallback
-	ctrl.RecordCall(subject, "FooMethod", "123").Fallback().Return(5)
+	// every expectation should have precedence over default call
+	ctrl.RecordCall(subject, "FooMethod", gomock.Any()).WillByDefault().Return(5)
 	ctrl.RecordCall(subject, "FooMethod", "123").Return(123)
 	ctrl.RecordCall(subject, "FooMethod", "345").Return(345)
 
-	// should not fallback and match expectation
+	// should not use default but match expectation
 	rets := ctrl.Call(subject, "FooMethod", "123")
 	if ret, ok := rets[0].(int); !ok {
 		t.Fatalf("Return value is not an int")
@@ -781,23 +782,7 @@ func TestFallbackAndExpectationWithAllExpectationsMet(t *testing.T) {
 		t.Errorf("Return value is %v want 123", ret)
 	}
 
-	// should fallback
-	rets = ctrl.Call(subject, "FooMethod", "fallback")
-	if ret, ok := rets[0].(int); !ok {
-		t.Fatalf("Return value is not an int")
-	} else if ret != 5 {
-		t.Errorf("Return value is %v want 5", ret)
-	}
-
-	// should not fallback and match expectation
-	rets = ctrl.Call(subject, "FooMethod", "345")
-	if ret, ok := rets[0].(int); !ok {
-		t.Fatalf("Return value is not an int")
-	} else if ret != 345 {
-		t.Errorf("Return value is %v want 345", ret)
-	}
-
-	// should fallback
+	// should call default since expectation is consumed
 	rets = ctrl.Call(subject, "FooMethod", "123")
 	if ret, ok := rets[0].(int); !ok {
 		t.Fatalf("Return value is not an int")
@@ -805,45 +790,72 @@ func TestFallbackAndExpectationWithAllExpectationsMet(t *testing.T) {
 		t.Errorf("Return value is %v want 5", ret)
 	}
 
-	reporter.assertPass("expectations should have precedence over fallback")
+	// should not call default but match expectation
+	rets = ctrl.Call(subject, "FooMethod", "345")
+	if ret, ok := rets[0].(int); !ok {
+		t.Fatalf("Return value is not an int")
+	} else if ret != 345 {
+		t.Errorf("Return value is %v want 345", ret)
+	}
+
+	// should call default since expectation is consumed
+	rets = ctrl.Call(subject, "FooMethod", "345")
+	if ret, ok := rets[0].(int); !ok {
+		t.Fatalf("Return value is not an int")
+	} else if ret != 5 {
+		t.Errorf("Return value is %v want 5", ret)
+	}
+
 	ctrl.Finish()
+	reporter.assertPass("expectations should have precedence over default call")
 }
 
-func TestOverwriteFallback(t *testing.T) {
+func TestOverwriteWillByDefault(t *testing.T) {
 	reporter, ctrl := createFixtures(t)
 	subject := new(Subject)
 
-	// first fallback
-	ctrl.RecordCall(subject, "FooMethod", "fallback").Fallback().Return(123)
+	// first defaultCall
+	ctrl.RecordCall(subject, "FooMethod", "defaultCall").WillByDefault().Return(123)
 
-	// uses current fallback
-	rets := ctrl.Call(subject, "FooMethod", "something")
+	// uses current default
+	rets := ctrl.Call(subject, "FooMethod", "defaultCall")
 	if ret, ok := rets[0].(int); !ok {
 		t.Fatalf("Return value is not an int")
 	} else if ret != 123 {
 		t.Errorf("Return value is %v want 123", ret)
 	}
 
-	// overwrite fallback
-	ctrl.RecordCall(subject, "FooMethod", "anotherFallback").Fallback().Return(456)
+	// overwrite default (when second one matches at least all parameters that first one matched)
+	ctrl.RecordCall(subject, "FooMethod", "defaultCall").WillByDefault().Return(456)
 
-	// matches new fallback
-	rets = ctrl.Call(subject, "FooMethod", "arbitrary")
+	// matches new default
+	rets = ctrl.Call(subject, "FooMethod", "defaultCall")
 	if ret, ok := rets[0].(int); !ok {
 		t.Fatalf("Return value is not an int")
 	} else if ret != 456 {
 		t.Errorf("Return value is %v want 456", ret)
 	}
 
-	reporter.assertPass("should always take the latest fallback definition")
+	// overwrite default with more loose one
+	ctrl.RecordCall(subject, "FooMethod", gomock.Any()).WillByDefault().Return(789)
+
+	// matches new default
+	rets = ctrl.Call(subject, "FooMethod", "defaultCall")
+	if ret, ok := rets[0].(int); !ok {
+		t.Fatalf("Return value is not an int")
+	} else if ret != 789 {
+		t.Errorf("Return value is %v want 789", ret)
+	}
+
 	ctrl.Finish()
+	reporter.assertPass("should always take the latest default definition")
 }
 
-func TestFallbackWithMissingReturn(t *testing.T) {
+func TestWillByDefaultWithMissingReturn(t *testing.T) {
 	reporter, ctrl := createFixtures(t)
 	subject := new(Subject)
 
-	ctrl.RecordCall(subject, "FooMethod", "fallback").Fallback()
+	ctrl.RecordCall(subject, "FooMethod", gomock.Any()).WillByDefault()
 
 	rets := ctrl.Call(subject, "FooMethod", "something")
 	if ret, ok := rets[0].(int); !ok {
@@ -852,85 +864,124 @@ func TestFallbackWithMissingReturn(t *testing.T) {
 		t.Errorf("Return value is %v want 0", ret)
 	}
 
-	reporter.assertPass("fallback should return default on missing return definition")
 	ctrl.Finish()
+	reporter.assertPass("should return zero value on missing return definition")
 }
 
-func TestFallbackIgnoresMinMaxTimes(t *testing.T) {
+func TestWillByDefaultMinMaxTimes(t *testing.T) {
 
-	// test Min/MaxTimes ignores
+	// test MinTimes failes
 	reporter, ctrl := createFixtures(t)
 	subject := new(Subject)
 
-	ctrl.RecordCall(subject, "FooMethod", "fallback").Fallback().MinTimes(1).MaxTimes(2).Return(5)
+	ctrl.RecordCall(subject, "FooMethod", gomock.Any()).WillByDefault().MinTimes(2).Return(5)
 
-	// call 3 times should work
-	ctrl.Call(subject, "FooMethod", "something")
-	ctrl.Call(subject, "FooMethod", "something")
+	// only one call: should fail expectation
 	ctrl.Call(subject, "FooMethod", "something")
 
-	reporter.assertPass("fallback should ignore Min/MaxTimes")
+	reporter.assertFatal(func() {
+		ctrl.Finish()
+	}, "aborting test due to missing call(s)")
+
+	// test MinTimes succeeds
+	reporter, ctrl = createFixtures(t)
+	subject = new(Subject)
+
+	ctrl.RecordCall(subject, "FooMethod", gomock.Any()).WillByDefault().MinTimes(2).Return(5)
+
+	// two calls: should meet expectations
+	ctrl.Call(subject, "FooMethod", "something")
+	ctrl.Call(subject, "FooMethod", "something")
+
 	ctrl.Finish()
+	reporter.assertPass("calling default for at least MinTime should work")
+
+	// test MaxTimes failes
+	reporter, ctrl = createFixtures(t)
+	subject = new(Subject)
+
+	ctrl.RecordCall(subject, "FooMethod", gomock.Any()).WillByDefault().MaxTimes(2).Return(5)
+
+	ctrl.Call(subject, "FooMethod", "something")
+	ctrl.Call(subject, "FooMethod", "something")
+
+	reporter.assertFatal(func() {
+		// call 1 more than MaxTimes should fail
+		ctrl.Call(subject, "FooMethod", "something")
+		ctrl.Finish()
+	}, "Unexpected call to", "has already been called the max number of times.")
+
+	// test MaxTimes succeeds
+	reporter, ctrl = createFixtures(t)
+	subject = new(Subject)
+
+	ctrl.RecordCall(subject, "FooMethod", gomock.Any()).WillByDefault().MaxTimes(2).Return(5)
+
+	// call no more than MaxTimes should work
+	ctrl.Call(subject, "FooMethod", "something")
+
+	ctrl.Finish()
+	reporter.assertPass("calling default for at most MaxTimes should work")
 }
 
-func TestFallbackIgnoresAfterFunction(t *testing.T) {
-	// fallback should return when trying to add prerequisite
+func TestWillByDefaultAfterFunction(t *testing.T) {
+	// default call should fail if prerequisite not called
 	reporter, ctrl := createFixtures(t)
 	subject := new(Subject)
 
 	someCall := ctrl.RecordCall(subject, "FooMethod", "123").Return(123)
+	ctrl.RecordCall(subject, "FooMethod", gomock.Any()).WillByDefault().After(someCall)
 
 	reporter.assertFatal(func() {
-		ctrl.RecordCall(subject, "FooMethod", "ignored").Fallback().After(someCall)
-	}, "Fallback isn't allowed to have prerequisites")
+		ctrl.Call(subject, "FooMethod", "something")
+	}, "")
 
-	// fallback should ignore prerequisite when tricked to add one
+	// should work if prerequisite called
 	reporter, ctrl = createFixtures(t)
 	subject = new(Subject)
 
 	someCall = ctrl.RecordCall(subject, "FooMethod", "123").Return(123)
-	// trick fallback to hold prerequisite
-	fallback := ctrl.RecordCall(subject, "FooMethod", "ignored").After(someCall)
-	fallback.Fallback()
+	ctrl.RecordCall(subject, "FooMethod", gomock.Any()).WillByDefault().After(someCall)
 
-	ctrl.Call(subject, "FooMethod", "ignored")
+	ctrl.Call(subject, "FooMethod", "123")
+	ctrl.Call(subject, "FooMethod", "something")
 
-	reporter.assertPass("fallback should ignore After call")
 	ctrl.Finish()
+	reporter.assertPass("should work if prerequisite called before")
 
-	// fallback used as prerequisite should return an error
+	// default call used as prerequisite should work
 	reporter, ctrl = createFixtures(t)
 	subject = new(Subject)
 
-	fallback = ctrl.RecordCall(subject, "FooMethod", "ignored").Fallback()
+	defaultCall := ctrl.RecordCall(subject, "FooMethod", gomock.Any()).WillByDefault()
+	ctrl.RecordCall(subject, "FooMethod", "123").Return(123).After(defaultCall)
 
-	reporter.assertFatal(func() {
-		ctrl.RecordCall(subject, "FooMethod", "123").Return(123).After(fallback)
-	}, "Fallback isn't allowed to be a prerequisite")
-
-	// when fallback is tricked to be used as prerequisite it should be ignored
-	reporter, ctrl = createFixtures(t)
-	subject = new(Subject)
-
-	fallback = ctrl.RecordCall(subject, "FooMethod", "ignored")
-	ctrl.RecordCall(subject, "FooMethod", "123").After(fallback)
-	fallback.Fallback()
-
-	// should be able to call this even if fallback is a prerequisite
+	ctrl.Call(subject, "FooMethod", "something")
 	ctrl.Call(subject, "FooMethod", "123")
 
-	reporter.assertPass("fallback as prerequisite should be ignored")
 	ctrl.Finish()
+	reporter.assertPass("defaultCall called as prerequisite should work")
+
+	// default call used as prerequisite should work even if not called (0 times minimum by default)
+	reporter, ctrl = createFixtures(t)
+	subject = new(Subject)
+
+	defaultCall = ctrl.RecordCall(subject, "FooMethod", gomock.Any()).WillByDefault()
+	ctrl.RecordCall(subject, "FooMethod", "123").Return(123).After(defaultCall)
+
+	ctrl.Call(subject, "FooMethod", "123")
+
+	ctrl.Finish()
+	reporter.assertPass("defaultCall called as prerequisite should work")
 }
 
-func TestFallbackCallsDoFunc(t *testing.T) {
-	// After() should be ignored on fallback
+func TestWillByDefaultCallsDoFunc(t *testing.T) {
 	reporter, ctrl := createFixtures(t)
 	subject := new(Subject)
 
 	str := ""
 
-	ctrl.RecordCall(subject, "FooMethod", "fallback").Fallback().Do(func(s string) {
+	ctrl.RecordCall(subject, "FooMethod", gomock.Any()).WillByDefault().Do(func(s string) {
 		str = s
 	})
 
@@ -940,17 +991,17 @@ func TestFallbackCallsDoFunc(t *testing.T) {
 		t.Errorf("value is %v want 'something'", str)
 	}
 
-	reporter.assertPass("fallback should ignore After()")
 	ctrl.Finish()
+	reporter.assertPass("defaultCall should ignore After()")
 }
 
-func TestFallbackCallsDoAndReturnFunc(t *testing.T) {
+func TestWillByDefaultCallsDoAndReturnFunc(t *testing.T) {
 	reporter, ctrl := createFixtures(t)
 	subject := new(Subject)
 
 	str := ""
 
-	ctrl.RecordCall(subject, "FooMethod", "fallback").Fallback().DoAndReturn(func(s string) int {
+	ctrl.RecordCall(subject, "FooMethod", gomock.Any()).WillByDefault().DoAndReturn(func(s string) int {
 		str = s
 		return 5
 	})
@@ -966,6 +1017,6 @@ func TestFallbackCallsDoAndReturnFunc(t *testing.T) {
 		t.Errorf("value is %v want 'something'", str)
 	}
 
-	reporter.assertPass("fallback work with DoAndReturn")
 	ctrl.Finish()
+	reporter.assertPass("defaultCall work with DoAndReturn")
 }

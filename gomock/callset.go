@@ -53,8 +53,7 @@ func (cs callSet) Remove(call *Call) {
 	key := callSetKey{call.receiver, call.method}
 	calls := cs.expected[key]
 	for i, c := range calls {
-		// never remove a fallback call
-		if c == call && !c.isFallback {
+		if c == call {
 			// maintain order for remaining calls
 			cs.expected[key] = append(calls[:i], calls[i+1:]...)
 			cs.exhausted[key] = append(cs.exhausted[key], call)
@@ -70,24 +69,23 @@ func (cs callSet) FindMatch(receiver interface{}, method string, args []interfac
 	// Search through the expected calls.
 	expected := cs.expected[key]
 	var callsErrors bytes.Buffer
-	var fallback *Call
+	var defaultCall *Call
 	for _, call := range expected {
-		// remember fallback for later use and skip it for now
-		if call.isFallback {
-			fallback = call
-			continue
-		}
 		err := call.matches(args)
 		if err != nil {
 			fmt.Fprintf(&callsErrors, "\n%v", err)
 		} else {
+			if call.isDefault {
+				defaultCall = call
+				continue
+			}
 			return call, nil
 		}
 	}
 
-	// Nothing found check if we at least hold a callback
-	if fallback != nil {
-		return fallback, nil
+	// Nothing found check if we at least found some default
+	if defaultCall != nil {
+		return defaultCall, nil
 	}
 
 	// If we haven't found a match then search through the exhausted calls so we
@@ -111,7 +109,7 @@ func (cs callSet) Failures() []*Call {
 	failures := make([]*Call, 0, len(cs.expected))
 	for _, calls := range cs.expected {
 		for _, call := range calls {
-			if !call.satisfied() && !call.isFallback {
+			if !call.satisfied() {
 				failures = append(failures, call)
 			}
 		}

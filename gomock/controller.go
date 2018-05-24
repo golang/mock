@@ -159,7 +159,7 @@ func (ctrl *Controller) Call(receiver interface{}, method string, args ...interf
 		}
 
 		actions := expected.call(args)
-		if expected.exhausted() && !expected.isFallback {
+		if expected.exhausted() {
 			ctrl.expectedCalls.Remove(expected)
 		}
 		return actions

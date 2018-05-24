@@ -30,7 +30,7 @@ type Call struct {
 	methodType reflect.Type // the type of the method
 	args       []Matcher    // the args
 	origin     string       // file and line number of call setup
-	isFallback bool         // true if this is a fallback
+	isDefault  bool         // true if this is a default call
 
 	preReqs []*Call // prerequisite calls
 
@@ -79,10 +79,12 @@ func newCall(t TestReporter, receiver interface{}, method string, methodType ref
 		args: margs, origin: origin, minCalls: 1, maxCalls: 1, actions: actions}
 }
 
-// Fallback defines this call as fallback (default) if no other call matches.
-// The arguments are not checked / matched since this would not be a fallback anymore.
-func (c *Call) Fallback() *Call {
-	c.isFallback = true
+// WillByDefault defines this expectation as a default that is tried to match if no other expectation matches.
+// To use this as catch-all you may use Any() matcher for the method parameters.
+// WillByDefault expects to be called 0 or more times. This can be overwritten by Min/MaxTimes() methods.
+func (c *Call) WillByDefault() *Call {
+	c.isDefault = true
+	c.AnyTimes()
 	return c
 }
 
@@ -276,16 +278,6 @@ func (c *Call) After(preReq *Call) *Call {
 		h.Helper()
 	}
 
-	// this is more or less a hint, since you could add a call as prerequisite
-	// and afterwards declare it as Fallback()
-	if preReq.isFallback {
-		c.t.Fatalf("Fallback isn't allowed to be a prerequisite")
-	}
-	// same here
-	if c.isFallback {
-		c.t.Fatalf("Fallback isn't allowed to have prerequisites")
-	}
-
 	if c == preReq {
 		c.t.Fatalf("A call isn't allowed to be its own prerequisite")
 	}
@@ -401,7 +393,7 @@ func (c *Call) matches(args []interface{}) error {
 	// Check that all prerequisite calls have been satisfied.
 	for _, preReqCall := range c.preReqs {
 		// skip fallback since this should not be a prerequisite
-		if !preReqCall.satisfied() && !preReqCall.isFallback {
+		if !preReqCall.satisfied() {
 			return fmt.Errorf("Expected call at %s doesn't have a prerequisite call satisfied:\n%v\nshould be called before:\n%v",
 				c.origin, preReqCall, c)
 		}
