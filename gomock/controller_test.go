@@ -710,3 +710,262 @@ func TestDuplicateFinishCallFails(t *testing.T) {
 
 	rep.assertFatal(ctrl.Finish, "Controller.Finish was called more than once. It has to be called exactly once.")
 }
+
+// Test fallback call that is used to define a default behavior and catches any call for a method that could not be matched
+
+func TestFallbackOnly(t *testing.T) {
+	// no call
+	reporter, ctrl := createFixtures(t)
+	subject := new(Subject)
+
+	ctrl.RecordCall(subject, "FooMethod", "fallback").Fallback().Return(5)
+	reporter.assertPass("not calling a function with fallback is ok")
+	ctrl.Finish()
+
+	// multiple arbitrary calls
+	reporter, ctrl = createFixtures(t)
+	subject = new(Subject)
+
+	ctrl.RecordCall(subject, "FooMethod", "isIgnored", "for", "fallback").Fallback().Return(5)
+
+	rets := ctrl.Call(subject, "FooMethod", "123")
+	if ret, ok := rets[0].(int); !ok {
+		t.Fatalf("Return value is not an int")
+	} else if ret != 5 {
+		t.Errorf("Return value is %v want 5", ret)
+	}
+
+	rets = ctrl.Call(subject, "FooMethod", "")
+	if ret, ok := rets[0].(int); !ok {
+		t.Fatalf("Return value is not an int")
+	} else if ret != 5 {
+		t.Errorf("Return value is %v want 5", ret)
+	}
+
+	reporter.assertPass("calling a function with fallback n times with arbitrary parameters is ok")
+	ctrl.Finish()
+}
+
+func TestFallbackAndExpectationWithMissingCall(t *testing.T) {
+	reporter, ctrl := createFixtures(t)
+	subject := new(Subject)
+
+	ctrl.RecordCall(subject, "FooMethod", "fallback").Fallback().Return(5)
+	ctrl.RecordCall(subject, "FooMethod", "123").Return(123)
+
+	// does fallback but not match expectation
+	ctrl.Call(subject, "FooMethod", "should fallback")
+
+	// does fallback but not match expectation
+	ctrl.Call(subject, "FooMethod", "also fallback")
+
+	reporter.assertFatal(func() {
+		ctrl.Finish()
+	}, "aborting test due to missing call(s)")
+}
+
+func TestFallbackAndExpectationWithAllExpectationsMet(t *testing.T) {
+	reporter, ctrl := createFixtures(t)
+	subject := new(Subject)
+
+	// every expectation should have precedence over fallback
+	ctrl.RecordCall(subject, "FooMethod", "123").Fallback().Return(5)
+	ctrl.RecordCall(subject, "FooMethod", "123").Return(123)
+	ctrl.RecordCall(subject, "FooMethod", "345").Return(345)
+
+	// should not fallback and match expectation
+	rets := ctrl.Call(subject, "FooMethod", "123")
+	if ret, ok := rets[0].(int); !ok {
+		t.Fatalf("Return value is not an int")
+	} else if ret != 123 {
+		t.Errorf("Return value is %v want 123", ret)
+	}
+
+	// should fallback
+	rets = ctrl.Call(subject, "FooMethod", "fallback")
+	if ret, ok := rets[0].(int); !ok {
+		t.Fatalf("Return value is not an int")
+	} else if ret != 5 {
+		t.Errorf("Return value is %v want 5", ret)
+	}
+
+	// should not fallback and match expectation
+	rets = ctrl.Call(subject, "FooMethod", "345")
+	if ret, ok := rets[0].(int); !ok {
+		t.Fatalf("Return value is not an int")
+	} else if ret != 345 {
+		t.Errorf("Return value is %v want 345", ret)
+	}
+
+	// should fallback
+	rets = ctrl.Call(subject, "FooMethod", "123")
+	if ret, ok := rets[0].(int); !ok {
+		t.Fatalf("Return value is not an int")
+	} else if ret != 5 {
+		t.Errorf("Return value is %v want 5", ret)
+	}
+
+	reporter.assertPass("expectations should have precedence over fallback")
+	ctrl.Finish()
+}
+
+func TestOverwriteFallback(t *testing.T) {
+	reporter, ctrl := createFixtures(t)
+	subject := new(Subject)
+
+	// first fallback
+	ctrl.RecordCall(subject, "FooMethod", "fallback").Fallback().Return(123)
+
+	// uses current fallback
+	rets := ctrl.Call(subject, "FooMethod", "something")
+	if ret, ok := rets[0].(int); !ok {
+		t.Fatalf("Return value is not an int")
+	} else if ret != 123 {
+		t.Errorf("Return value is %v want 123", ret)
+	}
+
+	// overwrite fallback
+	ctrl.RecordCall(subject, "FooMethod", "anotherFallback").Fallback().Return(456)
+
+	// matches new fallback
+	rets = ctrl.Call(subject, "FooMethod", "arbitrary")
+	if ret, ok := rets[0].(int); !ok {
+		t.Fatalf("Return value is not an int")
+	} else if ret != 456 {
+		t.Errorf("Return value is %v want 456", ret)
+	}
+
+	reporter.assertPass("should always take the latest fallback definition")
+	ctrl.Finish()
+}
+
+func TestFallbackWithMissingReturn(t *testing.T) {
+	reporter, ctrl := createFixtures(t)
+	subject := new(Subject)
+
+	ctrl.RecordCall(subject, "FooMethod", "fallback").Fallback()
+
+	rets := ctrl.Call(subject, "FooMethod", "something")
+	if ret, ok := rets[0].(int); !ok {
+		t.Fatalf("Return value is not an int")
+	} else if ret != 0 {
+		t.Errorf("Return value is %v want 0", ret)
+	}
+
+	reporter.assertPass("fallback should return default on missing return definition")
+	ctrl.Finish()
+}
+
+func TestFallbackIgnoresMinMaxTimes(t *testing.T) {
+
+	// test Min/MaxTimes ignores
+	reporter, ctrl := createFixtures(t)
+	subject := new(Subject)
+
+	ctrl.RecordCall(subject, "FooMethod", "fallback").Fallback().MinTimes(1).MaxTimes(2).Return(5)
+
+	// call 3 times should work
+	ctrl.Call(subject, "FooMethod", "something")
+	ctrl.Call(subject, "FooMethod", "something")
+	ctrl.Call(subject, "FooMethod", "something")
+
+	reporter.assertPass("fallback should ignore Min/MaxTimes")
+	ctrl.Finish()
+}
+
+func TestFallbackIgnoresAfterFunction(t *testing.T) {
+	// fallback should return when trying to add prerequisite
+	reporter, ctrl := createFixtures(t)
+	subject := new(Subject)
+
+	someCall := ctrl.RecordCall(subject, "FooMethod", "123").Return(123)
+
+	reporter.assertFatal(func() {
+		ctrl.RecordCall(subject, "FooMethod", "ignored").Fallback().After(someCall)
+	}, "Fallback isn't allowed to have prerequisites")
+
+	// fallback should ignore prerequisite when tricked to add one
+	reporter, ctrl = createFixtures(t)
+	subject = new(Subject)
+
+	someCall = ctrl.RecordCall(subject, "FooMethod", "123").Return(123)
+	// trick fallback to hold prerequisite
+	fallback := ctrl.RecordCall(subject, "FooMethod", "ignored").After(someCall)
+	fallback.Fallback()
+
+	ctrl.Call(subject, "FooMethod", "ignored")
+
+	reporter.assertPass("fallback should ignore After call")
+	ctrl.Finish()
+
+	// fallback used as prerequisite should return an error
+	reporter, ctrl = createFixtures(t)
+	subject = new(Subject)
+
+	fallback = ctrl.RecordCall(subject, "FooMethod", "ignored").Fallback()
+
+	reporter.assertFatal(func() {
+		ctrl.RecordCall(subject, "FooMethod", "123").Return(123).After(fallback)
+	}, "Fallback isn't allowed to be a prerequisite")
+
+	// when fallback is tricked to be used as prerequisite it should be ignored
+	reporter, ctrl = createFixtures(t)
+	subject = new(Subject)
+
+	fallback = ctrl.RecordCall(subject, "FooMethod", "ignored")
+	ctrl.RecordCall(subject, "FooMethod", "123").After(fallback)
+	fallback.Fallback()
+
+	// should be able to call this even if fallback is a prerequisite
+	ctrl.Call(subject, "FooMethod", "123")
+
+	reporter.assertPass("fallback as prerequisite should be ignored")
+	ctrl.Finish()
+}
+
+func TestFallbackCallsDoFunc(t *testing.T) {
+	// After() should be ignored on fallback
+	reporter, ctrl := createFixtures(t)
+	subject := new(Subject)
+
+	str := ""
+
+	ctrl.RecordCall(subject, "FooMethod", "fallback").Fallback().Do(func(s string) {
+		str = s
+	})
+
+	ctrl.Call(subject, "FooMethod", "something")
+
+	if str != "something" {
+		t.Errorf("value is %v want 'something'", str)
+	}
+
+	reporter.assertPass("fallback should ignore After()")
+	ctrl.Finish()
+}
+
+func TestFallbackCallsDoAndReturnFunc(t *testing.T) {
+	reporter, ctrl := createFixtures(t)
+	subject := new(Subject)
+
+	str := ""
+
+	ctrl.RecordCall(subject, "FooMethod", "fallback").Fallback().DoAndReturn(func(s string) int {
+		str = s
+		return 5
+	})
+
+	rets := ctrl.Call(subject, "FooMethod", "something")
+	if ret, ok := rets[0].(int); !ok {
+		t.Fatalf("Return value is not an int")
+	} else if ret != 5 {
+		t.Errorf("Return value is %v want 5", ret)
+	}
+
+	if str != "something" {
+		t.Errorf("value is %v want 'something'", str)
+	}
+
+	reporter.assertPass("fallback work with DoAndReturn")
+	ctrl.Finish()
+}
