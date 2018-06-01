@@ -29,12 +29,12 @@ func TestMatchers(t *testing.T) {
 		yes, no []e
 	}
 	tests := []testCase{
-		testCase{gomock.Any(), []e{3, nil, "foo"}, nil},
-		testCase{gomock.Eq(4), []e{4}, []e{3, "blah", nil, int64(4)}},
-		testCase{gomock.Nil(),
+		{gomock.Any(), []e{3, nil, "foo"}, nil},
+		{gomock.Eq(4), []e{4}, []e{3, "blah", nil, int64(4)}},
+		{gomock.Nil(),
 			[]e{nil, (error)(nil), (chan bool)(nil), (*int)(nil)},
 			[]e{"", 0, make(chan bool), errors.New("err"), new(int)}},
-		testCase{gomock.Not(gomock.Eq(4)), []e{3, "blah", nil, int64(4)}, []e{4}},
+		{gomock.Not(gomock.Eq(4)), []e{3, "blah", nil, int64(4)}, []e{4}},
 	}
 	for i, test := range tests {
 		for _, x := range test.yes {
