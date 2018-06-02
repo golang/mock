@@ -224,6 +224,46 @@ func TestNoRecordedMatchingMethodNameForAReceiverLooseMode(t *testing.T) {
 	})
 }
 
+func TestMakingAnUnMatchingCallWhereSpecificCallsAreExpectedLooseMode(t *testing.T) {
+	reporter, ctrl := createLooseFixtures(t)
+	subject := new(Subject)
+
+	ctrl.RecordCall(subject, "FooMethod", "argument")
+	ctrl.Call(subject, "NotRecordedMethod", "argument")
+	reporter.assertFatal(func() {
+		ctrl.Call(subject, "FooMethod", "argument", "more arg")
+	})
+	reporter.assertFatal(func() {
+		ctrl.Call(subject, "FooMethod", "argument1000")
+	})
+	ctrl.Call(subject, "FooMethod", "argument")
+	reporter.assertPass("Expected method call made eventually")
+}
+
+func TestMakingAnUnexpectedCallWhereCallsAreExpectedLooseMode(t *testing.T) {
+	reporter, ctrl := createLooseFixtures(t)
+	subject := new(Subject)
+
+	ctrl.RecordCall(subject, "FooMethod", "argument")
+	ctrl.Call(subject, "NotRecordedMethod", "argument")
+	ctrl.Call(subject, "FooMethod", "argument")
+	reporter.assertPass("Expected method call made eventually")
+}
+
+func TestMakingAnUnexpectedCallWhereCallsAreExpectedStrictMode(t *testing.T) {
+	reporter, ctrl := createFixtures(t)
+	subject := new(Subject)
+
+	ctrl.RecordCall(subject, "FooMethod", "argument")
+	reporter.assertFatal(func() {
+		ctrl.Call(subject, "NotRecordedMethod", "argument")
+	})
+	ctrl.Call(subject, "FooMethod", "argument")
+	ctrl.Finish()
+	reporter.assertFail("Expected method call made eventually but only after other unexecpted " +
+		"calls (This is not permitted in loose mode)")
+}
+
 // This tests that a call with an arguments of some primitive type matches a recorded call.
 func TestExpectedMethodCall(t *testing.T) {
 	reporter, ctrl := createFixtures(t)
