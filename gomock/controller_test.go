@@ -224,20 +224,30 @@ func TestNoRecordedMatchingMethodNameForAReceiverLooseMode(t *testing.T) {
 	})
 }
 
-func TestMakingAnUnMatchingCallWhereSpecificCallsAreExpectedLooseMode(t *testing.T) {
+func TestMakingUnMatchingCallWhereASpecificCallAreExpectedLooseMode(t *testing.T) {
 	reporter, ctrl := createLooseFixtures(t)
 	subject := new(Subject)
 
 	ctrl.RecordCall(subject, "FooMethod", "argument")
 	ctrl.Call(subject, "NotRecordedMethod", "argument")
-	reporter.assertFatal(func() {
-		ctrl.Call(subject, "FooMethod", "argument", "more arg")
-	})
-	reporter.assertFatal(func() {
-		ctrl.Call(subject, "FooMethod", "argument1000")
-	})
+	ctrl.Call(subject, "FooMethod", "argument", "morearg2")
+	ctrl.Call(subject, "FooMethod", "argument1000")
 	ctrl.Call(subject, "FooMethod", "argument")
-	reporter.assertPass("Expected method call made eventually")
+	reporter.assertPass("Expected method call never made")
+}
+
+func TestMakingUnMatchingCallWhereSpecificCallsAreExpectedNTimesLooseMode(t *testing.T) {
+	reporter, ctrl := createLooseFixtures(t)
+	subject := new(Subject)
+
+	ctrl.RecordCall(subject, "FooMethod", "argument")
+	ctrl.Call(subject, "NotRecordedMethod", "argument")
+	ctrl.Call(subject, "FooMethod", "argument", "morearg2")
+	ctrl.Call(subject, "FooMethod", "argument1000")
+	ctrl.Call(subject, "FooMethod", "argument")
+	reporter.assertFatal(func() {
+		ctrl.Call(subject, "FooMethod", "argument")
+	})
 }
 
 func TestMakingAnUnexpectedCallWhereCallsAreExpectedLooseMode(t *testing.T) {
