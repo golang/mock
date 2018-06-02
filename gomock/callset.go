@@ -73,6 +73,8 @@ func (cs callSet) FindMatch(receiver interface{}, method string, args []interfac
 		err := call.matches(args)
 		if err != nil {
 			fmt.Fprintf(&callsErrors, "\n%v", err)
+		} else if err := call.arePreReqsSatisfied(); err != nil {
+			fmt.Fprintf(&callsErrors, "\n%v", err)
 		} else {
 			return call, nil
 		}
@@ -103,7 +105,11 @@ func (cs callSet) FindLooseMatch(receiver interface{}, method string, args []int
 	var callsErrors bytes.Buffer
 	for _, call := range expected {
 		err := call.matches(args)
-		if err == nil {
+		if err != nil {
+			continue
+		} else if err = call.arePreReqsSatisfied(); err != nil {
+			fmt.Fprintf(&callsErrors, "\n%v", err)
+		} else {
 			return call, nil
 		}
 	}

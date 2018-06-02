@@ -380,19 +380,21 @@ func (c *Call) matches(args []interface{}) error {
 		}
 	}
 
-	// Check that all prerequisite calls have been satisfied.
+	// Check that the call is not exhausted.
+	if c.exhausted() {
+		return fmt.Errorf("Expected call at %s has already been called the max number of times.", c.origin)
+	}
+
+	return nil
+}
+
+func (c *Call) arePreReqsSatisfied() error {
 	for _, preReqCall := range c.preReqs {
 		if !preReqCall.satisfied() {
 			return fmt.Errorf("Expected call at %s doesn't have a prerequisite call satisfied:\n%v\nshould be called before:\n%v",
 				c.origin, preReqCall, c)
 		}
 	}
-
-	// Check that the call is not exhausted.
-	if c.exhausted() {
-		return fmt.Errorf("Expected call at %s has already been called the max number of times.", c.origin)
-	}
-
 	return nil
 }
 
