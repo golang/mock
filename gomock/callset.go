@@ -63,7 +63,7 @@ func (cs callSet) Remove(call *Call) {
 }
 
 // FindMatch searches for a matching call. Returns error with explanation message if no call matched.
-func (cs callSet) FindMatch(receiver interface{}, method string, args []interface{}, isLooseMode bool) (*Call, error) {
+func (cs callSet) FindMatch(receiver interface{}, method string, args []interface{}) (*Call, error) {
 	key := callSetKey{receiver, method}
 
 	// Search through the expected calls.
@@ -71,9 +71,9 @@ func (cs callSet) FindMatch(receiver interface{}, method string, args []interfac
 	var callsErrors bytes.Buffer
 	for _, call := range expected {
 		err := call.matches(args)
-		if err != nil && !isLooseMode {
+		if err != nil {
 			fmt.Fprintf(&callsErrors, "\n%v", err)
-		} else if err == nil {
+		} else {
 			return call, nil
 		}
 	}
@@ -87,8 +87,34 @@ func (cs callSet) FindMatch(receiver interface{}, method string, args []interfac
 		}
 	}
 
-	if len(expected)+len(exhausted) == 0 && !isLooseMode {
+	if len(expected)+len(exhausted) == 0 {
 		fmt.Fprintf(&callsErrors, "there are no expected calls of the method %q for that receiver", method)
+	}
+
+	return nil, fmt.Errorf(callsErrors.String())
+}
+
+// FindMatch searches for a matching call. Returns error with explanation message if no call matched.
+func (cs callSet) FindLooseMatch(receiver interface{}, method string, args []interface{}) (*Call, error) {
+	key := callSetKey{receiver, method}
+
+	// Search through the expected calls.
+	expected := cs.expected[key]
+	var callsErrors bytes.Buffer
+	for _, call := range expected {
+		err := call.matches(args)
+		if err == nil {
+			return call, nil
+		}
+	}
+
+	// If we haven't found a match then search through the exhausted calls so we
+	// get useful error messages.
+	exhausted := cs.exhausted[key]
+	for _, call := range exhausted {
+		if err := call.matches(args); err != nil {
+			fmt.Fprintf(&callsErrors, "\n%v", err)
+		}
 	}
 
 	errString := callsErrors.String()

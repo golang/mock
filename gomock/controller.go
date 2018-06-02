@@ -147,7 +147,13 @@ func (ctrl *Controller) Call(receiver interface{}, method string, args ...interf
 		defer ctrl.mu.Unlock()
 
 		var actions []func([]interface{}) []interface{}
-		expected, err := ctrl.expectedCalls.FindMatch(receiver, method, args, ctrl.LooseMode)
+		var expected *Call
+		var err error
+		if !ctrl.LooseMode {
+			expected, err = ctrl.expectedCalls.FindMatch(receiver, method, args)
+		} else {
+			expected, err = ctrl.expectedCalls.FindLooseMatch(receiver, method, args)
+		}
 		if err != nil {
 			origin := callerInfo(2)
 			ctrl.t.Fatalf("Unexpected call to %T.%v(%v) at %s because: %s", receiver, method, args, origin, err)
