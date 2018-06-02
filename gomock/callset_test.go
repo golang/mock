@@ -33,7 +33,8 @@ func TestCallSetAdd(t *testing.T) {
 		cs.Add(newCall(t, receiver, method, reflect.TypeOf(receiverType{}.Func)))
 	}
 
-	call, err := cs.FindMatch(receiver, method, []interface{}{})
+	isLoose := false
+	call, err := cs.FindMatch(receiver, method, []interface{}{}, isLoose)
 	if err != nil {
 		t.Fatalf("FindMatch: %v", err)
 	}

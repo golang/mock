@@ -63,7 +63,7 @@ func (cs callSet) Remove(call *Call) {
 }
 
 // FindMatch searches for a matching call. Returns error with explanation message if no call matched.
-func (cs callSet) FindMatch(receiver interface{}, method string, args []interface{}) (*Call, error) {
+func (cs callSet) FindMatch(receiver interface{}, method string, args []interface{}, isLooseMode bool) (*Call, error) {
 	key := callSetKey{receiver, method}
 
 	// Search through the expected calls.
@@ -71,9 +71,9 @@ func (cs callSet) FindMatch(receiver interface{}, method string, args []interfac
 	var callsErrors bytes.Buffer
 	for _, call := range expected {
 		err := call.matches(args)
-		if err != nil {
+		if err != nil && !isLooseMode {
 			fmt.Fprintf(&callsErrors, "\n%v", err)
-		} else {
+		} else if err == nil {
 			return call, nil
 		}
 	}
@@ -87,11 +87,16 @@ func (cs callSet) FindMatch(receiver interface{}, method string, args []interfac
 		}
 	}
 
-	if len(expected)+len(exhausted) == 0 {
+	if len(expected)+len(exhausted) == 0 && !isLooseMode {
 		fmt.Fprintf(&callsErrors, "there are no expected calls of the method %q for that receiver", method)
 	}
 
-	return nil, fmt.Errorf(callsErrors.String())
+	errString := callsErrors.String()
+	if errString == "" {
+		return nil, nil
+	} else {
+		return nil, fmt.Errorf(callsErrors.String())
+	}
 }
 
 // Failures returns the calls that are not satisfied.

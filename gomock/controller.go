@@ -58,7 +58,6 @@ package gomock
 import (
 	"fmt"
 	"reflect"
-	"regexp"
 	"runtime"
 	"sync"
 
@@ -148,13 +147,10 @@ func (ctrl *Controller) Call(receiver interface{}, method string, args ...interf
 		defer ctrl.mu.Unlock()
 
 		var actions []func([]interface{}) []interface{}
-		expected, err := ctrl.expectedCalls.FindMatch(receiver, method, args)
+		expected, err := ctrl.expectedCalls.FindMatch(receiver, method, args, ctrl.LooseMode)
 		if err != nil {
-			isUnexpectedCallsError, _ := regexp.MatchString("there are no expected calls of the method \".*\" for that receiver", err.Error())
-			if !isUnexpectedCallsError || !ctrl.LooseMode {
-				origin := callerInfo(2)
-				ctrl.t.Fatalf("Unexpected call to %T.%v(%v) at %s because: %s", receiver, method, args, origin, err)
-			}
+			origin := callerInfo(2)
+			ctrl.t.Fatalf("Unexpected call to %T.%v(%v) at %s because: %s", receiver, method, args, origin, err)
 		}
 
 		// this is to protect against nil dereference for calls that are not
