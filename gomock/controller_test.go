@@ -711,14 +711,14 @@ func TestDuplicateFinishCallFails(t *testing.T) {
 	rep.assertFatal(ctrl.Finish, "Controller.Finish was called more than once. It has to be called exactly once.")
 }
 
-// Test WillByDefault call that is used to define a default behavior
+// Test ByDefault call that is used to define a default behavior
 
-func TestWillByDefaultOnly(t *testing.T) {
+func TestByDefaultOnly(t *testing.T) {
 	// no call
 	reporter, ctrl := createFixtures(t)
 	subject := new(Subject)
 
-	ctrl.RecordCall(subject, "FooMethod", "something").WillByDefault().Return(5)
+	ctrl.RecordCall(subject, "FooMethod", "something").ByDefault().Return(5)
 	ctrl.Finish()
 
 	reporter.assertPass("not calling a function with defined default is ok")
@@ -727,7 +727,7 @@ func TestWillByDefaultOnly(t *testing.T) {
 	reporter, ctrl = createFixtures(t)
 	subject = new(Subject)
 
-	ctrl.RecordCall(subject, "FooMethod", gomock.Any()).WillByDefault().Return(5)
+	ctrl.RecordCall(subject, "FooMethod", gomock.Any()).ByDefault().Return(5)
 
 	rets := ctrl.Call(subject, "FooMethod", "123")
 	if ret, ok := rets[0].(int); !ok {
@@ -747,11 +747,11 @@ func TestWillByDefaultOnly(t *testing.T) {
 	reporter.assertPass("calling a function with defined default n times with arbitrary parameters is ok")
 }
 
-func TestWillByDefaultAndExpectationWithMissingCall(t *testing.T) {
+func TestByDefaultAndExpectationWithMissingCall(t *testing.T) {
 	reporter, ctrl := createFixtures(t)
 	subject := new(Subject)
 
-	ctrl.RecordCall(subject, "FooMethod", gomock.Any()).WillByDefault().Return(5)
+	ctrl.RecordCall(subject, "FooMethod", gomock.Any()).ByDefault().Return(5)
 	ctrl.RecordCall(subject, "FooMethod", "123").Return(123)
 
 	// does call default and not match expectation
@@ -765,12 +765,12 @@ func TestWillByDefaultAndExpectationWithMissingCall(t *testing.T) {
 	}, "aborting test due to missing call(s)")
 }
 
-func TestWillByDefaultAndExpectationWithAllExpectationsMet(t *testing.T) {
+func TestByDefaultAndExpectationWithAllExpectationsMet(t *testing.T) {
 	reporter, ctrl := createFixtures(t)
 	subject := new(Subject)
 
 	// every expectation should have precedence over default call
-	ctrl.RecordCall(subject, "FooMethod", gomock.Any()).WillByDefault().Return(5)
+	ctrl.RecordCall(subject, "FooMethod", gomock.Any()).ByDefault().Return(5)
 	ctrl.RecordCall(subject, "FooMethod", "123").Return(123)
 	ctrl.RecordCall(subject, "FooMethod", "345").Return(345)
 
@@ -810,12 +810,12 @@ func TestWillByDefaultAndExpectationWithAllExpectationsMet(t *testing.T) {
 	reporter.assertPass("expectations should have precedence over default call")
 }
 
-func TestOverwriteWillByDefault(t *testing.T) {
+func TestOverwriteByDefault(t *testing.T) {
 	reporter, ctrl := createFixtures(t)
 	subject := new(Subject)
 
 	// first defaultCall
-	ctrl.RecordCall(subject, "FooMethod", "defaultCall").WillByDefault().Return(123)
+	ctrl.RecordCall(subject, "FooMethod", "defaultCall").ByDefault().Return(123)
 
 	// uses current default
 	rets := ctrl.Call(subject, "FooMethod", "defaultCall")
@@ -826,7 +826,7 @@ func TestOverwriteWillByDefault(t *testing.T) {
 	}
 
 	// overwrite default (when second one matches at least all parameters that first one matched)
-	ctrl.RecordCall(subject, "FooMethod", "defaultCall").WillByDefault().Return(456)
+	ctrl.RecordCall(subject, "FooMethod", "defaultCall").ByDefault().Return(456)
 
 	// matches new default
 	rets = ctrl.Call(subject, "FooMethod", "defaultCall")
@@ -837,7 +837,7 @@ func TestOverwriteWillByDefault(t *testing.T) {
 	}
 
 	// overwrite default with more loose one
-	ctrl.RecordCall(subject, "FooMethod", gomock.Any()).WillByDefault().Return(789)
+	ctrl.RecordCall(subject, "FooMethod", gomock.Any()).ByDefault().Return(789)
 
 	// matches new default
 	rets = ctrl.Call(subject, "FooMethod", "defaultCall")
@@ -851,11 +851,11 @@ func TestOverwriteWillByDefault(t *testing.T) {
 	reporter.assertPass("should always take the latest default definition")
 }
 
-func TestWillByDefaultWithMissingReturn(t *testing.T) {
+func TestByDefaultWithMissingReturn(t *testing.T) {
 	reporter, ctrl := createFixtures(t)
 	subject := new(Subject)
 
-	ctrl.RecordCall(subject, "FooMethod", gomock.Any()).WillByDefault()
+	ctrl.RecordCall(subject, "FooMethod", gomock.Any()).ByDefault()
 
 	rets := ctrl.Call(subject, "FooMethod", "something")
 	if ret, ok := rets[0].(int); !ok {
@@ -868,120 +868,72 @@ func TestWillByDefaultWithMissingReturn(t *testing.T) {
 	reporter.assertPass("should return zero value on missing return definition")
 }
 
-func TestWillByDefaultMinMaxTimes(t *testing.T) {
-
-	// test MinTimes failes
+func TestByDefaultMinMaxTimesNotAllowed(t *testing.T) {
+	// test MinTimes not allowed
 	reporter, ctrl := createFixtures(t)
 	subject := new(Subject)
 
-	ctrl.RecordCall(subject, "FooMethod", gomock.Any()).WillByDefault().MinTimes(2).Return(5)
-
-	// only one call: should fail expectation
-	ctrl.Call(subject, "FooMethod", "something")
-
 	reporter.assertFatal(func() {
-		ctrl.Finish()
-	}, "aborting test due to missing call(s)")
+		ctrl.RecordCall(subject, "FooMethod", gomock.Any()).ByDefault().MinTimes(2).Return(5)
+	}, "MinTimes() is not allowed when using ByDefault()")
 
-	// test MinTimes succeeds
+	// test MaxTimes not allowed
 	reporter, ctrl = createFixtures(t)
 	subject = new(Subject)
-
-	ctrl.RecordCall(subject, "FooMethod", gomock.Any()).WillByDefault().MinTimes(2).Return(5)
-
-	// two calls: should meet expectations
-	ctrl.Call(subject, "FooMethod", "something")
-	ctrl.Call(subject, "FooMethod", "something")
-
-	ctrl.Finish()
-	reporter.assertPass("calling default for at least MinTime should work")
-
-	// test MaxTimes failes
-	reporter, ctrl = createFixtures(t)
-	subject = new(Subject)
-
-	ctrl.RecordCall(subject, "FooMethod", gomock.Any()).WillByDefault().MaxTimes(2).Return(5)
-
-	ctrl.Call(subject, "FooMethod", "something")
-	ctrl.Call(subject, "FooMethod", "something")
 
 	reporter.assertFatal(func() {
 		// call 1 more than MaxTimes should fail
-		ctrl.Call(subject, "FooMethod", "something")
-		ctrl.Finish()
-	}, "Unexpected call to", "has already been called the max number of times.")
+		ctrl.RecordCall(subject, "FooMethod", gomock.Any()).ByDefault().MaxTimes(2).Return(5)
+	}, "MaxTimes() is not allowed when using ByDefault()")
 
-	// test MaxTimes succeeds
+	// test AnyTimes not allowed
 	reporter, ctrl = createFixtures(t)
 	subject = new(Subject)
 
-	ctrl.RecordCall(subject, "FooMethod", gomock.Any()).WillByDefault().MaxTimes(2).Return(5)
+	reporter.assertFatal(func() {
+		// call 1 more than MaxTimes should fail
+		ctrl.RecordCall(subject, "FooMethod", gomock.Any()).ByDefault().AnyTimes().Return(5)
+	}, "AnyTimes() is not allowed when using ByDefault()")
 
-	// call no more than MaxTimes should work
-	ctrl.Call(subject, "FooMethod", "something")
+	// test Times not allowed
+	reporter, ctrl = createFixtures(t)
+	subject = new(Subject)
 
-	ctrl.Finish()
-	reporter.assertPass("calling default for at most MaxTimes should work")
+	reporter.assertFatal(func() {
+		// call 1 more than MaxTimes should fail
+		ctrl.RecordCall(subject, "FooMethod", gomock.Any()).ByDefault().Times(4).Return(5)
+	}, "Times() is not allowed when using ByDefault()")
 }
 
-func TestWillByDefaultAfterFunction(t *testing.T) {
-	// default call should fail if prerequisite not called
+func TestByDefaultAfterNotAllowed(t *testing.T) {
+	// test After not allowed
 	reporter, ctrl := createFixtures(t)
 	subject := new(Subject)
 
 	someCall := ctrl.RecordCall(subject, "FooMethod", "123").Return(123)
-	ctrl.RecordCall(subject, "FooMethod", gomock.Any()).WillByDefault().After(someCall)
 
 	reporter.assertFatal(func() {
-		ctrl.Call(subject, "FooMethod", "something")
-	}, "")
+		ctrl.RecordCall(subject, "FooMethod", gomock.Any()).ByDefault().After(someCall)
+	}, "ByDefault() isn't allowed to have prerequisites")
 
-	// should work if prerequisite called
+	// test default call used as prerequisite not allowed
 	reporter, ctrl = createFixtures(t)
 	subject = new(Subject)
 
-	someCall = ctrl.RecordCall(subject, "FooMethod", "123").Return(123)
-	ctrl.RecordCall(subject, "FooMethod", gomock.Any()).WillByDefault().After(someCall)
+	defaultCall := ctrl.RecordCall(subject, "FooMethod", gomock.Any()).ByDefault()
 
-	ctrl.Call(subject, "FooMethod", "123")
-	ctrl.Call(subject, "FooMethod", "something")
-
-	ctrl.Finish()
-	reporter.assertPass("should work if prerequisite called before")
-
-	// default call used as prerequisite should work
-	reporter, ctrl = createFixtures(t)
-	subject = new(Subject)
-
-	defaultCall := ctrl.RecordCall(subject, "FooMethod", gomock.Any()).WillByDefault()
-	ctrl.RecordCall(subject, "FooMethod", "123").Return(123).After(defaultCall)
-
-	ctrl.Call(subject, "FooMethod", "something")
-	ctrl.Call(subject, "FooMethod", "123")
-
-	ctrl.Finish()
-	reporter.assertPass("defaultCall called as prerequisite should work")
-
-	// default call used as prerequisite should work even if not called (0 times minimum by default)
-	reporter, ctrl = createFixtures(t)
-	subject = new(Subject)
-
-	defaultCall = ctrl.RecordCall(subject, "FooMethod", gomock.Any()).WillByDefault()
-	ctrl.RecordCall(subject, "FooMethod", "123").Return(123).After(defaultCall)
-
-	ctrl.Call(subject, "FooMethod", "123")
-
-	ctrl.Finish()
-	reporter.assertPass("defaultCall called as prerequisite should work")
+	reporter.assertFatal(func() {
+		ctrl.RecordCall(subject, "FooMethod", "123").Return(123).After(defaultCall)
+	}, "Default isn't allowed to be a prerequisite")
 }
 
-func TestWillByDefaultCallsDoFunc(t *testing.T) {
+func TestByDefaultCallsDoFunc(t *testing.T) {
 	reporter, ctrl := createFixtures(t)
 	subject := new(Subject)
 
 	str := ""
 
-	ctrl.RecordCall(subject, "FooMethod", gomock.Any()).WillByDefault().Do(func(s string) {
+	ctrl.RecordCall(subject, "FooMethod", gomock.Any()).ByDefault().Do(func(s string) {
 		str = s
 	})
 
@@ -995,13 +947,13 @@ func TestWillByDefaultCallsDoFunc(t *testing.T) {
 	reporter.assertPass("defaultCall should ignore After()")
 }
 
-func TestWillByDefaultCallsDoAndReturnFunc(t *testing.T) {
+func TestByDefaultCallsDoAndReturnFunc(t *testing.T) {
 	reporter, ctrl := createFixtures(t)
 	subject := new(Subject)
 
 	str := ""
 
-	ctrl.RecordCall(subject, "FooMethod", gomock.Any()).WillByDefault().DoAndReturn(func(s string) int {
+	ctrl.RecordCall(subject, "FooMethod", gomock.Any()).ByDefault().DoAndReturn(func(s string) int {
 		str = s
 		return 5
 	})

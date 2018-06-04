@@ -79,17 +79,29 @@ func newCall(t TestReporter, receiver interface{}, method string, methodType ref
 		args: margs, origin: origin, minCalls: 1, maxCalls: 1, actions: actions}
 }
 
-// WillByDefault defines this expectation as a default that is tried to match if no other expectation matches.
+// ByDefault defines this expectation as a default that is tried to match if no other expectation matches.
 // To use this as catch-all you may use Any() matcher for the method parameters.
-// WillByDefault expects to be called 0 or more times. This can be overwritten by Min/MaxTimes() methods.
-func (c *Call) WillByDefault() *Call {
+// ByDefault expects to be called 0 or more times. This can be overwritten by Min/MaxTimes() methods.
+func (c *Call) ByDefault() *Call {
+	if c.minCalls != 1 || c.maxCalls != 1 {
+		c.t.Fatalf("MinTimes(), MaxTimes(), Times() or AnyTimes() is not allowed when using ByDefault()")
+	}
+
+	if len(c.preReqs) != 0 {
+		c.t.Fatalf("After() is not allowed when using ByDefault()")
+	}
+
 	c.isDefault = true
-	c.AnyTimes()
+	c.minCalls, c.maxCalls = 0, 1e8
 	return c
 }
 
 // AnyTimes allows the expectation to be called 0 or more times
 func (c *Call) AnyTimes() *Call {
+	if c.isDefault {
+		c.t.Fatalf("AnyTimes() is not allowed when using ByDefault()")
+	}
+
 	c.minCalls, c.maxCalls = 0, 1e8 // close enough to infinity
 	return c
 }
@@ -97,6 +109,10 @@ func (c *Call) AnyTimes() *Call {
 // MinTimes requires the call to occur at least n times. If AnyTimes or MaxTimes have not been called, MinTimes also
 // sets the maximum number of calls to infinity.
 func (c *Call) MinTimes(n int) *Call {
+	if c.isDefault {
+		c.t.Fatalf("MinTimes() is not allowed when using ByDefault()")
+	}
+
 	c.minCalls = n
 	if c.maxCalls == 1 {
 		c.maxCalls = 1e8
@@ -107,6 +123,10 @@ func (c *Call) MinTimes(n int) *Call {
 // MaxTimes limits the number of calls to n times. If AnyTimes or MinTimes have not been called, MaxTimes also
 // sets the minimum number of calls to 0.
 func (c *Call) MaxTimes(n int) *Call {
+	if c.isDefault {
+		c.t.Fatalf("MaxTimes() is not allowed when using ByDefault()")
+	}
+
 	c.maxCalls = n
 	if c.minCalls == 1 {
 		c.minCalls = 0
@@ -211,6 +231,10 @@ func (c *Call) Return(rets ...interface{}) *Call {
 
 // Times declares the exact number of times a function call is expected to be executed.
 func (c *Call) Times(n int) *Call {
+	if c.isDefault {
+		c.t.Fatalf("Times() is not allowed when using ByDefault()")
+	}
+
 	c.minCalls, c.maxCalls = n, n
 	return c
 }
@@ -276,6 +300,15 @@ func (c *Call) isPreReq(other *Call) bool {
 func (c *Call) After(preReq *Call) *Call {
 	if h, ok := c.t.(testHelper); ok {
 		h.Helper()
+	}
+
+	// this is more or less a hint, since you could add a call as prerequisite
+	// and afterwards use ByDefault()
+	if preReq.isDefault {
+		c.t.Fatalf("Default isn't allowed to be a prerequisite")
+	}
+	if c.isDefault {
+		c.t.Fatalf("ByDefault() isn't allowed to have prerequisites")
 	}
 
 	if c == preReq {
