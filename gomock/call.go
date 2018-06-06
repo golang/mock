@@ -81,7 +81,7 @@ func newCall(t TestReporter, receiver interface{}, method string, methodType ref
 
 // ByDefault defines this expectation as a default that is tried to match if no other expectation matches.
 // To use this as catch-all you may use Any() matcher for the method parameters.
-// ByDefault expects to be called 0 or more times. This can be overwritten by Min/MaxTimes() methods.
+// ByDefault expects to be called 0 or more times.
 func (c *Call) ByDefault() *Call {
 	if c.minCalls != 1 || c.maxCalls != 1 {
 		c.t.Fatalf("MinTimes(), MaxTimes(), Times() or AnyTimes() is not allowed when using ByDefault()")

@@ -882,7 +882,6 @@ func TestByDefaultMinMaxTimesNotAllowed(t *testing.T) {
 	subject = new(Subject)
 
 	reporter.assertFatal(func() {
-		// call 1 more than MaxTimes should fail
 		ctrl.RecordCall(subject, "FooMethod", gomock.Any()).ByDefault().MaxTimes(2).Return(5)
 	}, "MaxTimes() is not allowed when using ByDefault()")
 
@@ -891,7 +890,6 @@ func TestByDefaultMinMaxTimesNotAllowed(t *testing.T) {
 	subject = new(Subject)
 
 	reporter.assertFatal(func() {
-		// call 1 more than MaxTimes should fail
 		ctrl.RecordCall(subject, "FooMethod", gomock.Any()).ByDefault().AnyTimes().Return(5)
 	}, "AnyTimes() is not allowed when using ByDefault()")
 
@@ -900,7 +898,6 @@ func TestByDefaultMinMaxTimesNotAllowed(t *testing.T) {
 	subject = new(Subject)
 
 	reporter.assertFatal(func() {
-		// call 1 more than MaxTimes should fail
 		ctrl.RecordCall(subject, "FooMethod", gomock.Any()).ByDefault().Times(4).Return(5)
 	}, "Times() is not allowed when using ByDefault()")
 }
