@@ -35,11 +35,11 @@ func TestRemember(t *testing.T) {
 
 	user.Remember(mockIndex, []string{"a", "b"}, []interface{}{1, 2})
 	// Check the ConcreteRet calls.
-	if c := mockIndex.ConcreteRet(); c != boolc {
-		t.Errorf("ConcreteRet: got %v, want %v", c, boolc)
-	}
 	if c := mockIndex.ConcreteRet(); c != nil {
 		t.Errorf("ConcreteRet: got %v, want nil", c)
+	}
+	if c := mockIndex.ConcreteRet(); c != boolc {
+		t.Errorf("ConcreteRet: got %v, want %v", c, boolc)
 	}
 
 	// Try one with an action.
@@ -68,13 +68,31 @@ func TestVariadicFunction(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockIndex := mock_user.NewMockIndex(ctrl)
-	mockIndex.EXPECT().Ellip("%d", 5, 6, 7, 8).Do(func(format string, nums ...int) {
+	mockIndex.EXPECT().Ellip("%d").Do(func(format string, nums ...int) {
 		sum := 0
 		for _, value := range nums {
 			sum += value
 		}
-		if sum != 26 {
-			t.Errorf("Expected 7, got %d", sum)
+		if sum != 0 {
+			t.Errorf("Expected 0, got %d", sum)
+		}
+	})
+	mockIndex.EXPECT().Ellip("%d", gomock.Any()).Do(func(format string, nums ...int) {
+		sum := 0
+		for _, value := range nums {
+			sum += value
+		}
+		if sum != 0 {
+			t.Errorf("Expected 0, got %d", sum)
+		}
+	})
+	mockIndex.EXPECT().Ellip("%d", gomock.Any()).Do(func(format string, nums ...int) {
+		sum := 0
+		for _, value := range nums {
+			sum += value
+		}
+		if sum != 0 {
+			t.Errorf("Expected 0, got %d", sum)
 		}
 	})
 	mockIndex.EXPECT().Ellip("%d", gomock.Any()).Do(func(format string, nums ...int) {
@@ -86,36 +104,18 @@ func TestVariadicFunction(t *testing.T) {
 			t.Errorf("Expected 7, got %d", sum)
 		}
 	})
-	mockIndex.EXPECT().Ellip("%d", gomock.Any()).Do(func(format string, nums ...int) {
+	mockIndex.EXPECT().Ellip("%d", 5, 6, 7, 8).Do(func(format string, nums ...int) {
 		sum := 0
 		for _, value := range nums {
 			sum += value
 		}
-		if sum != 0 {
-			t.Errorf("Expected 0, got %d", sum)
-		}
-	})
-	mockIndex.EXPECT().Ellip("%d", gomock.Any()).Do(func(format string, nums ...int) {
-		sum := 0
-		for _, value := range nums {
-			sum += value
-		}
-		if sum != 0 {
-			t.Errorf("Expected 0, got %d", sum)
-		}
-	})
-	mockIndex.EXPECT().Ellip("%d").Do(func(format string, nums ...int) {
-		sum := 0
-		for _, value := range nums {
-			sum += value
-		}
-		if sum != 0 {
-			t.Errorf("Expected 0, got %d", sum)
+		if sum != 26 {
+			t.Errorf("Expected 7, got %d", sum)
 		}
 	})
 
-	mockIndex.Ellip("%d", 1, 2, 3, 4) // Match second matcher.
-	mockIndex.Ellip("%d", 5, 6, 7, 8) // Match first matcher.
+	mockIndex.Ellip("%d", 1, 2, 3, 4) // Match second to last matcher.
+	mockIndex.Ellip("%d", 5, 6, 7, 8) // Match last matcher.
 	mockIndex.Ellip("%d", 0)
 	mockIndex.Ellip("%d")
 	mockIndex.Ellip("%d")

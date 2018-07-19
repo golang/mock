@@ -69,12 +69,12 @@ func (cs callSet) FindMatch(receiver interface{}, method string, args []interfac
 	// Search through the expected calls.
 	expected := cs.expected[key]
 	var callsErrors bytes.Buffer
-	for _, call := range expected {
-		err := call.matches(args)
+	for i := len(expected) - 1; i >= 0; i-- {
+		err := expected[i].matches(args)
 		if err != nil {
 			fmt.Fprintf(&callsErrors, "\n%v", err)
 		} else {
-			return call, nil
+			return expected[i], nil
 		}
 	}
 
