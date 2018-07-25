@@ -402,10 +402,16 @@ func (c *Call) call(args []interface{}) []func([]interface{}) []interface{} {
 }
 
 // InOrder declares that the given calls should occur in order.
-func InOrder(calls ...*Call) {
+func InOrder(calls ...*Call) (last *Call) {
+	if len(calls) == 1 {
+		return calls[0]
+	}
+
 	for i := 1; i < len(calls); i++ {
 		calls[i].After(calls[i-1])
+		last = calls[i]
 	}
+	return
 }
 
 func setSlice(arg interface{}, v reflect.Value) {
