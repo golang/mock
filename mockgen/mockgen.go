@@ -79,6 +79,9 @@ func main() {
 
 	dst := os.Stdout
 	if len(*destination) > 0 {
+		if err := os.MkdirAll(filepath.Dir(*destination), os.ModePerm); err != nil {
+			log.Fatalf("Unable to create directory: %v", err)
+		}
 		f, err := os.Create(*destination)
 		if err != nil {
 			log.Fatalf("Failed opening destination file: %v", err)
