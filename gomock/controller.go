@@ -57,10 +57,11 @@ package gomock
 
 import (
 	"fmt"
-	"golang.org/x/net/context"
 	"reflect"
 	"runtime"
 	"sync"
+
+	"golang.org/x/net/context"
 )
 
 // A TestReporter is something that can be used to report test failures.
@@ -188,19 +189,10 @@ func (ctrl *Controller) Finish() {
 	}
 	ctrl.finished = true
 
-	// If we're currently panicking, probably because this is a deferred call,
-	// pass through the panic.
-	if err := recover(); err != nil {
-		panic(err)
-	}
-
 	// Check that all remaining expected calls are satisfied.
 	failures := ctrl.expectedCalls.Failures()
 	for _, call := range failures {
 		ctrl.t.Errorf("missing call(s) to %v", call)
-	}
-	if len(failures) != 0 {
-		ctrl.t.Fatalf("aborting test due to missing call(s)")
 	}
 }
 
