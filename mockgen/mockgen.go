@@ -35,11 +35,11 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/golang/mock/mockgen/model"
+	"github.com/otokaze/mock/mockgen/model"
 )
 
 const (
-	gomockImportPath = "github.com/golang/mock/gomock"
+	gomockImportPath = "github.com/otokaze/mock/gomock"
 )
 
 var (
@@ -68,6 +68,8 @@ func main() {
 		}
 		pkg, err = Reflect(flag.Arg(0), strings.Split(flag.Arg(1), ","))
 	}
+	// fmt.Printf("=======%+v", pkg.SrcDir)
+	// os.Exit(0)
 	if err != nil {
 		log.Fatalf("Loading input failed: %v", err)
 	}

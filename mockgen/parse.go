@@ -29,7 +29,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/golang/mock/mockgen/model"
+	"github.com/otokaze/mock/mockgen/model"
 )
 
 var (
@@ -176,6 +176,7 @@ func (p *fileParser) parseFile(importPath string, file *ast.File) (*model.Packag
 	}
 	return &model.Package{
 		Name:       file.Name.String(),
+		SrcDir:     p.srcDir,
 		Interfaces: is,
 	}, nil
 }
