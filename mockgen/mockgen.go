@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // MockGen generates mock implementations of Go interfaces.
-package main
+package mockgen
 
 // TODO: This does not support recursive embedded interfaces.
 // TODO: This does not support embedding package-local interfaces in a separate file.
