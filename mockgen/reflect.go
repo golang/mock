@@ -176,7 +176,7 @@ import (
 	"path"
 	"reflect"
 
-	"github.com/golang/mock/mockgen/model"
+	"github.com/otokaze/mock/mockgen/model"
 
 	pkg_ {{printf "%q" .ImportPath}}
 )
