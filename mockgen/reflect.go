@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package mockgen
 
 // This file contains the model construction by reflection.
 
@@ -28,7 +28,7 @@ import (
 	"runtime"
 	"text/template"
 
-	"github.com/golang/mock/mockgen/model"
+	"github.com/otokaze/mock/mockgen/model"
 )
 
 var (
@@ -176,7 +176,7 @@ import (
 	"path"
 	"reflect"
 
-	"github.com/golang/mock/mockgen/model"
+	"github.com/otokaze/mock/mockgen/model"
 
 	pkg_ {{printf "%q" .ImportPath}}
 )
