@@ -53,6 +53,7 @@ var (
 	packageOut      = flag.String("package", "", "Package of the generated code; defaults to the package of the input with a 'mock_' prefix.")
 	selfPackage     = flag.String("self_package", "", "The full package import path for the generated code. The purpose of this flag is to prevent import cycles in the generated code by trying to include its own package. This can happen if the mock's package is set to one of its inputs (usually the main one) and the output is stdio so mockgen cannot detect the final output package. Setting this flag will then tell mockgen which import to exclude.")
 	writePkgComment = flag.Bool("write_package_comment", true, "Writes package documentation comment (godoc) if true.")
+	cache           = flag.Bool("cache", false, "Store the source file hash to identify changes.")
 
 	debugParser = flag.Bool("debug_parser", false, "Print out parser results only.")
 )
@@ -65,9 +66,11 @@ func main() {
 	var pkg *model.Package
 	var err error
 	if *source != "" {
-		var notModified bool
-		if notModified, sourceHash = sourceNotModified(*source, *destination); notModified {
-			return
+		if *cache {
+			var notModified bool
+			if notModified, sourceHash = sourceNotModified(*source, *destination); notModified {
+				return
+			}
 		}
 		pkg, err = ParseFile(*source)
 	} else {
