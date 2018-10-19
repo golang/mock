@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"go/ast"
 	"go/parser"
 	"go/token"
@@ -68,6 +69,22 @@ func TestImportsOfFile(t *testing.T) {
 
 	imports := importsOfFile(file)
 	checkGreeterImports(t, imports)
+}
+
+func TestImportsOfFileContext(t *testing.T) {
+	// this test will fail if double import is detected with golang.org/x/net/context
+	// and context in the same package
+	ParseFile("tests/golang_x_context/pass.go")
+	failed := false
+	msg := ""
+	fatalf = func(format string, v ...interface{}) {
+		failed = true
+		msg = fmt.Sprintf(format, v)
+	}
+	ParseFile("tests/golang_x_context/fail.go")
+	if !failed {
+		t.Fatalf(msg)
+	}
 }
 
 func checkGreeterImports(t *testing.T, imports map[string]string) {

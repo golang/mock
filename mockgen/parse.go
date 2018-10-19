@@ -35,6 +35,8 @@ import (
 var (
 	imports  = flag.String("imports", "", "(source mode) Comma-separated name=path pairs of explicit imports to use.")
 	auxFiles = flag.String("aux_files", "", "(source mode) Comma-separated pkg=path pairs of auxiliary Go source files.")
+	// for easier testing
+	fatalf = log.Fatalf
 )
 
 // TODO: simplify error reporting
@@ -430,6 +432,8 @@ func (p *fileParser) parseType(pkg string, typ ast.Expr) (model.Type, error) {
 // of the imports in file.
 func importsOfFile(file *ast.File) map[string]string {
 	m := make(map[string]string)
+	xCtx := false
+	ctx := false
 	for _, is := range file.Imports {
 		var pkgName string
 		importPath := is.Path.Value[1 : len(is.Path.Value)-1] // remove quotes
@@ -452,9 +456,18 @@ func importsOfFile(file *ast.File) map[string]string {
 				pkgName = pkg.Name
 			}
 		}
-
-		if _, ok := m[pkgName]; ok {
-			log.Fatalf("imported package collision: %q imported twice", pkgName)
+		if importPath == "golang.org/x/net/context" && pkgName == "context" {
+			xCtx = true
+		} else if importPath == "context" && pkgName == "context" {
+			ctx = true
+		}
+		_, ok := m[pkgName]
+		if ok && xCtx && ctx {
+			xCtx = false
+			ctx = false
+			continue
+		} else if ok {
+			fatalf("imported package collision: %q imported twice", pkgName)
 		}
 		m[pkgName] = importPath
 	}
