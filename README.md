@@ -1,4 +1,4 @@
-gomock [![Build Status](https://travis-ci.org/golang/mock.svg?branch=master)](https://travis-ci.org/golang/mock)
+gomock [![Build Status][travis-ci-badge]][travis-ci] [![GoDoc][godoc-badge]][godoc]
 ======
 
 GoMock is a mocking framework for the [Go programming language][golang]. It
@@ -89,6 +89,10 @@ cases, you will need only the `-source` flag.
 TODO: Brief overview of how to create mock objects and set up expectations, and
 an example.
 
-[golang]: http://golang.org/
-[golang-install]: http://golang.org/doc/install.html#releases
-[gomock-ref]: http://godoc.org/github.com/golang/mock/gomock
+[golang]:          http://golang.org/
+[golang-install]:  http://golang.org/doc/install.html#releases
+[gomock-ref]:      http://godoc.org/github.com/golang/mock/gomock
+[travis-ci-badge]: https://travis-ci.org/golang/mock.svg?branch=master
+[travis-ci]:       https://travis-ci.org/golang/mock
+[godoc-badge]:     https://godoc.org/github.com/golang/mock/gomock?status.svg
+[godoc]:           https://godoc.org/github.com/golang/mock/gomock
