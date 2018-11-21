@@ -46,7 +46,14 @@ type Call struct {
 
 // newCall creates a *Call. It requires the method type in order to support
 // unexported methods.
-func newCall(t TestHelper, receiver interface{}, method string, methodType reflect.Type, args ...interface{}) *Call {
+func newCall(
+	t TestHelper,
+	receiver interface{},
+	method string,
+	methodType reflect.Type,
+	callerInfo func(int) string,
+	args ...interface{},
+) *Call {
 	t.Helper()
 
 	// TODO: check arity, types.

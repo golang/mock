@@ -27,10 +27,11 @@ func TestCallSetAdd(t *testing.T) {
 	method := "TestMethod"
 	var receiver interface{} = "TestReceiver"
 	cs := newCallSet()
+	nopCallerInfo := func(int) string { return "" }
 
 	numCalls := 10
 	for i := 0; i < numCalls; i++ {
-		cs.Add(newCall(t, receiver, method, reflect.TypeOf(receiverType{}.Func)))
+		cs.Add(newCall(t, receiver, method, reflect.TypeOf(receiverType{}.Func), nopCallerInfo))
 	}
 
 	call, err := cs.FindMatch(receiver, method, []interface{}{})

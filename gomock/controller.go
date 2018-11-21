@@ -58,6 +58,7 @@ package gomock
 import (
 	"context"
 	"fmt"
+	"path"
 	"reflect"
 	"runtime"
 	"sync"
@@ -107,23 +108,49 @@ type Controller struct {
 	// TestReporter passed in when creating the Controller via NewController.
 	// If the TestReporter does not implment a TestHelper it will be wrapped
 	// with a nopTestHelper.
-	T             TestHelper
-	mu            sync.Mutex
-	expectedCalls *callSet
-	finished      bool
+	T               TestHelper
+	mu              sync.Mutex
+	expectedCalls   *callSet
+	finished        bool
+	callerFormatter func(skip int) string
 }
 
 // NewController returns a new Controller. It is the preferred way to create a
+// Controller. It receives options that are used to configure the returned
 // Controller.
-func NewController(t TestReporter) *Controller {
+func NewController(t TestReporter, opts ...ControllerOption) *Controller {
 	h, ok := t.(TestHelper)
 	if !ok {
 		h = nopTestHelper{t}
 	}
 
-	return &Controller{
+	ctrl := &Controller{
 		T:             h,
 		expectedCalls: newCallSet(),
+	}
+
+	for _, opt := range opts {
+		opt(ctrl)
+	}
+
+	return ctrl
+}
+
+// ControllerOption configures a Controller to customize how it interacts
+// within the tests.
+type ControllerOption func(*Controller)
+
+// WithConciseCallstack returns a ControllerOption that configures the
+// Controller to limit how much information is presented upon a failure.
+func WithConciseCallstack() ControllerOption {
+	return func(c *Controller) {
+		c.callerFormatter = func(skip int) string {
+			if _, file, line, ok := runtime.Caller(skip + 1); ok {
+				file = path.Base(file)
+				return fmt.Sprintf("%s:%d", file, line)
+			}
+			return "unknown file"
+		}
 	}
 }
 
@@ -140,8 +167,8 @@ func (r *cancelReporter) Fatalf(format string, args ...interface{}) {
 	r.TestHelper.Fatalf(format, args...)
 }
 
-// WithContext returns a new Controller and a Context, which is cancelled on any
-// fatal failure.
+// WithContext returns a new Controller and a Context, which is cancelled on
+// any fatal failure.
 func WithContext(ctx context.Context, t TestReporter) (*Controller, context.Context) {
 	h, ok := t.(TestHelper)
 	if !ok {
@@ -176,7 +203,7 @@ func (ctrl *Controller) RecordCall(receiver interface{}, method string, args ...
 func (ctrl *Controller) RecordCallWithMethodType(receiver interface{}, method string, methodType reflect.Type, args ...interface{}) *Call {
 	ctrl.T.Helper()
 
-	call := newCall(ctrl.T, receiver, method, methodType, args...)
+	call := newCall(ctrl.T, receiver, method, methodType, ctrl.callerInfo, args...)
 
 	ctrl.mu.Lock()
 	defer ctrl.mu.Unlock()
@@ -197,7 +224,7 @@ func (ctrl *Controller) Call(receiver interface{}, method string, args ...interf
 
 		expected, err := ctrl.expectedCalls.FindMatch(receiver, method, args)
 		if err != nil {
-			origin := callerInfo(2)
+			origin := ctrl.callerInfo(2)
 			ctrl.T.Fatalf("Unexpected call to %T.%v(%v) at %s because: %s", receiver, method, args, origin, err)
 		}
 
@@ -255,7 +282,11 @@ func (ctrl *Controller) Finish() {
 	}
 }
 
-func callerInfo(skip int) string {
+func (ctrl *Controller) callerInfo(skip int) string {
+	if ctrl.callerFormatter != nil {
+		return ctrl.callerFormatter(skip + 1)
+	}
+
 	if _, file, line, ok := runtime.Caller(skip + 1); ok {
 		return fmt.Sprintf("%s:%d", file, line)
 	}

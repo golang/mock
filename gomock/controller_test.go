@@ -16,7 +16,10 @@ package gomock_test
 
 import (
 	"fmt"
+	"path"
 	"reflect"
+	"regexp"
+	"runtime"
 	"testing"
 
 	"strings"
@@ -55,7 +58,8 @@ func (e *ErrorReporter) assertFail(msg string) {
 }
 
 // Use to check that code triggers a fatal test failure.
-func (e *ErrorReporter) assertFatal(fn func(), expectedErrMsgs ...string) {
+func (e *ErrorReporter) assertFatal(fn func(), expectedErrAssertions ...interface{}) {
+	e.t.Helper()
 	defer func() {
 		err := recover()
 		if err == nil {
@@ -68,15 +72,24 @@ func (e *ErrorReporter) assertFatal(fn func(), expectedErrMsgs ...string) {
 			e.t.Error("Expected fatal failure, but got a", actual)
 		} else if token, ok := err.(*struct{}); ok && token == &e.fatalToken {
 			// This is okay - the panic is from Fatalf().
-			if expectedErrMsgs != nil {
+			if expectedErrAssertions != nil {
 				// assert that the actual error message
-				// contains expectedErrMsgs
+				// contains expectedErrAssertions
 
 				// check the last actualErrMsg, because the previous messages come from previous errors
 				actualErrMsg := e.log[len(e.log)-1]
-				for _, expectedErrMsg := range expectedErrMsgs {
-					if !strings.Contains(actualErrMsg, expectedErrMsg) {
-						e.t.Errorf("Error message:\ngot: %q\nwant to contain: %q\n", actualErrMsg, expectedErrMsg)
+				for _, assertion := range expectedErrAssertions {
+					switch x := assertion.(type) {
+					case func(string) error:
+						if err := x(actualErrMsg); err != nil {
+							e.t.Error(err)
+						}
+					case string:
+						if !strings.Contains(actualErrMsg, x) {
+							e.t.Errorf("Error message:\ngot: %q\nwant to contain: %q\n", actualErrMsg, x)
+						}
+					default:
+						panic(fmt.Sprintf("unknown assertion type: %T", assertion))
 					}
 				}
 			}
@@ -162,12 +175,12 @@ func assertEqual(t *testing.T, expected interface{}, actual interface{}) {
 	}
 }
 
-func createFixtures(t *testing.T) (reporter *ErrorReporter, ctrl *gomock.Controller) {
+func createFixtures(t *testing.T, opts ...gomock.ControllerOption) (reporter *ErrorReporter, ctrl *gomock.Controller) {
 	// reporter acts as a testing.T-like object that we pass to the
 	// Controller. We use it to test that the mock considered tests
 	// successful or failed.
 	reporter = NewErrorReporter(t)
-	ctrl = gomock.NewController(reporter)
+	ctrl = gomock.NewController(reporter, opts...)
 	return
 }
 
@@ -735,5 +748,43 @@ func TestWithHelper(t *testing.T) {
 
 	if withHelper.helper == 0 {
 		t.Fatal("expected Helper to be invoked")
+	}
+}
+
+func TestCallstackPrinting(t *testing.T) {
+	_, thisFile, _, ok := runtime.Caller(0)
+	if !ok {
+		t.Fatal("unknown file")
+	}
+
+	for _, test := range []struct {
+		Name      string
+		FileRegex string
+		Opts      []gomock.ControllerOption
+	}{
+		{
+			Name:      "normal",
+			FileRegex: thisFile,
+		},
+		{
+			Name:      "concise",
+			FileRegex: `\s` + path.Base(thisFile), // Should not have a / before the name
+			Opts:      []gomock.ControllerOption{gomock.WithConciseCallstack()},
+		},
+	} {
+		t.Run(test.Name, func(t *testing.T) {
+			reporter, ctrl := createFixtures(t, test.Opts...)
+			subject := new(Subject)
+
+			reporter.assertFatal(func() {
+				ctrl.Call(subject, "NotRecordedMethod", "argument")
+			}, func(s string) error {
+				if !regexp.MustCompile(test.FileRegex).MatchString(s) {
+					return fmt.Errorf("expected to match %q: %q", test.FileRegex, s)
+				}
+				return nil
+			})
+			ctrl.Finish()
+		})
 	}
 }
