@@ -121,8 +121,13 @@ func NewController(t TestReporter) *Controller {
 		h = nopTestHelper{t}
 	}
 
+	f, ok := t.(testFailer)
+	if !ok {
+		f = nopTestFailer{h}
+	}
+
 	return &Controller{
-		T:             h,
+		T:             f,
 		expectedCalls: newCallSet(),
 	}
 }
@@ -148,8 +153,13 @@ func WithContext(ctx context.Context, t TestReporter) (*Controller, context.Cont
 		h = nopTestHelper{t}
 	}
 
+	f, ok := t.(testFailer)
+	if !ok {
+		f = nopTestFailer{h}
+	}
+
 	ctx, cancel := context.WithCancel(ctx)
-	return NewController(&cancelReporter{h, cancel}), ctx
+	return NewController(&cancelReporter{f, cancel}), ctx
 }
 
 type nopTestHelper struct {
@@ -157,6 +167,12 @@ type nopTestHelper struct {
 }
 
 func (h nopTestHelper) Helper() {}
+
+type nopTestFailer struct {
+	TestHelper
+}
+
+func (f nopTestFailer) Failed() bool { return false }
 
 // RecordCall is called by a mock. It should not be called by user code.
 func (ctrl *Controller) RecordCall(receiver interface{}, method string, args ...interface{}) *Call {
@@ -192,6 +208,7 @@ func (ctrl *Controller) Call(receiver interface{}, method string, args ...interf
 	// Nest this code so we can use defer to make sure the lock is released.
 	actions := func() []func([]interface{}) []interface{} {
 		ctrl.T.Helper()
+
 		ctrl.mu.Lock()
 		defer ctrl.mu.Unlock()
 
@@ -226,10 +243,21 @@ func (ctrl *Controller) Call(receiver interface{}, method string, args ...interf
 	return rets
 }
 
+type testFailer interface {
+	TestHelper
+	Failed() bool
+}
+
 // Finish checks to see if all the methods that were expected to be called
 // were called. It should be invoked for each Controller.
 func (ctrl *Controller) Finish() {
 	ctrl.T.Helper()
+
+	if f, ok := ctrl.T.(testFailer); ok {
+		if f.Failed() {
+			return
+		}
+	}
 
 	ctrl.mu.Lock()
 	defer ctrl.mu.Unlock()

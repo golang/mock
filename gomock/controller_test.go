@@ -25,10 +25,12 @@ import (
 )
 
 type ErrorReporter struct {
-	t          *testing.T
-	log        []string
-	failed     bool
-	fatalToken struct{}
+	t           *testing.T
+	log         []string
+	failed      bool
+	fatalCalled bool
+	fatalToken  struct{}
+	helper      int
 }
 
 func NewErrorReporter(t *testing.T) *ErrorReporter {
@@ -56,7 +58,9 @@ func (e *ErrorReporter) assertFail(msg string) {
 
 // Use to check that code triggers a fatal test failure.
 func (e *ErrorReporter) assertFatal(fn func(), expectedErrMsgs ...string) {
+	e.t.Helper()
 	defer func() {
+		e.t.Helper()
 		err := recover()
 		if err == nil {
 			var actual string
@@ -93,6 +97,7 @@ func (e *ErrorReporter) assertFatal(fn func(), expectedErrMsgs ...string) {
 // recoverUnexpectedFatal can be used as a deferred call in test cases to
 // recover from and display a call to ErrorReporter.Fatalf().
 func (e *ErrorReporter) recoverUnexpectedFatal() {
+	e.t.Helper()
 	err := recover()
 	if err == nil {
 		// No panic.
@@ -119,16 +124,16 @@ func (e *ErrorReporter) Errorf(format string, args ...interface{}) {
 func (e *ErrorReporter) Fatalf(format string, args ...interface{}) {
 	e.Logf(format, args...)
 	e.failed = true
+	e.fatalCalled = true
 	panic(&e.fatalToken)
 }
 
-type HelperReporter struct {
-	gomock.TestReporter
-	helper int
+func (e *ErrorReporter) Failed() bool {
+	return e.fatalCalled
 }
 
-func (h *HelperReporter) Helper() {
-	h.helper++
+func (e *ErrorReporter) Helper() {
+	e.helper++
 }
 
 // A type purely for use as a receiver in testing the Controller.
@@ -195,10 +200,8 @@ func TestNoRecordedMatchingMethodNameForAReceiver(t *testing.T) {
 	reporter.assertFatal(func() {
 		ctrl.Call(subject, "NotRecordedMethod", "argument")
 	}, "Unexpected call to", "there are no expected calls of the method \"NotRecordedMethod\" for that receiver")
-	reporter.assertFatal(func() {
-		// The expected call wasn't made.
-		ctrl.Finish()
-	})
+	defer reporter.recoverUnexpectedFatal()
+	ctrl.Finish()
 }
 
 // This tests that a call with an arguments of some primitive type matches a recorded call.
@@ -211,6 +214,21 @@ func TestExpectedMethodCall(t *testing.T) {
 	ctrl.Finish()
 
 	reporter.assertPass("Expected method call made.")
+}
+
+// This tests that the controller won't report a failure if Fatalf has already
+// been invoked.
+func TestExpectedSingleFatalf(t *testing.T) {
+	reporter, ctrl := createFixtures(t)
+	subject := new(Subject)
+
+	ctrl.RecordCall(subject, "FooMethod", "argument")
+	reporter.assertFatal(func() {
+		ctrl.Call(subject, "NotRecordedMethod", "argument")
+	}, "Unexpected call to", "there are no expected calls of the method \"NotRecordedMethod\" for that receiver")
+	reporter.failed = true
+	defer reporter.recoverUnexpectedFatal()
+	ctrl.Finish()
 }
 
 func TestUnexpectedMethodCall(t *testing.T) {
@@ -254,10 +272,8 @@ func TestUnexpectedArgCount(t *testing.T) {
 		// ... so is this.
 		ctrl.Call(subject, "FooMethod")
 	}, "Unexpected call to", "wrong number of arguments", "Got: 0, want: 1")
-	reporter.assertFatal(func() {
-		// The expected call wasn't made.
-		ctrl.Finish()
-	})
+	defer reporter.recoverUnexpectedFatal()
+	ctrl.Finish()
 }
 
 // This tests that a call with complex arguments (a struct and some primitive type) matches a recorded call.
@@ -292,10 +308,8 @@ func TestUnexpectedArgValue_FirstArg(t *testing.T) {
 	}, "Unexpected call to", "doesn't match the argument at index 0",
 		"Got: {11 no message}\nWant: is equal to {123 hello}")
 
-	reporter.assertFatal(func() {
-		// The expected call wasn't made.
-		ctrl.Finish()
-	})
+	defer reporter.recoverUnexpectedFatal()
+	ctrl.Finish()
 }
 
 func TestUnexpectedArgValue_SecondtArg(t *testing.T) {
@@ -311,10 +325,8 @@ func TestUnexpectedArgValue_SecondtArg(t *testing.T) {
 	}, "Unexpected call to", "doesn't match the argument at index 1",
 		"Got: 3\nWant: is equal to 15")
 
-	reporter.assertFatal(func() {
-		// The expected call wasn't made.
-		ctrl.Finish()
-	})
+	defer reporter.recoverUnexpectedFatal()
+	ctrl.Finish()
 }
 
 func TestAnyTimes(t *testing.T) {
@@ -728,7 +740,7 @@ func TestNoHelper(t *testing.T) {
 }
 
 func TestWithHelper(t *testing.T) {
-	withHelper := &HelperReporter{TestReporter: NewErrorReporter(t)}
+	withHelper := NewErrorReporter(t)
 	ctrlWithHelper := gomock.NewController(withHelper)
 
 	ctrlWithHelper.T.Helper()

@@ -17,6 +17,10 @@ func (o *mockTestReporter) Fatalf(format string, args ...interface{}) {
 	o.fatalCalls++
 }
 
+func (o *mockTestReporter) Failed() bool {
+	return o.fatalCalls > 0
+}
+
 func (o *mockTestReporter) Helper() {}
 
 func TestCall_After(t *testing.T) {
