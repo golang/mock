@@ -86,8 +86,78 @@ For an example of the use of `mockgen`, see the `sample/` directory. In simple
 cases, you will need only the `-source` flag.
 
 
-TODO: Brief overview of how to create mock objects and set up expectations, and
-an example.
+Building Mocks
+--------------
+
+```go
+type Foo interface {
+  Bar(x int) int
+}
+
+Func SUT(f Foo) {
+ // ...
+}
+
+```
+
+```go
+func TestFoo(t *testing.T) {
+  ctrl := gomock.NewController(t)
+
+  // Assert that Bar() is invoked.
+  defer ctrl.Finish()
+
+  m := NewMockFoo(ctrl)
+
+  // Asserts that the first and only call to Bar() is passed 99.
+  // Anything else will fail.
+  m.
+    EXPECT().
+    Bar(gomock.Eq(99)).
+    Return(101)
+
+  SUT(m)
+}
+```
+
+Building Stubs
+--------------
+
+```go
+type Foo interface {
+  Bar(x int) int
+}
+
+Func SUT(f Foo) {
+ // ...
+}
+
+```
+
+```go
+func TestFoo(t *testing.T) {
+  ctrl := gomock.NewController(t)
+  defer ctrl.Finish()
+
+  m := NewMockFoo(ctrl)
+
+  // Does not make any assertions. Returns 101 when Bar is invoked with 99.
+  m.
+    EXPECT().
+    Bar(gomock.Eq(99)).
+    Return(101).
+    AnyTimes()
+
+  // Does not make any assertions. Returns 103 when Bar is invoked with 101.
+  m.
+    EXPECT().
+    Bar(gomock.Eq(101)).
+    Return(103).
+    AnyTimes()
+
+  SUT(m)
+}
+```
 
 [golang]:          http://golang.org/
 [golang-install]:  http://golang.org/doc/install.html#releases
