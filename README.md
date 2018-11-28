@@ -82,6 +82,8 @@ It supports the following flags:
 	If one of the interfaces has no custom name specified, then default naming
 	convention will be used.
 
+* `-copyright_file`: Copyright file used to add copyright header to the resulting source code.
+
 For an example of the use of `mockgen`, see the `sample/` directory. In simple
 cases, you will need only the `-source` flag.
 
