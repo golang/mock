@@ -211,7 +211,7 @@ func main() {
 	}
 
 	for _, it := range its {
-		intf, err := model.InterfaceFromInterfaceType(it.typ)
+		intf, err := model.InterfaceFromInterfaceOrFuncType(it.typ)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Reflection: %v\n", err)
 			os.Exit(1)

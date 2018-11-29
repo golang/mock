@@ -179,7 +179,21 @@ func (p *fileParser) parseFile(importPath string, file *ast.File) (*model.Packag
 
 	var is []*model.Interface
 	for ni := range iterInterfaces(file) {
-		i, err := p.parseInterface(ni.name.String(), importPath, ni.it)
+		i, err := p.parseInterface(ni.name.String(), importPath, ni.it.Methods.List)
+		if err != nil {
+			return nil, err
+		}
+		is = append(is, i)
+	}
+	for ni := range iterFuncs(file) {
+		// For function types, generate an interface having a single
+		// "Call" method.
+		i, err := p.parseInterface(ni.name.String(), importPath, []*ast.Field{
+			{
+				Names: []*ast.Ident{{Name: "Call"}},
+				Type:  ni.ft,
+			},
+		})
 		if err != nil {
 			return nil, err
 		}
@@ -219,9 +233,9 @@ func (p *fileParser) parsePackage(path string) error {
 	return nil
 }
 
-func (p *fileParser) parseInterface(name, pkg string, it *ast.InterfaceType) (*model.Interface, error) {
+func (p *fileParser) parseInterface(name, pkg string, fields []*ast.Field) (*model.Interface, error) {
 	intf := &model.Interface{Name: name}
-	for _, field := range it.Methods.List {
+	for _, field := range fields {
 		switch v := field.Type.(type) {
 		case *ast.FuncType:
 			if nn := len(field.Names); nn != 1 {
@@ -244,7 +258,7 @@ func (p *fileParser) parseInterface(name, pkg string, it *ast.InterfaceType) (*m
 					return nil, p.errorf(v.Pos(), "unknown embedded interface %s", v.String())
 				}
 			}
-			eintf, err := p.parseInterface(v.String(), pkg, ei)
+			eintf, err := p.parseInterface(v.String(), pkg, ei.Methods.List)
 			if err != nil {
 				return nil, err
 			}
@@ -270,7 +284,7 @@ func (p *fileParser) parseInterface(name, pkg string, it *ast.InterfaceType) (*m
 					return nil, p.errorf(v.Pos(), "unknown embedded interface %s.%s", fpkg, sel)
 				}
 			}
-			eintf, err := p.parseInterface(sel, fpkg, ei)
+			eintf, err := p.parseInterface(sel, fpkg, ei.Methods.List)
 			if err != nil {
 				return nil, err
 			}
@@ -501,6 +515,38 @@ func iterInterfaces(file *ast.File) <-chan namedInterface {
 				}
 
 				ch <- namedInterface{ts.Name, it}
+			}
+		}
+		close(ch)
+	}()
+	return ch
+}
+
+type namedFunc struct {
+	name *ast.Ident
+	ft   *ast.FuncType
+}
+
+// Create an iterator over all function types in file.
+func iterFuncs(file *ast.File) <-chan namedFunc {
+	ch := make(chan namedFunc)
+	go func() {
+		for _, decl := range file.Decls {
+			gd, ok := decl.(*ast.GenDecl)
+			if !ok || gd.Tok != token.TYPE {
+				continue
+			}
+			for _, spec := range gd.Specs {
+				ts, ok := spec.(*ast.TypeSpec)
+				if !ok {
+					continue
+				}
+				ft, ok := ts.Type.(*ast.FuncType)
+				if !ok {
+					continue
+				}
+
+				ch <- namedFunc{ts.Name, ft}
 			}
 		}
 		close(ch)
