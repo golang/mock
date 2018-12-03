@@ -159,6 +159,46 @@ func TestFoo(t *testing.T) {
 }
 ```
 
+Table Driven Tests
+------------------
+Ref: [Issue 223](https://github.com/golang/mock/issues/223)
+It is important to note, especially when testing multiple cases in a loop, to setup your mock controller within your sub-tests.  
+Otherwise, test may yeild unexpected behavior.
+
+```go
+func TestFoo(t *testing.T) {
+  tests := []struct{
+    name string
+    code int
+    result []byte
+  }{
+    /* test 1 */
+    {"success", 200, []byte(`{"foo":"bar"}`)},
+
+    /* test 2 */
+    ... [snip] ...
+  }
+
+  for _, v := range tests {
+
+    t.Run(v.name, func(t *testing.T) {
+      mockCtrl := gomock.NewController(t)
+      defer mockCtrl.Finish()
+
+      mockedStore := mock.NewMockDataStore(mockCtrl)
+      srv.db := mockedStore
+
+      mockedStore.EXPECT().Get(gomock.Any()).Return(v.result)
+
+      req := http.NewRequest("GET", "/foo", nil)
+      w := httptest.NewRecorder()
+      srv.ServeHTTP(w, req)
+      is.Equal(w.code, v.c)
+    })
+  }
+}
+```
+
 [golang]:          http://golang.org/
 [golang-install]:  http://golang.org/doc/install.html#releases
 [gomock-ref]:      http://godoc.org/github.com/golang/mock/gomock
