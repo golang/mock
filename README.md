@@ -161,7 +161,7 @@ func TestFoo(t *testing.T) {
 
 Table Driven Tests
 ------------------
-Ref: [Issue 223](https://github.com/golang/mock/issues/223)
+Ref: [Issue 223](https://github.com/golang/mock/issues/223)  
 It is important to note, especially when testing multiple cases in a loop, to setup your mock controller within your sub-tests.  
 Otherwise, test may yeild unexpected behavior.
 
