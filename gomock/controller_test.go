@@ -122,6 +122,15 @@ func (e *ErrorReporter) Fatalf(format string, args ...interface{}) {
 	panic(&e.fatalToken)
 }
 
+type HelperReporter struct {
+	gomock.TestReporter
+	helper int
+}
+
+func (h *HelperReporter) Helper() {
+	h.helper++
+}
+
 // A type purely for use as a receiver in testing the Controller.
 type Subject struct{}
 
@@ -709,4 +718,22 @@ func TestDuplicateFinishCallFails(t *testing.T) {
 	rep.assertPass("the first Finish call should succeed")
 
 	rep.assertFatal(ctrl.Finish, "Controller.Finish was called more than once. It has to be called exactly once.")
+}
+
+func TestTestNoHelper(t *testing.T) {
+	ctrlNoHelper := gomock.NewController(NewErrorReporter(t))
+
+	// doesn't panic
+	ctrlNoHelper.T.Helper()
+}
+
+func TestTestWithHelper(t *testing.T) {
+	withHelper := &HelperReporter{TestReporter: NewErrorReporter(t)}
+	ctrlWithHelper := gomock.NewController(withHelper)
+
+	ctrlWithHelper.T.Helper()
+
+	if withHelper.helper == 0 {
+		t.Fatal("expected Helper to be invoked")
+	}
 }
