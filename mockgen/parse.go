@@ -39,7 +39,7 @@ var (
 
 // TODO: simplify error reporting
 
-func ParseFile(source string) (*model.Package, error) {
+func parseFile(source string) (*model.Package, error) {
 	srcDir, err := filepath.Abs(filepath.Dir(source))
 	if err != nil {
 		return nil, fmt.Errorf("failed getting source directory: %v", err)
@@ -386,10 +386,10 @@ func (p *fileParser) parseType(pkg string, typ ast.Expr) (model.Type, error) {
 			}
 			// assume type in this package
 			return &model.NamedType{Package: pkg, Type: v.Name}, nil
-		} else {
-			// assume predeclared type
-			return model.PredeclaredType(v.Name), nil
 		}
+
+		// assume predeclared type
+		return model.PredeclaredType(v.Name), nil
 	case *ast.InterfaceType:
 		if v.Methods != nil && len(v.Methods.List) > 0 {
 			return nil, p.errorf(v.Pos(), "can't handle non-empty unnamed interface types")

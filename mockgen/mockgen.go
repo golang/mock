@@ -60,13 +60,13 @@ func main() {
 	var pkg *model.Package
 	var err error
 	if *source != "" {
-		pkg, err = ParseFile(*source)
+		pkg, err = parseFile(*source)
 	} else {
 		if flag.NArg() != 2 {
 			usage()
 			log.Fatal("Expected exactly two arguments")
 		}
-		pkg, err = Reflect(flag.Arg(0), strings.Split(flag.Arg(1), ","))
+		pkg, err = reflect(flag.Arg(0), strings.Split(flag.Arg(1), ","))
 	}
 	if err != nil {
 		log.Fatalf("Loading input failed: %v", err)
@@ -250,17 +250,17 @@ func (g *generator) Generate(pkg *model.Package, pkgName string, outputPackagePa
 	}
 
 	// Sort keys to make import alias generation predictable
-	sorted_paths := make([]string, len(im), len(im))
+	sortedPaths := make([]string, len(im), len(im))
 	x := 0
 	for pth := range im {
-		sorted_paths[x] = pth
+		sortedPaths[x] = pth
 		x++
 	}
-	sort.Strings(sorted_paths)
+	sort.Strings(sortedPaths)
 
 	g.packageMap = make(map[string]string, len(im))
 	localNames := make(map[string]bool, len(im))
-	for _, pth := range sorted_paths {
+	for _, pth := range sortedPaths {
 		base := sanitize(path.Base(pth))
 
 		// Local names for an imported package can usually be the basename of the import path.
