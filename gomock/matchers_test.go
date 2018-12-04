@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:generate mockgen -destination internal/mock_matcher/mock_matcher.go github.com/golang/mock/gomock Matcher
+
 package gomock_test
 
 import (
@@ -19,7 +21,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	mock_matcher "github.com/golang/mock/gomock/mock_matcher"
+	mock_matcher "github.com/golang/mock/gomock/internal/mock_matcher"
 )
 
 func TestMatchers(t *testing.T) {
