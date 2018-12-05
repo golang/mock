@@ -2,7 +2,11 @@ package main
 
 import (
 	"fmt"
+	"regexp"
+	"strings"
 	"testing"
+
+	"github.com/golang/mock/mockgen/model"
 )
 
 func TestMakeArgString(t *testing.T) {
@@ -178,4 +182,88 @@ func TestIdentifierAllocator_allocateIdentifier(t *testing.T) {
 	if !allocatorContainsIdentifiers(a, expected) {
 		t.Fatalf("allocator doesn't contain the expected items - allocator: %#v, expected items: %#v", a, expected)
 	}
+}
+
+func TestGenerateMockInterface_Helper(t *testing.T) {
+	for _, test := range []struct {
+		Name       string
+		Identifier string
+		HelperLine string
+		Methods    []*model.Method
+	}{
+		{Name: "mock", Identifier: "MockSomename", HelperLine: "m.ctrl.T.Helper()"},
+		{Name: "recorder", Identifier: "MockSomenameMockRecorder", HelperLine: "mr.mock.ctrl.T.Helper()"},
+		{
+			Name:       "mock identifier conflict",
+			Identifier: "MockSomename",
+			HelperLine: "m_2.ctrl.T.Helper()",
+			Methods: []*model.Method{
+				{
+					Name: "MethodA",
+					In: []*model.Parameter{
+						{
+							Name: "m",
+							Type: &model.NamedType{Type: "int"},
+						},
+					},
+				},
+			},
+		},
+		{
+			Name:       "recorder identifier conflict",
+			Identifier: "MockSomenameMockRecorder",
+			HelperLine: "mr_2.mock.ctrl.T.Helper()",
+			Methods: []*model.Method{
+				{
+					Name: "MethodA",
+					In: []*model.Parameter{
+						{
+							Name: "mr",
+							Type: &model.NamedType{Type: "int"},
+						},
+					},
+				},
+			},
+		},
+	} {
+		t.Run(test.Name, func(t *testing.T) {
+			g := generator{}
+
+			if len(test.Methods) == 0 {
+				test.Methods = []*model.Method{
+					{Name: "MethodA"},
+					{Name: "MethodB"},
+				}
+			}
+
+			if err := g.GenerateMockInterface(&model.Interface{
+				Name:    "Somename",
+				Methods: test.Methods,
+			}, "somepackage"); err != nil {
+				t.Fatal(err)
+			}
+
+			lines := strings.Split(g.buf.String(), "\n")
+
+			// T.Helper() should be the first line
+			for _, method := range test.Methods {
+				if strings.TrimSpace(lines[findMethod(t, test.Identifier, method.Name, lines)+1]) != test.HelperLine {
+					t.Fatalf("method %s.%s did not declare itself a Helper method", test.Identifier, method.Name)
+				}
+			}
+		})
+	}
+}
+
+func findMethod(t *testing.T, identifier, methodName string, lines []string) int {
+	t.Helper()
+	r := regexp.MustCompile(fmt.Sprintf(`func\s+\(.+%s\)\s*%s`, identifier, methodName))
+	for i, line := range lines {
+		if r.MatchString(line) {
+			return i
+		}
+	}
+
+	t.Fatalf("unable to find 'func (m %s) %s'", identifier, methodName)
+	panic("unreachable")
 }

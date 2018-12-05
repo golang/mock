@@ -35,6 +35,7 @@ func (m *MockVendorsDep) EXPECT() *MockVendorsDepMockRecorder {
 
 // Foo mocks base method
 func (m *MockVendorsDep) Foo() a.Ifc {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Foo")
 	ret0, _ := ret[0].(a.Ifc)
 	return ret0
@@ -42,5 +43,6 @@ func (m *MockVendorsDep) Foo() a.Ifc {
 
 // Foo indicates an expected call of Foo
 func (mr *MockVendorsDepMockRecorder) Foo() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Foo", reflect.TypeOf((*MockVendorsDep)(nil).Foo))
 }

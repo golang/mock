@@ -34,10 +34,12 @@ func (m *MockS) EXPECT() *MockSMockRecorder {
 
 // F mocks base method
 func (m *MockS) F(arg0 X) {
+	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "F", arg0)
 }
 
 // F indicates an expected call of F
 func (mr *MockSMockRecorder) F(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "F", reflect.TypeOf((*MockS)(nil).F), arg0)
 }
