@@ -66,7 +66,7 @@ func TestImportsOfFile(t *testing.T) {
 		t.Fatalf("Unexpected error: %v", err)
 	}
 
-	imports := importsOfFile(file)
+	imports, _ := importsOfFile(file)
 	checkGreeterImports(t, imports)
 }
 

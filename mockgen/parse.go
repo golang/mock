@@ -90,7 +90,6 @@ func ParseFile(source string) (*model.Package, error) {
 	if err != nil {
 		return nil, err
 	}
-	pkg.DotImports = make([]string, 0, len(dotImports))
 	for path := range dotImports {
 		pkg.DotImports = append(pkg.DotImports, path)
 	}
@@ -149,7 +148,7 @@ func (p *fileParser) addAuxInterfacesFromFile(pkg string, file *ast.File) {
 // parseFile loads all file imports and auxiliary files import into the
 // fileParser, parses all file interfaces and returns package model.
 func (p *fileParser) parseFile(importPath string, file *ast.File) (*model.Package, error) {
-	allImports := importsOfFile(file)
+	allImports, dotImports := importsOfFile(file)
 	// Don't stomp imports provided by -imports. Those should take precedence.
 	for pkg, path := range allImports {
 		if _, ok := p.imports[pkg]; !ok {
@@ -159,7 +158,8 @@ func (p *fileParser) parseFile(importPath string, file *ast.File) (*model.Packag
 	// Add imports from auxiliary files, which might be needed for embedded interfaces.
 	// Don't stomp any other imports.
 	for _, f := range p.auxFiles {
-		for pkg, path := range importsOfFile(f) {
+		auxImports, _ := importsOfFile(f)
+		for pkg, path := range auxImports {
 			if _, ok := p.imports[pkg]; !ok {
 				p.imports[pkg] = path
 			}
@@ -177,6 +177,7 @@ func (p *fileParser) parseFile(importPath string, file *ast.File) (*model.Packag
 	return &model.Package{
 		Name:       file.Name.String(),
 		Interfaces: is,
+		DotImports: dotImports,
 	}, nil
 }
 
@@ -197,7 +198,8 @@ func (p *fileParser) parsePackage(path string) error {
 		for ni := range iterInterfaces(file) {
 			p.importedInterfaces[path][ni.name.Name] = ni.it
 		}
-		for pkgName, pkgPath := range importsOfFile(file) {
+		imports, _ := importsOfFile(file)
+		for pkgName, pkgPath := range imports {
 			if _, ok := p.imports[pkgName]; !ok {
 				p.imports[pkgName] = pkgPath
 			}
@@ -428,8 +430,9 @@ func (p *fileParser) parseType(pkg string, typ ast.Expr) (model.Type, error) {
 
 // importsOfFile returns a map of package name to import path
 // of the imports in file.
-func importsOfFile(file *ast.File) map[string]string {
-	m := make(map[string]string)
+func importsOfFile(file *ast.File) (normalImports map[string]string, dotImports []string) {
+	normalImports = make(map[string]string)
+	dotImports = make([]string, 0)
 	for _, is := range file.Imports {
 		var pkgName string
 		importPath := is.Path.Value[1 : len(is.Path.Value)-1] // remove quotes
@@ -439,7 +442,7 @@ func importsOfFile(file *ast.File) map[string]string {
 			if is.Name.Name == "_" {
 				continue
 			}
-			pkgName = removeDot(is.Name.Name)
+			pkgName = is.Name.Name
 		} else {
 			pkg, err := build.Import(importPath, "", 0)
 			if err != nil {
@@ -453,12 +456,17 @@ func importsOfFile(file *ast.File) map[string]string {
 			}
 		}
 
-		if _, ok := m[pkgName]; ok {
-			log.Fatalf("imported package collision: %q imported twice", pkgName)
+		if pkgName == "." {
+			dotImports = append(dotImports, importPath)
+		} else {
+
+			if _, ok := normalImports[pkgName]; ok {
+				log.Fatalf("imported package collision: %q imported twice", pkgName)
+			}
+			normalImports[pkgName] = importPath
 		}
-		m[pkgName] = importPath
 	}
-	return m
+	return
 }
 
 type namedInterface struct {
