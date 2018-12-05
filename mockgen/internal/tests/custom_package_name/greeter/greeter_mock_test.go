@@ -35,6 +35,7 @@ func (m *MockInputMaker) EXPECT() *MockInputMakerMockRecorder {
 
 // MakeInput mocks base method
 func (m *MockInputMaker) MakeInput() v1.GreetInput {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "MakeInput")
 	ret0, _ := ret[0].(v1.GreetInput)
 	return ret0
@@ -42,5 +43,6 @@ func (m *MockInputMaker) MakeInput() v1.GreetInput {
 
 // MakeInput indicates an expected call of MakeInput
 func (mr *MockInputMakerMockRecorder) MakeInput() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MakeInput", reflect.TypeOf((*MockInputMaker)(nil).MakeInput))
 }

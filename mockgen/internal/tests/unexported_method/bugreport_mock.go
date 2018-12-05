@@ -34,6 +34,7 @@ func (m *MockExample) EXPECT() *MockExampleMockRecorder {
 
 // someMethod mocks base method
 func (m *MockExample) someMethod(arg0 string) string {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "someMethod", arg0)
 	ret0, _ := ret[0].(string)
 	return ret0
@@ -41,5 +42,6 @@ func (m *MockExample) someMethod(arg0 string) string {
 
 // someMethod indicates an expected call of someMethod
 func (mr *MockExampleMockRecorder) someMethod(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "someMethod", reflect.TypeOf((*MockExample)(nil).someMethod), arg0)
 }

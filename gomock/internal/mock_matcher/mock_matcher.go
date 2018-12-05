@@ -34,6 +34,7 @@ func (m *MockMatcher) EXPECT() *MockMatcherMockRecorder {
 
 // Matches mocks base method
 func (m *MockMatcher) Matches(arg0 interface{}) bool {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Matches", arg0)
 	ret0, _ := ret[0].(bool)
 	return ret0
@@ -41,11 +42,13 @@ func (m *MockMatcher) Matches(arg0 interface{}) bool {
 
 // Matches indicates an expected call of Matches
 func (mr *MockMatcherMockRecorder) Matches(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Matches", reflect.TypeOf((*MockMatcher)(nil).Matches), arg0)
 }
 
 // String mocks base method
 func (m *MockMatcher) String() string {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "String")
 	ret0, _ := ret[0].(string)
 	return ret0
@@ -53,5 +56,6 @@ func (m *MockMatcher) String() string {
 
 // String indicates an expected call of String
 func (mr *MockMatcherMockRecorder) String() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "String", reflect.TypeOf((*MockMatcher)(nil).String))
 }
