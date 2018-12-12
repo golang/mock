@@ -1,6 +1,6 @@
 package vendor_dep
 
-import "a"
+import "test.src/a"
 
 type VendorsDep interface {
 	Foo() a.Ifc

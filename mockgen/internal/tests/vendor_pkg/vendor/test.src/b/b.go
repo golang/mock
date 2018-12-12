@@ -1,4 +1,4 @@
-package a
+package b
 
 type Ifc interface {
 	A(string) string
