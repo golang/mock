@@ -1,7 +1,7 @@
 package vendor_dep
 
-import "a"
+import "golang.org/x/tools/present"
 
 type VendorsDep interface {
-	Foo() a.Ifc
+	Foo() present.Elem
 }
