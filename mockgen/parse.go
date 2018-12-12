@@ -17,6 +17,7 @@ package main
 // This file contains the model construction by parsing source files.
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"go/ast"
@@ -30,6 +31,7 @@ import (
 	"strings"
 
 	"github.com/golang/mock/mockgen/model"
+	"golang.org/x/tools/go/packages"
 )
 
 var (
@@ -45,10 +47,19 @@ func parseFile(source string) (*model.Package, error) {
 		return nil, fmt.Errorf("failed getting source directory: %v", err)
 	}
 
-	var packageImport string
-	if p, err := build.ImportDir(srcDir, 0); err == nil {
-		packageImport = p.ImportPath
-	} // TODO: should we fail if this returns an error?
+	cfg := &packages.Config{Mode: packages.LoadSyntax, Tests: true}
+	pkgs, err := packages.Load(cfg, "file="+source)
+	if err != nil {
+		return nil, err
+	}
+	if packages.PrintErrors(pkgs) > 0 || len(pkgs) == 0 {
+		return nil, errors.New("loading package failed")
+	}
+
+	packageImport := pkgs[0].PkgPath
+
+	// It is illegal to import a _test package.
+	packageImport = strings.TrimSuffix(packageImport, "_test")
 
 	fs := token.NewFileSet()
 	file, err := parser.ParseFile(fs, source, nil, 0)

@@ -5,8 +5,8 @@
 package vendor_dep
 
 import (
-	a "a"
 	gomock "github.com/golang/mock/gomock"
+	present "golang.org/x/tools/present"
 	reflect "reflect"
 )
 
@@ -34,10 +34,10 @@ func (m *MockVendorsDep) EXPECT() *MockVendorsDepMockRecorder {
 }
 
 // Foo mocks base method
-func (m *MockVendorsDep) Foo() a.Ifc {
+func (m *MockVendorsDep) Foo() present.Elem {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Foo")
-	ret0, _ := ret[0].(a.Ifc)
+	ret0, _ := ret[0].(present.Elem)
 	return ret0
 }
 
