@@ -227,7 +227,8 @@ func (ctrl *Controller) Call(receiver interface{}, method string, args ...interf
 }
 
 // Finish checks to see if all the methods that were expected to be called
-// were called. It should be invoked for each Controller.
+// were called. It should be invoked for each Controller. It is not idempotent
+// and therefore can only be invoked once.
 func (ctrl *Controller) Finish() {
 	ctrl.T.Helper()
 
