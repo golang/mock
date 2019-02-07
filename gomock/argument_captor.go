@@ -21,7 +21,7 @@ func (ac *argumentCaptor) Value() interface{} {
 	if len(ac.values) < 1 {
 		return nil
 	}
-	return ac.values[len(ac.values) - 1]
+	return ac.values[len(ac.values)-1]
 }
 
 func (ac *argumentCaptor) AllValues() []interface{} {

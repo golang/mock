@@ -122,7 +122,7 @@ func TestAnyCaptor(t *testing.T) {
 	if !anyCaptor.Matches([]interface{}{make([]int, 3)}) {
 		t.Errorf("expected Matches to be true for %s", []interface{}{make([]int, 3)})
 	}
-	if fmt.Sprintf("%s", gomock.Any()) != fmt.Sprintf("%s", anyCaptor){
+	if fmt.Sprintf("%s", gomock.Any()) != fmt.Sprintf("%s", anyCaptor) {
 		t.Errorf("expected string representation to be '%s', but was '%s'", gomock.Any(), anyCaptor)
 	}
 }

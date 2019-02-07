@@ -8,7 +8,7 @@ type Dao interface {
 	InsertIDs(ids []int)
 }
 
-type realDao struct {}
+type realDao struct{}
 
 func (realDao) InsertIDs(ids []int) {
 	fmt.Println(fmt.Sprintf("inserting ids %d", ids))
