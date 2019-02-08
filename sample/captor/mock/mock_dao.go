@@ -34,10 +34,12 @@ func (m *MockDao) EXPECT() *MockDaoMockRecorder {
 
 // InsertIDs mocks base method
 func (m *MockDao) InsertIDs(arg0 []int) {
+	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "InsertIDs", arg0)
 }
 
 // InsertIDs indicates an expected call of InsertIDs
 func (mr *MockDaoMockRecorder) InsertIDs(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertIDs", reflect.TypeOf((*MockDao)(nil).InsertIDs), arg0)
 }
