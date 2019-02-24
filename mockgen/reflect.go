@@ -22,6 +22,7 @@ import (
 	"flag"
 	"go/build"
 	"io/ioutil"
+	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -96,7 +97,11 @@ func runInDir(program []byte, dir string) (*model.Package, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer func() { os.RemoveAll(tmpDir) }()
+	defer func() {
+		if err := os.RemoveAll(tmpDir); err != nil {
+			log.Printf("failed to remove temp directory: %s", err)
+		}
+	}()
 	const progSource = "prog.go"
 	var progBinary = "prog.bin"
 	if runtime.GOOS == "windows" {
