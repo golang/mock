@@ -252,7 +252,12 @@ func (nt *NamedType) String(pm map[string]string, pkgOverride string) string {
 	if pkgOverride == nt.Package {
 		return nt.Type
 	}
-	return pm[nt.Package] + "." + nt.Type
+	prefix := pm[nt.Package]
+	if prefix != "" {
+		return prefix + "." + nt.Type
+	} else {
+		return nt.Type
+	}
 }
 func (nt *NamedType) addImports(im map[string]bool) {
 	if nt.Package != "" {

@@ -3,8 +3,8 @@ package concurrent
 import (
 	"testing"
 
+	"context"
 	"github.com/golang/mock/gomock"
-	"golang.org/x/net/context"
 
 	mock "github.com/golang/mock/sample/concurrent/mock"
 )

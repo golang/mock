@@ -122,6 +122,15 @@ func (e *ErrorReporter) Fatalf(format string, args ...interface{}) {
 	panic(&e.fatalToken)
 }
 
+type HelperReporter struct {
+	gomock.TestReporter
+	helper int
+}
+
+func (h *HelperReporter) Helper() {
+	h.helper++
+}
+
 // A type purely for use as a receiver in testing the Controller.
 type Subject struct{}
 
@@ -968,4 +977,23 @@ func TestByDefaultCallsDoAndReturnFunc(t *testing.T) {
 
 	ctrl.Finish()
 	reporter.assertPass("defaultCall work with DoAndReturn")
+
+}
+
+func TestNoHelper(t *testing.T) {
+	ctrlNoHelper := gomock.NewController(NewErrorReporter(t))
+
+	// doesn't panic
+	ctrlNoHelper.T.Helper()
+}
+
+func TestWithHelper(t *testing.T) {
+	withHelper := &HelperReporter{TestReporter: NewErrorReporter(t)}
+	ctrlWithHelper := gomock.NewController(withHelper)
+
+	ctrlWithHelper.T.Helper()
+
+	if withHelper.helper == 0 {
+		t.Fatal("expected Helper to be invoked")
+	}
 }

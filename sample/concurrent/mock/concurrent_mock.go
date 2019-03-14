@@ -34,6 +34,7 @@ func (m *MockMath) EXPECT() *MockMathMockRecorder {
 
 // Sum mocks base method
 func (m *MockMath) Sum(arg0, arg1 int) int {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Sum", arg0, arg1)
 	ret0, _ := ret[0].(int)
 	return ret0
@@ -41,5 +42,6 @@ func (m *MockMath) Sum(arg0, arg1 int) int {
 
 // Sum indicates an expected call of Sum
 func (mr *MockMathMockRecorder) Sum(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Sum", reflect.TypeOf((*MockMath)(nil).Sum), arg0, arg1)
 }

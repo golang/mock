@@ -22,6 +22,7 @@ import (
 	"flag"
 	"go/build"
 	"io/ioutil"
+	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -52,6 +53,10 @@ func writeProgram(importPath string, symbols []string) ([]byte, error) {
 // run the given program and parse the output as a model.Package.
 func run(program string) (*model.Package, error) {
 	f, err := ioutil.TempFile("", "")
+	if err != nil {
+		return nil, err
+	}
+
 	filename := f.Name()
 	defer os.Remove(filename)
 	if err := f.Close(); err != nil {
@@ -92,7 +97,11 @@ func runInDir(program []byte, dir string) (*model.Package, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer func() { os.RemoveAll(tmpDir) }()
+	defer func() {
+		if err := os.RemoveAll(tmpDir); err != nil {
+			log.Printf("failed to remove temp directory: %s", err)
+		}
+	}()
 	const progSource = "prog.go"
 	var progBinary = "prog.bin"
 	if runtime.GOOS == "windows" {
@@ -122,7 +131,7 @@ func runInDir(program []byte, dir string) (*model.Package, error) {
 	return run(filepath.Join(tmpDir, progBinary))
 }
 
-func Reflect(importPath string, symbols []string) (*model.Package, error) {
+func reflect(importPath string, symbols []string) (*model.Package, error) {
 	// TODO: sanity check arguments
 
 	if *execOnly != "" {
