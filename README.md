@@ -130,7 +130,7 @@ type Foo interface {
   Bar(x int) int
 }
 
-Func SUT(f Foo) {
+func SUT(f Foo) {
  // ...
 }
 
