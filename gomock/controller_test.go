@@ -298,7 +298,7 @@ func TestUnexpectedArgValue_FirstArg(t *testing.T) {
 	})
 }
 
-func TestUnexpectedArgValue_SecondtArg(t *testing.T) {
+func TestUnexpectedArgValue_SecondArg(t *testing.T) {
 	reporter, ctrl := createFixtures(t)
 	defer reporter.recoverUnexpectedFatal()
 	subject := new(Subject)
