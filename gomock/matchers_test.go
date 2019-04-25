@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate mockgen -destination internal/mock_matcher/mock_matcher.go github.com/golang/mock/gomock Matcher
+//go:generate mockgen -destination internal/mock_gomock/mock_matcher.go github.com/golang/mock/gomock Matcher
 
 package gomock_test
 
@@ -21,7 +21,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	mock_matcher "github.com/golang/mock/gomock/internal/mock_matcher"
+	"github.com/golang/mock/gomock/internal/mock_gomock"
 )
 
 func TestMatchers(t *testing.T) {
@@ -57,7 +57,7 @@ func TestNotMatcher(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockMatcher := mock_matcher.NewMockMatcher(ctrl)
+	mockMatcher := mock_gomock.NewMockMatcher(ctrl)
 	notMatcher := gomock.Not(mockMatcher)
 
 	mockMatcher.EXPECT().Matches(4).Return(true)
