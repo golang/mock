@@ -87,8 +87,13 @@ func (cs callSet) FindMatch(receiver interface{}, method string, args []interfac
 		}
 	}
 
-	if len(expected)+len(exhausted) == 0 {
+	expectedNum := len(expected)
+	exhaustedNum := len(exhausted)
+
+	if expectedNum+exhaustedNum == 0 {
 		fmt.Fprintf(&callsErrors, "there are no expected calls of the method %q for that receiver", method)
+	} else if exhaustedNum > 0 && callsErrors.Len() == 0 {
+		fmt.Fprintf(&callsErrors, "there are no expected calls of the method %q in that order", method)
 	}
 
 	return nil, fmt.Errorf(callsErrors.String())
