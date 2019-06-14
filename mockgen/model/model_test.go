@@ -34,3 +34,57 @@ func TestImpPath(t *testing.T) {
 		})
 	}
 }
+
+func TestTypeString(t *testing.T) {
+	pkgMap := map[string]string{"pkg": "pkg2"}
+	testCases := []struct {
+		input Type
+		want  string
+	}{
+		{&EmptyLength{}, "[]"},
+		{&LiteralLength{Len: 1}, "[1]"},
+		{&ConstLength{Name: "C"}, "[C]"},
+		{&ConstLength{Package: "pkg", Name: "C"}, "[pkg2.C]"},
+		{&ArrayType{
+			Len:  &ConstLength{Package: "pkg", Name: "C"},
+			Type: &NamedType{Package: "pkg2", Type: "T"},
+		}, "[pkg2.C]T"},
+	}
+	for _, tc := range testCases {
+		if got := tc.input.String(pkgMap, ""); got != tc.want {
+			t.Errorf("got %s; want %s", got, tc.want)
+		}
+	}
+}
+
+func TestTypeAddImports(t *testing.T) {
+	testCases := []struct {
+		input Type
+		want  map[string]bool
+	}{
+		{&EmptyLength{}, map[string]bool{}},
+		{&LiteralLength{Len: 1}, map[string]bool{}},
+		{&ConstLength{Name: "C"}, map[string]bool{}},
+		{&ConstLength{Package: "pkg", Name: "C"}, map[string]bool{"pkg": true}},
+		{&ArrayType{
+			Len:  &ConstLength{Package: "pkg", Name: "C"},
+			Type: &NamedType{Package: "pkg2", Type: "T"},
+		}, map[string]bool{"pkg": true, "pkg2": true}},
+	}
+	for _, tc := range testCases {
+		m := map[string]bool{}
+		tc.input.addImports(m)
+		assertMapEqual(t, m, tc.want)
+	}
+}
+
+func assertMapEqual(t *testing.T, actual, expected map[string]bool) {
+	if len(actual) != len(expected) {
+		t.Errorf("expected %v to have the same length as %v", expected, actual)
+	}
+	for k, v := range actual {
+		if actual[k] != v {
+			t.Errorf("expected %v to have key %s with value %t", expected, k, v)
+		}
+	}
+}

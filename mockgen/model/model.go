@@ -129,6 +129,8 @@ type Type interface {
 
 func init() {
 	gob.Register(&ArrayType{})
+	gob.Register(&EmptyLength{})
+	gob.Register(&LiteralLength{})
 	gob.Register(&ChanType{})
 	gob.Register(&FuncType{})
 	gob.Register(&MapType{})
@@ -147,19 +149,58 @@ func init() {
 
 // ArrayType is an array or slice type.
 type ArrayType struct {
-	Len  int // -1 for slices, >= 0 for arrays
+	Len  Type // LengthType
 	Type Type
 }
 
 func (at *ArrayType) String(pm map[string]string, pkgOverride string) string {
-	s := "[]"
-	if at.Len > -1 {
-		s = fmt.Sprintf("[%d]", at.Len)
-	}
-	return s + at.Type.String(pm, pkgOverride)
+	return at.Len.String(pm, pkgOverride) + at.Type.String(pm, pkgOverride)
 }
 
-func (at *ArrayType) addImports(im map[string]bool) { at.Type.addImports(im) }
+func (at *ArrayType) addImports(im map[string]bool) {
+	at.Len.addImports(im)
+	at.Type.addImports(im)
+}
+
+// EmptyLength is a length of a slice
+type EmptyLength struct{}
+
+func (el *EmptyLength) String(pm map[string]string, pkgOverride string) string {
+	return "[]"
+}
+
+func (el *EmptyLength) addImports(im map[string]bool) {}
+
+// LiteralLength is a length of an array represented by a literal
+type LiteralLength struct {
+	Len int
+}
+
+func (ll *LiteralLength) String(pm map[string]string, pkgOverride string) string {
+	return fmt.Sprintf("[%d]", ll.Len)
+}
+
+func (ll *LiteralLength) addImports(im map[string]bool) {}
+
+// ConstLength is a length of an array represented by a const
+type ConstLength struct {
+	Package string // might be empty
+	Name    string
+}
+
+func (ll *ConstLength) String(pm map[string]string, pkgOverride string) string {
+	length := ll.Name
+	if prefix := pm[ll.Package]; prefix != "" && pkgOverride != ll.Package {
+		length = prefix + "." + ll.Name
+	}
+	return fmt.Sprintf("[%s]", length)
+}
+
+func (ll *ConstLength) addImports(im map[string]bool) {
+	if ll.Package != "" {
+		im[ll.Package] = true
+	}
+}
 
 // ChanType is a channel type.
 type ChanType struct {
@@ -381,7 +422,7 @@ func typeFromType(t reflect.Type) (Type, error) {
 	switch t.Kind() {
 	case reflect.Array:
 		return &ArrayType{
-			Len:  t.Len(),
+			Len:  &LiteralLength{Len: t.Len()},
 			Type: elemType,
 		}, nil
 	case reflect.Bool, reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
@@ -433,7 +474,7 @@ func typeFromType(t reflect.Type) (Type, error) {
 		}, nil
 	case reflect.Slice:
 		return &ArrayType{
-			Len:  -1,
+			Len:  &EmptyLength{},
 			Type: elemType,
 		}, nil
 	case reflect.Struct:

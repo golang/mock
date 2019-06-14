@@ -348,13 +348,9 @@ func (p *fileParser) parseFieldList(pkg string, fields []*ast.Field) ([]*model.P
 func (p *fileParser) parseType(pkg string, typ ast.Expr) (model.Type, error) {
 	switch v := typ.(type) {
 	case *ast.ArrayType:
-		ln := -1
-		if v.Len != nil {
-			x, err := strconv.Atoi(v.Len.(*ast.BasicLit).Value)
-			if err != nil {
-				return nil, p.errorf(v.Len.Pos(), "bad array size: %v", err)
-			}
-			ln = x
+		ln, err := p.parseLength(pkg, v.Len)
+		if err != nil {
+			return nil, err
 		}
 		t, err := p.parseType(pkg, v.Elt)
 		if err != nil {
@@ -433,6 +429,34 @@ func (p *fileParser) parseType(pkg string, typ ast.Expr) (model.Type, error) {
 	}
 
 	return nil, fmt.Errorf("don't know how to parse type %T", typ)
+}
+
+func (p *fileParser) parseLength(pkg string, len ast.Expr) (model.Type, error) {
+	if len == nil {
+		return &model.EmptyLength{}, nil
+	}
+	switch v := len.(type) {
+	case *ast.BasicLit:
+		x, err := strconv.Atoi(v.Value)
+		if err != nil {
+			return nil, p.errorf(v.Pos(), "bad array size: %v", err)
+		}
+		return &model.LiteralLength{Len: x}, nil
+	case *ast.SelectorExpr:
+		pkgName := v.X.(*ast.Ident).String()
+		pkg, ok := p.imports[pkgName]
+		if !ok {
+			return nil, p.errorf(v.Pos(), "unknown package %q", pkgName)
+		}
+		return &model.ConstLength{Package: pkg, Name: v.Sel.String()}, nil
+	case *ast.Ident:
+		maybeImportedPkg, ok := p.imports[pkg]
+		if ok {
+			pkg = maybeImportedPkg
+		}
+		return &model.ConstLength{Package: pkg, Name: v.Name}, nil
+	}
+	return nil, fmt.Errorf("don't know how to parse length %T", len)
 }
 
 // importsOfFile returns a map of package name to import path
