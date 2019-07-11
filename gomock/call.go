@@ -276,7 +276,7 @@ func (c *Call) satisfied() bool {
 	return c.numCalls >= c.minCalls
 }
 
-// Returns true iff the maximum number of calls have been made.
+// Returns true if the maximum number of calls have been made.
 func (c *Call) exhausted() bool {
 	return c.numCalls >= c.maxCalls
 }
