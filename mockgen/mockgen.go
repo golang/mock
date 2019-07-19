@@ -269,7 +269,7 @@ func (g *generator) Generate(pkg *model.Package, pkgName string, outputPackagePa
 	}
 
 	// Sort keys to make import alias generation predictable
-	sortedPaths := make([]string, len(im), len(im))
+	sortedPaths := make([]string, len(im))
 	x := 0
 	for pth := range im {
 		sortedPaths[x] = pth
