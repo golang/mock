@@ -3,7 +3,7 @@
 
 set -euo pipefail
 
-GOFMT_DIFF=$(IFS=$'\n'; gofmt -d $( find . -type f -name '*.go' ) )
+GOFMT_DIFF=$(IFS=$'\n'; gofmt -d $( find . -path ./vendor -prune -o -type f -name '*.go' -print ) )
 if [[ -n "${GOFMT_DIFF}" ]]; then
     echo "${GOFMT_DIFF}"
     echo
