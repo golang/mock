@@ -151,7 +151,7 @@ func (p *fileParser) addAuxInterfacesFromFile(pkg string, file *ast.File) {
 	if _, ok := p.auxInterfaces[pkg]; !ok {
 		p.auxInterfaces[pkg] = make(map[string]*ast.InterfaceType)
 	}
-	for ni := range iterInterfaces(file) {
+	for _, ni := range extractInterfaces(file) {
 		p.auxInterfaces[pkg][ni.name.Name] = ni.it
 	}
 }
@@ -178,14 +178,14 @@ func (p *fileParser) parseFile(importPath string, file *ast.File) (*model.Packag
 	}
 
 	var is []*model.Interface
-	for ni := range iterInterfaces(file) {
+	for _, ni := range extractInterfaces(file) {
 		i, err := p.parseInterface(ni.name.String(), importPath, ni.it.Methods.List)
 		if err != nil {
 			return nil, err
 		}
 		is = append(is, i)
 	}
-	for ni := range iterFuncs(file) {
+	for _, ni := range extractFuncs(file) {
 		// For function types, generate an interface having a single
 		// "Call" method.
 		i, err := p.parseInterface(ni.name.String(), importPath, []*ast.Field{
@@ -220,7 +220,7 @@ func (p *fileParser) parsePackage(path string) error {
 		if _, ok := p.importedInterfaces[path]; !ok {
 			p.importedInterfaces[path] = make(map[string]*ast.InterfaceType)
 		}
-		for ni := range iterInterfaces(file) {
+		for _, ni := range extractInterfaces(file) {
 			p.importedInterfaces[path][ni.name.Name] = ni.it
 		}
 		imports, _ := importsOfFile(file)
@@ -495,31 +495,26 @@ type namedInterface struct {
 	it   *ast.InterfaceType
 }
 
-// Create an iterator over all interfaces in file.
-func iterInterfaces(file *ast.File) <-chan namedInterface {
-	ch := make(chan namedInterface)
-	go func() {
-		for _, decl := range file.Decls {
-			gd, ok := decl.(*ast.GenDecl)
-			if !ok || gd.Tok != token.TYPE {
+// Extracts all interfaces from a file.
+func extractInterfaces(file *ast.File) (interfaces []namedInterface) {
+	for _, decl := range file.Decls {
+		gd, ok := decl.(*ast.GenDecl)
+		if !ok || gd.Tok != token.TYPE {
+			continue
+		}
+		for _, spec := range gd.Specs {
+			ts, ok := spec.(*ast.TypeSpec)
+			if !ok {
 				continue
 			}
-			for _, spec := range gd.Specs {
-				ts, ok := spec.(*ast.TypeSpec)
-				if !ok {
-					continue
-				}
-				it, ok := ts.Type.(*ast.InterfaceType)
-				if !ok {
-					continue
-				}
-
-				ch <- namedInterface{ts.Name, it}
+			it, ok := ts.Type.(*ast.InterfaceType)
+			if !ok {
+				continue
 			}
+			interfaces = append(interfaces, namedInterface{ts.Name, it})
 		}
-		close(ch)
-	}()
-	return ch
+	}
+	return
 }
 
 type namedFunc struct {
@@ -527,31 +522,26 @@ type namedFunc struct {
 	ft   *ast.FuncType
 }
 
-// Create an iterator over all function types in file.
-func iterFuncs(file *ast.File) <-chan namedFunc {
-	ch := make(chan namedFunc)
-	go func() {
-		for _, decl := range file.Decls {
-			gd, ok := decl.(*ast.GenDecl)
-			if !ok || gd.Tok != token.TYPE {
+// Extracts all function types from a file.
+func extractFuncs(file *ast.File) (funcs []namedFunc) {
+	for _, decl := range file.Decls {
+		gd, ok := decl.(*ast.GenDecl)
+		if !ok || gd.Tok != token.TYPE {
+			continue
+		}
+		for _, spec := range gd.Specs {
+			ts, ok := spec.(*ast.TypeSpec)
+			if !ok {
 				continue
 			}
-			for _, spec := range gd.Specs {
-				ts, ok := spec.(*ast.TypeSpec)
-				if !ok {
-					continue
-				}
-				ft, ok := ts.Type.(*ast.FuncType)
-				if !ok {
-					continue
-				}
-
-				ch <- namedFunc{ts.Name, ft}
+			ft, ok := ts.Type.(*ast.FuncType)
+			if !ok {
+				continue
 			}
+			funcs = append(funcs, namedFunc{ts.Name, ft})
 		}
-		close(ch)
-	}()
-	return ch
+	}
+	return
 }
 
 // isVariadic returns whether the function is variadic.
