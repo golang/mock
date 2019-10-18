@@ -82,8 +82,8 @@ func (c *Call) AnyTimes() *Call {
 	return c
 }
 
-// MinTimes requires the call to occur at least n times. If AnyTimes or MaxTimes have not been called, MinTimes also
-// sets the maximum number of calls to infinity.
+// MinTimes requires the call to occur at least n times. If AnyTimes or MaxTimes have not been called or if MaxTimes
+// was previously called with 1, MinTimes also sets the maximum number of calls to infinity.
 func (c *Call) MinTimes(n int) *Call {
 	c.minCalls = n
 	if c.maxCalls == 1 {
@@ -92,8 +92,8 @@ func (c *Call) MinTimes(n int) *Call {
 	return c
 }
 
-// MaxTimes limits the number of calls to n times. If AnyTimes or MinTimes have not been called, MaxTimes also
-// sets the minimum number of calls to 0.
+// MaxTimes limits the number of calls to n times. If AnyTimes or MinTimes have not been called or if MinTimes was
+// previously called with 1, MaxTimes also sets the minimum number of calls to 0.
 func (c *Call) MaxTimes(n int) *Call {
 	c.maxCalls = n
 	if c.minCalls == 1 {
