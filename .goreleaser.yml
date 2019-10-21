@@ -18,6 +18,9 @@ builds:
       - 386
     env:
       - CGO_ENABLED=0
+      - GO111MODULE=on
+      - GOPROXY=https://proxy.golang.org
+      - GOSUMDB=sum.golang.org
     main: ./mockgen/
 archive:
   format: tar.gz
