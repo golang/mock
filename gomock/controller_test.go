@@ -407,6 +407,25 @@ func TestMinMaxTimes(t *testing.T) {
 	ctrl.Call(subject, "FooMethod", "argument")
 	ctrl.Call(subject, "FooMethod", "argument")
 	ctrl.Finish()
+
+	// If MaxTimes is called after MinTimes is called with 1, MaxTimes takes precedence.
+	reporter, ctrl = createFixtures(t)
+	subject = new(Subject)
+	ctrl.RecordCall(subject, "FooMethod", "argument").MinTimes(1).MaxTimes(2)
+	ctrl.Call(subject, "FooMethod", "argument")
+	ctrl.Call(subject, "FooMethod", "argument")
+	reporter.assertFatal(func() {
+		ctrl.Call(subject, "FooMethod", "argument")
+	})
+
+	// If MinTimes is called after MaxTimes is called with 1, MinTimes takes precedence.
+	reporter, ctrl = createFixtures(t)
+	subject = new(Subject)
+	ctrl.RecordCall(subject, "FooMethod", "argument").MaxTimes(1).MinTimes(2)
+	for i := 0; i < 100; i++ {
+		ctrl.Call(subject, "FooMethod", "argument")
+	}
+	ctrl.Finish()
 }
 
 func TestDo(t *testing.T) {
