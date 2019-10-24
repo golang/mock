@@ -98,6 +98,7 @@ func (m assignableToTypeOfMatcher) String() string {
 }
 
 // Constructors
+
 // Any returns a matcher that always matches.
 func Any() Matcher { return anyMatcher{} }
 
