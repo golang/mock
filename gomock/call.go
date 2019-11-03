@@ -301,8 +301,8 @@ func (c *Call) matches(args []interface{}) error {
 
 		for i, m := range c.args {
 			if !m.Matches(args[i]) {
-				return fmt.Errorf("Expected call at %s doesn't match the argument at index %s.\nGot: %v\nWant: %v",
-					c.origin, strconv.Itoa(i), args[i], m)
+				return fmt.Errorf("Expected call at %s doesn't match the argument at index %s.\nGot: %v(%v)\nWant: %v",
+					c.origin, strconv.Itoa(i), reflect.TypeOf(args[i]), args[i], m)
 			}
 		}
 	} else {
@@ -323,8 +323,8 @@ func (c *Call) matches(args []interface{}) error {
 			if i < c.methodType.NumIn()-1 {
 				// Non-variadic args
 				if !m.Matches(args[i]) {
-					return fmt.Errorf("Expected call at %s doesn't match the argument at index %s.\nGot: %v\nWant: %v",
-						c.origin, strconv.Itoa(i), args[i], m)
+					return fmt.Errorf("Expected call at %s doesn't match the argument at index %s.\nGot: %v(%v)\nWant: %v",
+						c.origin, strconv.Itoa(i), reflect.TypeOf(args[i]), args[i], m)
 				}
 				continue
 			}
@@ -366,8 +366,8 @@ func (c *Call) matches(args []interface{}) error {
 			// Got Foo(a, b, c, d) want Foo(matcherA, matcherB, matcherC, matcherD, matcherE)
 			// Got Foo(a, b, c, d, e) want Foo(matcherA, matcherB, matcherC, matcherD)
 			// Got Foo(a, b, c) want Foo(matcherA, matcherB)
-			return fmt.Errorf("Expected call at %s doesn't match the argument at index %s.\nGot: %v\nWant: %v",
-				c.origin, strconv.Itoa(i), args[i:], c.args[i])
+			return fmt.Errorf("Expected call at %s doesn't match the argument at index %s.\nGot: %v(%v)\nWant: %v(%v)",
+				c.origin, strconv.Itoa(i), reflect.TypeOf(args[i:]), args[i:], reflect.TypeOf(c.args[i]), c.args[i])
 
 		}
 	}

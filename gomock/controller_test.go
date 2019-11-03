@@ -284,13 +284,13 @@ func TestUnexpectedArgValue_FirstArg(t *testing.T) {
 		// the method argument (of TestStruct type) has 1 unexpected value (for the Message field)
 		ctrl.Call(subject, "ActOnTestStructMethod", TestStruct{Number: 123, Message: "no message"}, 15)
 	}, "Unexpected call to", "doesn't match the argument at index 0",
-		"Got: {123 no message}\nWant: is equal to {123 hello}")
+		"Got: gomock_test.TestStruct({123 no message})\nWant: is equal to gomock_test.TestStruct({123 hello})")
 
 	reporter.assertFatal(func() {
 		// the method argument (of TestStruct type) has 2 unexpected values (for both fields)
 		ctrl.Call(subject, "ActOnTestStructMethod", TestStruct{Number: 11, Message: "no message"}, 15)
 	}, "Unexpected call to", "doesn't match the argument at index 0",
-		"Got: {11 no message}\nWant: is equal to {123 hello}")
+		"Got: gomock_test.TestStruct({11 no message})\nWant: is equal to gomock_test.TestStruct({123 hello})")
 
 	reporter.assertFatal(func() {
 		// The expected call wasn't made.
@@ -309,7 +309,7 @@ func TestUnexpectedArgValue_SecondArg(t *testing.T) {
 	reporter.assertFatal(func() {
 		ctrl.Call(subject, "ActOnTestStructMethod", TestStruct{Number: 123, Message: "hello"}, 3)
 	}, "Unexpected call to", "doesn't match the argument at index 1",
-		"Got: 3\nWant: is equal to 15")
+		"Got: int(3)\nWant: is equal to int(15)")
 
 	reporter.assertFatal(func() {
 		// The expected call wasn't made.
@@ -701,7 +701,7 @@ func TestVariadicNoMatch(t *testing.T) {
 	rep.assertFatal(func() {
 		ctrl.Call(s, "VariadicMethod", 1)
 	}, "Expected call at", "doesn't match the argument at index 0",
-		"Got: 1\nWant: is equal to 0")
+		"Got: int(1)\nWant: is equal to int(0)")
 	ctrl.Call(s, "VariadicMethod", 0)
 	ctrl.Finish()
 }
