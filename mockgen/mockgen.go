@@ -235,7 +235,8 @@ func sanitize(s string) string {
 }
 
 func (g *generator) Generate(pkg *model.Package, outputPkgName string, outputPackagePath string) error {
-	if outputPkgName != pkg.Name {
+	if pkgName != pkg.Name && *selfPackage == "" {
+		// reset outputPackagePath if it's not passed in through -self_package
 		outputPackagePath = ""
 	}
 
