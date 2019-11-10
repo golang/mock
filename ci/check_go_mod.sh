@@ -7,6 +7,7 @@ go mod tidy
 
 if [ ! -z "$(git status --porcelain)" ]; then
     git status
+    git diff
     echo
     echo "The go.mod is not up to date."
     exit 1
