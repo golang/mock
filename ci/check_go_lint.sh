@@ -4,7 +4,7 @@
 set -euo pipefail
 
 if ! command -v golint >/dev/null; then
-    echo "error: golint not found; go get -u golang.com/x/lint/golint" >&2
+    echo "error: golint not found; go get -u golang.org/x/lint/golint" >&2
     exit 1
 fi
 
