@@ -12,7 +12,7 @@ script:
   - go vet ./...
   - go build ./...
   - go install github.com/golang/mock/mockgen
-  - go install golang.com/x/lint/golint
+  - go get -u golang.com/x/lint/golint
   - ./ci/check_go_fmt.sh
   - ./ci/check_go_lint.sh
   - ./ci/check_go_generate.sh
