@@ -252,7 +252,12 @@ func (nt *NamedType) String(pm map[string]string, pkgOverride string) string {
 	if pkgOverride == nt.Package {
 		return nt.Type
 	}
-	return pm[nt.Package] + "." + nt.Type
+	prefix := pm[nt.Package]
+	if prefix != "" {
+		return prefix + "." + nt.Type
+	} else {
+		return nt.Type
+	}
 }
 func (nt *NamedType) addImports(im map[string]bool) {
 	if nt.Package != "" {
@@ -354,15 +359,8 @@ func typeFromType(t reflect.Type) (Type, error) {
 	}
 
 	if imp := t.PkgPath(); imp != "" {
-		// PkgPath might return a path that includes "vendor"
-		// These paths do not compile, so we need to remove everything
-		// up to and including "/vendor/"
-		// see https://github.com/golang/go/issues/12019
-		if i := strings.LastIndex(imp, "/vendor/"); i != -1 {
-			imp = imp[i+len("/vendor/"):]
-		}
 		return &NamedType{
-			Package: imp,
+			Package: impPath(imp),
 			Type:    t.Name(),
 		}, nil
 	}
@@ -446,4 +444,18 @@ func typeFromType(t reflect.Type) (Type, error) {
 
 	// TODO: Struct, UnsafePointer
 	return nil, fmt.Errorf("can't yet turn %v (%v) into a model.Type", t, t.Kind())
+}
+
+// impPath sanitizes the package path returned by `PkgPath` method of a reflect Type so that
+// it is importable. PkgPath might return a path that includes "vendor". These paths do not
+// compile, so we need to remove everything up to and including "/vendor/".
+// See https://github.com/golang/go/issues/12019.
+func impPath(imp string) string {
+	if strings.HasPrefix(imp, "vendor/") {
+		imp = "/" + imp
+	}
+	if i := strings.LastIndex(imp, "/vendor/"); i != -1 {
+		imp = imp[i+len("/vendor/"):]
+	}
+	return imp
 }

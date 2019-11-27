@@ -122,6 +122,15 @@ func (e *ErrorReporter) Fatalf(format string, args ...interface{}) {
 	panic(&e.fatalToken)
 }
 
+type HelperReporter struct {
+	gomock.TestReporter
+	helper int
+}
+
+func (h *HelperReporter) Helper() {
+	h.helper++
+}
+
 // A type purely for use as a receiver in testing the Controller.
 type Subject struct{}
 
@@ -289,7 +298,7 @@ func TestUnexpectedArgValue_FirstArg(t *testing.T) {
 	})
 }
 
-func TestUnexpectedArgValue_SecondtArg(t *testing.T) {
+func TestUnexpectedArgValue_SecondArg(t *testing.T) {
 	reporter, ctrl := createFixtures(t)
 	defer reporter.recoverUnexpectedFatal()
 	subject := new(Subject)
@@ -454,6 +463,25 @@ func TestMinMaxTimes(t *testing.T) {
 	ctrl.RecordCall(subject, "FooMethod", "argument").MaxTimes(2).MinTimes(2)
 	ctrl.Call(subject, "FooMethod", "argument")
 	ctrl.Call(subject, "FooMethod", "argument")
+	ctrl.Finish()
+
+	// If MaxTimes is called after MinTimes is called with 1, MaxTimes takes precedence.
+	reporter, ctrl = createFixtures(t)
+	subject = new(Subject)
+	ctrl.RecordCall(subject, "FooMethod", "argument").MinTimes(1).MaxTimes(2)
+	ctrl.Call(subject, "FooMethod", "argument")
+	ctrl.Call(subject, "FooMethod", "argument")
+	reporter.assertFatal(func() {
+		ctrl.Call(subject, "FooMethod", "argument")
+	})
+
+	// If MinTimes is called after MaxTimes is called with 1, MinTimes takes precedence.
+	reporter, ctrl = createFixtures(t)
+	subject = new(Subject)
+	ctrl.RecordCall(subject, "FooMethod", "argument").MaxTimes(1).MinTimes(2)
+	for i := 0; i < 100; i++ {
+		ctrl.Call(subject, "FooMethod", "argument")
+	}
 	ctrl.Finish()
 }
 
@@ -766,4 +794,22 @@ func TestDuplicateFinishCallFails(t *testing.T) {
 	rep.assertPass("the first Finish call should succeed")
 
 	rep.assertFatal(ctrl.Finish, "Controller.Finish was called more than once. It has to be called exactly once.")
+}
+
+func TestNoHelper(t *testing.T) {
+	ctrlNoHelper := gomock.NewController(NewErrorReporter(t))
+
+	// doesn't panic
+	ctrlNoHelper.T.Helper()
+}
+
+func TestWithHelper(t *testing.T) {
+	withHelper := &HelperReporter{TestReporter: NewErrorReporter(t)}
+	ctrlWithHelper := gomock.NewController(withHelper)
+
+	ctrlWithHelper.T.Helper()
+
+	if withHelper.helper == 0 {
+		t.Fatal("expected Helper to be invoked")
+	}
 }

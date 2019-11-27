@@ -15,3 +15,6 @@ mockgen/mockgen
 
 # A binary produced by gotest.
 #gomock/[568]\.out
+
+# Editors
+.vscode

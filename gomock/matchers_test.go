@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:generate mockgen -destination internal/mock_gomock/mock_matcher.go github.com/golang/mock/gomock Matcher
+
 package gomock_test
 
 import (
@@ -19,7 +21,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	mock_matcher "github.com/golang/mock/gomock/mock_matcher"
+	"github.com/golang/mock/gomock/internal/mock_gomock"
 )
 
 func TestMatchers(t *testing.T) {
@@ -29,12 +31,12 @@ func TestMatchers(t *testing.T) {
 		yes, no []e
 	}
 	tests := []testCase{
-		testCase{gomock.Any(), []e{3, nil, "foo"}, nil},
-		testCase{gomock.Eq(4), []e{4}, []e{3, "blah", nil, int64(4)}},
-		testCase{gomock.Nil(),
+		{gomock.Any(), []e{3, nil, "foo"}, nil},
+		{gomock.Eq(4), []e{4}, []e{3, "blah", nil, int64(4)}},
+		{gomock.Nil(),
 			[]e{nil, (error)(nil), (chan bool)(nil), (*int)(nil)},
 			[]e{"", 0, make(chan bool), errors.New("err"), new(int)}},
-		testCase{gomock.Not(gomock.Eq(4)), []e{3, "blah", nil, int64(4)}, []e{4}},
+		{gomock.Not(gomock.Eq(4)), []e{3, "blah", nil, int64(4)}, []e{4}},
 	}
 	for i, test := range tests {
 		for _, x := range test.yes {
@@ -55,7 +57,7 @@ func TestNotMatcher(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockMatcher := mock_matcher.NewMockMatcher(ctrl)
+	mockMatcher := mock_gomock.NewMockMatcher(ctrl)
 	notMatcher := gomock.Not(mockMatcher)
 
 	mockMatcher.EXPECT().Matches(4).Return(true)
