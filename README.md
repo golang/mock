@@ -166,6 +166,53 @@ func TestFoo(t *testing.T) {
 }
 ```
 
+### Modifying Failure Messages
+
+When a matcher reports a failure, it prints the received (`Got`) vs the
+expected (`Want`) value.
+
+```
+Got: [3]
+Want: is equal to 2
+Expected call at user_test.go:33 doesn't match the argument at index 1.
+Got: [0 1 1 2 3]
+Want: is equal to 1
+```
+
+##### Modifying `Want`
+
+The `Want` value comes from the matcher's `String()` method. If the matcher's
+default output doesn't meet your needs, then it can be modified as follows:
+
+```go
+gomock.WantFormatter(
+  gomock.StringerFunc(func() string { return "is equal to fifteen" }),
+  gomock.Eq(15),
+)
+```
+
+This modifies the `gomock.Eq(15)` matcher's output for `Want:` from `is equal
+to 15` to `is equal to fifteen`.
+
+##### Modifying `Got`
+
+The `Got` value comes from the object's `String()` method if it is available.
+In some cases the output of an object is difficult to read (e.g., `[]byte`) and
+it would be helpful for the test to print it differently. The following
+modifies how the `Got` value is formatted:
+
+```go
+gomock.GotFormatterAdapter(
+  gomock.GotFormatterFunc(func(i interface{}) string {
+    // Leading 0s
+    return fmt.Sprintf("%02d", i)
+  }),
+  gomock.Eq(15),
+)
+```
+
+If the received value is `3`, then it will be printed as `03`.
+
 [golang]:          http://golang.org/
 [golang-install]:  http://golang.org/doc/install.html#releases
 [gomock-ref]:      http://godoc.org/github.com/golang/mock/gomock

@@ -317,6 +317,63 @@ func TestUnexpectedArgValue_SecondArg(t *testing.T) {
 	})
 }
 
+func TestUnexpectedArgValue_WantFormatter(t *testing.T) {
+	reporter, ctrl := createFixtures(t)
+	defer reporter.recoverUnexpectedFatal()
+	subject := new(Subject)
+
+	expectedArg0 := TestStruct{Number: 123, Message: "hello"}
+	ctrl.RecordCall(
+		subject,
+		"ActOnTestStructMethod",
+		expectedArg0,
+		gomock.WantFormatter(
+			gomock.StringerFunc(func() string { return "is equal to fifteen" }),
+			gomock.Eq(15),
+		),
+	)
+
+	reporter.assertFatal(func() {
+		ctrl.Call(subject, "ActOnTestStructMethod", TestStruct{Number: 123, Message: "hello"}, 3)
+	}, "Unexpected call to", "doesn't match the argument at index 1",
+		"Got: 3\nWant: is equal to fifteen")
+
+	reporter.assertFatal(func() {
+		// The expected call wasn't made.
+		ctrl.Finish()
+	})
+}
+
+func TestUnexpectedArgValue_GotFormatter(t *testing.T) {
+	reporter, ctrl := createFixtures(t)
+	defer reporter.recoverUnexpectedFatal()
+	subject := new(Subject)
+
+	expectedArg0 := TestStruct{Number: 123, Message: "hello"}
+	ctrl.RecordCall(
+		subject,
+		"ActOnTestStructMethod",
+		expectedArg0,
+		gomock.GotFormatterAdapter(
+			gomock.GotFormatterFunc(func(i interface{}) string {
+				// Leading 0s
+				return fmt.Sprintf("%02d", i)
+			}),
+			gomock.Eq(15),
+		),
+	)
+
+	reporter.assertFatal(func() {
+		ctrl.Call(subject, "ActOnTestStructMethod", TestStruct{Number: 123, Message: "hello"}, 3)
+	}, "Unexpected call to", "doesn't match the argument at index 1",
+		"Got: 03\nWant: is equal to 15")
+
+	reporter.assertFatal(func() {
+		// The expected call wasn't made.
+		ctrl.Finish()
+	})
+}
+
 func TestAnyTimes(t *testing.T) {
 	reporter, ctrl := createFixtures(t)
 	subject := new(Subject)

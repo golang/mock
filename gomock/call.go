@@ -301,8 +301,15 @@ func (c *Call) matches(args []interface{}) error {
 
 		for i, m := range c.args {
 			if !m.Matches(args[i]) {
-				return fmt.Errorf("Expected call at %s doesn't match the argument at index %s.\nGot: %v\nWant: %v",
-					c.origin, strconv.Itoa(i), args[i], m)
+				got := fmt.Sprintf("%v", args[i])
+				if gs, ok := m.(GotFormatter); ok {
+					got = gs.Got(args[i])
+				}
+
+				return fmt.Errorf(
+					"Expected call at %s doesn't match the argument at index %d.\nGot: %v\nWant: %v",
+					c.origin, i, got, m,
+				)
 			}
 		}
 	} else {
