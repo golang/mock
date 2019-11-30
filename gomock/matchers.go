@@ -29,6 +29,63 @@ type Matcher interface {
 	String() string
 }
 
+// WantFormatter modifies the given Matcher's String() method to the given
+// Stringer. This allows for control on how the "Want" is formatted when
+// printing .
+func WantFormatter(s fmt.Stringer, m Matcher) Matcher {
+	type matcher interface {
+		Matches(x interface{}) bool
+	}
+
+	return struct {
+		matcher
+		fmt.Stringer
+	}{
+		matcher:  m,
+		Stringer: s,
+	}
+}
+
+// StringerFunc type is an adapter to allow the use of ordinary functions as
+// a Stringer. If f is a function with the appropriate signature,
+// StringerFunc(f) is a Stringer that calls f.
+type StringerFunc func() string
+
+// String implements fmt.Stringer.
+func (f StringerFunc) String() string {
+	return f()
+}
+
+// GotFormatter is used to better print failure messages. If a matcher
+// implements GotFormatter, it will use the result from Got when printing
+// the failure message.
+type GotFormatter interface {
+	// Got is invoked with the received value. The result is used when
+	// printing the failure message.
+	Got(got interface{}) string
+}
+
+// GotFormatterFunc type is an adapter to allow the use of ordinary
+// functions as a GotFormatter. If f is a function with the appropriate
+// signature, GotFormatterFunc(f) is a GotFormatter that calls f.
+type GotFormatterFunc func(got interface{}) string
+
+// Got implements GotFormatter.
+func (f GotFormatterFunc) Got(got interface{}) string {
+	return f(got)
+}
+
+// GotFormatterAdapter attaches a GotFormatter to a Matcher.
+func GotFormatterAdapter(s GotFormatter, m Matcher) Matcher {
+	return struct {
+		GotFormatter
+		Matcher
+	}{
+		GotFormatter: s,
+		Matcher:      m,
+	}
+}
+
 type anyMatcher struct{}
 
 func (anyMatcher) Matches(x interface{}) bool {
