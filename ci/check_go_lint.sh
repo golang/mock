@@ -1,7 +1,7 @@
 #!/bin/bash
 # This script is used by CI to check if the code passes golint.
 
-set -euo pipefail
+set -u
 
 GOLINT_OUTPUT=$(IFS=$'\n'; golint ./... | grep -v "mockgen/internal/.*\|sample/.*")
 if [[ -n "${GOLINT_OUTPUT}" ]]; then
@@ -10,4 +10,3 @@ if [[ -n "${GOLINT_OUTPUT}" ]]; then
     echo "The go source files aren't passing golint."
     exit 1
 fi
-
