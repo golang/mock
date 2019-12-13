@@ -389,7 +389,7 @@ func (c *Call) matches(args []interface{}) error {
 
 	// Check that the call is not exhausted.
 	if c.exhausted() {
-		return fmt.Errorf("Expected call at %s has already been called the max number of times.", c.origin)
+		return fmt.Errorf("expected call at %s has already been called the max number of times", c.origin)
 	}
 
 	return nil
