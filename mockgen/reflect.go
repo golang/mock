@@ -27,6 +27,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"text/template"
 
 	"github.com/golang/mock/mockgen/model"
@@ -116,7 +117,7 @@ func runInDir(program []byte, dir string) (*model.Package, error) {
 	cmdArgs := []string{}
 	cmdArgs = append(cmdArgs, "build")
 	if *buildFlags != "" {
-		cmdArgs = append(cmdArgs, *buildFlags)
+		cmdArgs = append(cmdArgs, strings.Split(*buildFlags, " ")...)
 	}
 	cmdArgs = append(cmdArgs, "-o", progBinary, progSource)
 
