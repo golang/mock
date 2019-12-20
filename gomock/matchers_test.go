@@ -17,7 +17,9 @@
 package gomock_test
 
 import (
+	"context"
 	"errors"
+	"reflect"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -115,5 +117,15 @@ func TestAssignableToTypeOfMatcher(t *testing.T) {
 	}
 	if match := gomock.AssignableToTypeOf(&Dog{}).Matches(&Dog{Breed: "pug", Name: "Fido"}); !match {
 		t.Errorf(`AssignableToTypeOf(&Dog{}) should match &Dog{Breed: "pug", Name: "Fido"}`)
+	}
+
+	ctxInterface := reflect.TypeOf((*context.Context)(nil)).Elem()
+	if match := gomock.AssignableToTypeOf(ctxInterface).Matches(context.Background()); !match {
+		t.Errorf(`AssignableToTypeOf(context.Context) should not match context.Background()`)
+	}
+
+	ctxWithValue := context.WithValue(context.Background(), "key", "val")
+	if match := gomock.AssignableToTypeOf(ctxInterface).Matches(ctxWithValue); !match {
+		t.Errorf(`AssignableToTypeOf(context.Context) should not match ctxWithValue`)
 	}
 }
