@@ -1,8 +1,11 @@
-********************************************************************************
+---
+name: Feature request
+about: Propose a new feature for gomock
+title: ''
+labels: 'type: feature request'
+assignees: ''
 
-name: Feature request about: Propose a new feature for gomock
-
-********************************************************************************
+---
 
 *Requested feature* A clear description of the desired feature and an example of
 how it would be used.
