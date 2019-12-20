@@ -17,6 +17,7 @@ package gomock
 import (
 	"fmt"
 	"reflect"
+	"strings"
 )
 
 // A Matcher is a representation of a class of values.
@@ -154,7 +155,32 @@ func (m assignableToTypeOfMatcher) String() string {
 	return "is assignable to " + m.targetType.Name()
 }
 
+type allMatcher struct {
+	matchers []Matcher
+}
+
+func (am allMatcher) Matches(x interface{}) bool {
+	for _, m := range am.matchers {
+		if !m.Matches(x) {
+			return false
+		}
+	}
+	return true
+}
+
+func (am allMatcher) String() string {
+	ss := make([]string, 0, len(am.matchers))
+	for _, matcher := range am.matchers {
+		ss = append(ss, matcher.String())
+	}
+	return strings.Join(ss, "; ")
+}
+
 // Constructors
+
+// All returns a composite Matcher that returns true if and only all of the
+// matchers return true.
+func All(ms ...Matcher) Matcher { return allMatcher{ms} }
 
 // Any returns a matcher that always matches.
 func Any() Matcher { return anyMatcher{} }

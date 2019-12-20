@@ -26,29 +26,32 @@ import (
 
 func TestMatchers(t *testing.T) {
 	type e interface{}
-	type testCase struct {
+	tests := []struct {
+		name    string
 		matcher gomock.Matcher
 		yes, no []e
-	}
-	tests := []testCase{
-		{gomock.Any(), []e{3, nil, "foo"}, nil},
-		{gomock.Eq(4), []e{4}, []e{3, "blah", nil, int64(4)}},
-		{gomock.Nil(),
+	}{
+		{"test Any", gomock.Any(), []e{3, nil, "foo"}, nil},
+		{"test All", gomock.Eq(4), []e{4}, []e{3, "blah", nil, int64(4)}},
+		{"test Nil", gomock.Nil(),
 			[]e{nil, (error)(nil), (chan bool)(nil), (*int)(nil)},
 			[]e{"", 0, make(chan bool), errors.New("err"), new(int)}},
-		{gomock.Not(gomock.Eq(4)), []e{3, "blah", nil, int64(4)}, []e{4}},
+		{"test Not", gomock.Not(gomock.Eq(4)), []e{3, "blah", nil, int64(4)}, []e{4}},
+		{"test All", gomock.All(gomock.Any(), gomock.Eq(4)), []e{4}, []e{3, "blah", nil, int64(4)}},
 	}
-	for i, test := range tests {
-		for _, x := range test.yes {
-			if !test.matcher.Matches(x) {
-				t.Errorf(`test %d: "%v %s" should be true.`, i, x, test.matcher)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			for _, x := range tt.yes {
+				if !tt.matcher.Matches(x) {
+					t.Errorf(`"%v %s": got false, want true.`, x, tt.matcher)
+				}
 			}
-		}
-		for _, x := range test.no {
-			if test.matcher.Matches(x) {
-				t.Errorf(`test %d: "%v %s" should be false.`, i, x, test.matcher)
+			for _, x := range tt.no {
+				if tt.matcher.Matches(x) {
+					t.Errorf(`"%v %s": got true, want false.`, x, tt.matcher)
+				}
 			}
-		}
+		})
 	}
 }
 
