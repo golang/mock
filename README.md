@@ -8,14 +8,17 @@ contexts too.
 Installation
 ------------
 
-Once you have [installed Go][golang-install], install the `mockgen` tool:
+Once you have [installed Go][golang-install], install the `mockgen` tool.
+
+To get the latest released version use:
 
 ```bash
-go get github.com/golang/mock/mockgen
+GO111MODULE=on go get github.com/golang/mock/mockgen@latest
 ```
 
-_Note: It is recommended to have `GO111MODULE=on` to ensure the correct
-dependencies are used._
+If you use `mockgen` in your CI pipeline, it may be more appropriate to fixate
+on a specific mockgen version.
+
 
 Documentation
 -------------

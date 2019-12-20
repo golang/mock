@@ -53,11 +53,17 @@ var (
 	copyrightFile   = flag.String("copyright_file", "", "Copyright file used to add copyright header")
 
 	debugParser = flag.Bool("debug_parser", false, "Print out parser results only.")
+	version     = flag.Bool("version", false, "Print version.")
 )
 
 func main() {
 	flag.Usage = usage
 	flag.Parse()
+
+	if *version {
+		printVersion()
+		return
+	}
 
 	var pkg *model.Package
 	var err error
