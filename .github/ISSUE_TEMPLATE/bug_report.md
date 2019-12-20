@@ -1,8 +1,11 @@
-********************************************************************************
+---
+name: Bug report
+about: Report a bug in gomock
+title: ''
+labels: ''
+assignees: ''
 
-name: Bug report about: Report a bug in gomock
-
-********************************************************************************
+---
 
 **Actual behavior** A clear and concise description of what the bug is.
 
@@ -16,15 +19,10 @@ happen.
 
 **Additional Information**
 
--   gomock mode (reflect or source)
--   gomock version or git ref
--   golang version
+-   gomock mode (reflect or source):
+-   gomock version or git ref:
+-   golang version:
 
 **Triage Notes for the Maintainers**
 
-<!-- 🎉🎉🎉 Thank you for an opening an issue !!! 🎉🎉🎉 We are doing our best to get to this. Please help us by helping us prioritize your issue by filling the section below -->
-
-**Description**                                      | **Yes/No**
----------------------------------------------------- | ------------------------
-Please check if this a new feature you are proposing | <ul><li>- [ ] </li></ul>
-Please check if this is an issue with mockgen        | <ul><li>- [ ] </li></ul>
+<!-- 🎉🎉🎉 Thank you for an opening an issue !!! 🎉🎉🎉 We are doing our best to get to this. -->
