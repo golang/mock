@@ -87,6 +87,12 @@ It supports the following flags:
     mock name (mock factory method and mock recorder will be named after the mock).
     If one of the interfaces has no custom name specified, then default naming
     convention will be used.
+    
+* `-self_package`: The full package import path for the generated code. The purpose 
+    of this flag is to prevent import cycles in the generated code by trying to include 
+    its own package. This can happen if the mock's package is set to one of its 
+    inputs (usually the main one) and the output is stdio so mockgen cannot detect the 
+    final output package. Setting this flag will then tell mockgen which import to exclude.
 
 * `-copyright_file`: Copyright file used to add copyright header to the resulting source code.
 
