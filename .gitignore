@@ -18,3 +18,4 @@ mockgen/mockgen
 
 # Editors
 .vscode
+.idea
