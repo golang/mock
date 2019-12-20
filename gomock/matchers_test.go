@@ -38,6 +38,10 @@ func TestMatchers(t *testing.T) {
 			[]e{"", 0, make(chan bool), errors.New("err"), new(int)}},
 		{"test Not", gomock.Not(gomock.Eq(4)), []e{3, "blah", nil, int64(4)}, []e{4}},
 		{"test All", gomock.All(gomock.Any(), gomock.Eq(4)), []e{4}, []e{3, "blah", nil, int64(4)}},
+		{"test Len", gomock.Len(2),
+			[]e{[]int{1, 2}, "ab", map[string]int{"a": 0, "b": 1}, [2]string{"a", "b"}},
+			[]e{[]int{1}, "a", 42, 42.0, false, [1]string{"a"}},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
