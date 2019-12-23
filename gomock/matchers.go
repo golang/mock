@@ -176,6 +176,24 @@ func (am allMatcher) String() string {
 	return strings.Join(ss, "; ")
 }
 
+type lenMatcher struct {
+	i int
+}
+
+func (m lenMatcher) Matches(x interface{}) bool {
+	v := reflect.ValueOf(x)
+	switch v.Kind() {
+	case reflect.Array, reflect.Chan, reflect.Map, reflect.Slice, reflect.String:
+		return v.Len() == m.i
+	default:
+		return false
+	}
+}
+
+func (m lenMatcher) String() string {
+	return fmt.Sprintf("has length %d", m.i)
+}
+
 // Constructors
 
 // All returns a composite Matcher that returns true if and only all of the
@@ -191,6 +209,12 @@ func Any() Matcher { return anyMatcher{} }
 //   Eq(5).Matches(5) // returns true
 //   Eq(5).Matches(4) // returns false
 func Eq(x interface{}) Matcher { return eqMatcher{x} }
+
+// Len returns a matcher that matches on length. This matcher returns false if
+// is compared to a type that is not an array, chan, map, slice, or string.
+func Len(i int) Matcher {
+	return lenMatcher{i}
+}
 
 // Nil returns a matcher that matches if the received value is nil.
 //
