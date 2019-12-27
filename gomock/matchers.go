@@ -89,7 +89,7 @@ func GotFormatterAdapter(s GotFormatter, m Matcher) Matcher {
 
 type anyMatcher struct{}
 
-func (anyMatcher) Matches(x interface{}) bool {
+func (anyMatcher) Matches(interface{}) bool {
 	return true
 }
 

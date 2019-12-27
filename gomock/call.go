@@ -295,7 +295,7 @@ func (c *Call) String() string {
 func (c *Call) matches(args []interface{}) error {
 	if !c.methodType.IsVariadic() {
 		if len(args) != len(c.args) {
-			return fmt.Errorf("Expected call at %s has the wrong number of arguments. Got: %d, want: %d",
+			return fmt.Errorf("expected call at %s has the wrong number of arguments. Got: %d, want: %d",
 				c.origin, len(args), len(c.args))
 		}
 
@@ -307,22 +307,22 @@ func (c *Call) matches(args []interface{}) error {
 				}
 
 				return fmt.Errorf(
-					"Expected call at %s doesn't match the argument at index %d.\nGot: %v\nWant: %v",
+					"expected call at %s doesn't match the argument at index %d.\nGot: %v\nWant: %v",
 					c.origin, i, got, m,
 				)
 			}
 		}
 	} else {
 		if len(c.args) < c.methodType.NumIn()-1 {
-			return fmt.Errorf("Expected call at %s has the wrong number of matchers. Got: %d, want: %d",
+			return fmt.Errorf("expected call at %s has the wrong number of matchers. Got: %d, want: %d",
 				c.origin, len(c.args), c.methodType.NumIn()-1)
 		}
 		if len(c.args) != c.methodType.NumIn() && len(args) != len(c.args) {
-			return fmt.Errorf("Expected call at %s has the wrong number of arguments. Got: %d, want: %d",
+			return fmt.Errorf("expected call at %s has the wrong number of arguments. Got: %d, want: %d",
 				c.origin, len(args), len(c.args))
 		}
 		if len(args) < len(c.args)-1 {
-			return fmt.Errorf("Expected call at %s has the wrong number of arguments. Got: %d, want: greater than or equal to %d",
+			return fmt.Errorf("expected call at %s has the wrong number of arguments. Got: %d, want: greater than or equal to %d",
 				c.origin, len(args), len(c.args)-1)
 		}
 
@@ -330,7 +330,7 @@ func (c *Call) matches(args []interface{}) error {
 			if i < c.methodType.NumIn()-1 {
 				// Non-variadic args
 				if !m.Matches(args[i]) {
-					return fmt.Errorf("Expected call at %s doesn't match the argument at index %s.\nGot: %v\nWant: %v",
+					return fmt.Errorf("expected call at %s doesn't match the argument at index %s.\nGot: %v\nWant: %v",
 						c.origin, strconv.Itoa(i), args[i], m)
 				}
 				continue
@@ -403,7 +403,7 @@ func (c *Call) dropPrereqs() (preReqs []*Call) {
 	return
 }
 
-func (c *Call) call(args []interface{}) []func([]interface{}) []interface{} {
+func (c *Call) call() []func([]interface{}) []interface{} {
 	c.numCalls++
 	return c.actions
 }
