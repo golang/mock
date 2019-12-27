@@ -426,7 +426,7 @@ func TestMaxTimes1(t *testing.T) {
 	ctrl.Call(subject, "FooMethod", "argument")
 	ctrl.Finish()
 
-	//It fails if there are more
+	// It fails if there are more
 	reporter, ctrl := createFixtures(t)
 	subject = new(Subject)
 	ctrl.RecordCall(subject, "FooMethod", "argument").MaxTimes(1)

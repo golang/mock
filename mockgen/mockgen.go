@@ -357,9 +357,9 @@ func (g *generator) GenerateMockInterface(intf *model.Interface, outputPackagePa
 	g.p("")
 
 	// TODO: Re-enable this if we can import the interface reliably.
-	//g.p("// Verify that the mock satisfies the interface at compile time.")
-	//g.p("var _ %v = (*%v)(nil)", typeName, mockType)
-	//g.p("")
+	// g.p("// Verify that the mock satisfies the interface at compile time.")
+	// g.p("var _ %v = (*%v)(nil)", typeName, mockType)
+	// g.p("")
 
 	g.p("// New%v creates a new mock instance", mockType)
 	g.p("func New%v(ctrl *gomock.Controller) *%v {", mockType, mockType)
