@@ -267,3 +267,89 @@ func findMethod(t *testing.T, identifier, methodName string, lines []string) int
 	t.Fatalf("unable to find 'func (m %s) %s'", identifier, methodName)
 	panic("unreachable")
 }
+
+func TestGetArgNames(t *testing.T) {
+	for _, testCase := range []struct {
+		name     string
+		method   *model.Method
+		expected []string
+	}{
+		{
+			name: "NamedArg",
+			method: &model.Method{
+				In: []*model.Parameter{
+					{
+						Name: "firstArg",
+						Type: &model.NamedType{Type: "int"},
+					},
+					{
+						Name: "secondArg",
+						Type: &model.NamedType{Type: "string"},
+					},
+				},
+			},
+			expected: []string{"firstArg", "secondArg"},
+		},
+		{
+			name: "NotNamedArg",
+			method: &model.Method{
+				In: []*model.Parameter{
+					{
+						Name: "",
+						Type: &model.NamedType{Type: "int"},
+					},
+					{
+						Name: "",
+						Type: &model.NamedType{Type: "string"},
+					},
+				},
+			},
+			expected: []string{"arg0", "arg1"},
+		},
+		{
+			name: "MixedNameArg",
+			method: &model.Method{
+				In: []*model.Parameter{
+					{
+						Name: "firstArg",
+						Type: &model.NamedType{Type: "int"},
+					},
+					{
+						Name: "_",
+						Type: &model.NamedType{Type: "string"},
+					},
+				},
+			},
+			expected: []string{"firstArg", "arg1"},
+		},
+	} {
+		t.Run(testCase.name, func(t *testing.T) {
+			g := generator{}
+
+			result := g.getArgNames(testCase.method)
+			if !testEqSliceStr(t, result, testCase.expected) {
+				t.Fatalf("expected %s, got %s", result, testCase.expected)
+			}
+		})
+	}
+}
+
+func testEqSliceStr(t *testing.T, a, b []string) bool {
+	t.Helper()
+
+	if a == nil || b == nil {
+		return false
+	}
+
+	if len(a) != len(b) {
+		return false
+	}
+
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+
+	return true
+}
