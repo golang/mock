@@ -244,6 +244,12 @@ func Not(x interface{}) Matcher {
 //   var s fmt.Stringer = &bytes.Buffer{}
 //   AssignableToTypeOf(s).Matches(time.Second) // returns true
 //   AssignableToTypeOf(s).Matches(99) // returns false
+//
+//   var ctx = reflect.TypeOf((*context.Context)).Elem()
+//   AssignableToTypeOf(ctx).Matches(context.Background()) // returns true
 func AssignableToTypeOf(x interface{}) Matcher {
+	if xt, ok := x.(reflect.Type); ok {
+		return assignableToTypeOfMatcher{xt}
+	}
 	return assignableToTypeOfMatcher{reflect.TypeOf(x)}
 }
