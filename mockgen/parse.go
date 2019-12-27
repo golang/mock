@@ -101,8 +101,8 @@ func parseFile(source string) (*model.Package, error) {
 	if err != nil {
 		return nil, err
 	}
-	for path := range dotImports {
-		pkg.DotImports = append(pkg.DotImports, path)
+	for pkgPath := range dotImports {
+		pkg.DotImports = append(pkg.DotImports, pkgPath)
 	}
 	return pkg, nil
 }
@@ -161,18 +161,18 @@ func (p *fileParser) addAuxInterfacesFromFile(pkg string, file *ast.File) {
 func (p *fileParser) parseFile(importPath string, file *ast.File) (*model.Package, error) {
 	allImports, dotImports := importsOfFile(file)
 	// Don't stomp imports provided by -imports. Those should take precedence.
-	for pkg, path := range allImports {
+	for pkg, pkgPath := range allImports {
 		if _, ok := p.imports[pkg]; !ok {
-			p.imports[pkg] = path
+			p.imports[pkg] = pkgPath
 		}
 	}
 	// Add imports from auxiliary files, which might be needed for embedded interfaces.
 	// Don't stomp any other imports.
 	for _, f := range p.auxFiles {
 		auxImports, _ := importsOfFile(f)
-		for pkg, path := range auxImports {
+		for pkg, pkgPath := range auxImports {
 			if _, ok := p.imports[pkg]; !ok {
-				p.imports[pkg] = path
+				p.imports[pkg] = pkgPath
 			}
 		}
 	}

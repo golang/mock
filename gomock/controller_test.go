@@ -426,7 +426,7 @@ func TestMaxTimes1(t *testing.T) {
 	ctrl.Call(subject, "FooMethod", "argument")
 	ctrl.Finish()
 
-	//It fails if there are more
+	// It fails if there are more
 	reporter, ctrl := createFixtures(t)
 	subject = new(Subject)
 	ctrl.RecordCall(subject, "FooMethod", "argument").MaxTimes(1)
@@ -757,7 +757,7 @@ func TestVariadicNoMatch(t *testing.T) {
 	ctrl.RecordCall(s, "VariadicMethod", 0)
 	rep.assertFatal(func() {
 		ctrl.Call(s, "VariadicMethod", 1)
-	}, "Expected call at", "doesn't match the argument at index 0",
+	}, "expected call at", "doesn't match the argument at index 0",
 		"Got: 1\nWant: is equal to 0")
 	ctrl.Call(s, "VariadicMethod", 0)
 	ctrl.Finish()

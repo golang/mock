@@ -145,7 +145,7 @@ func reflect(importPath string, symbols []string) (*model.Package, error) {
 	}
 
 	if *progOnly {
-		os.Stdout.Write(program)
+		_, _ = os.Stdout.Write(program)
 		os.Exit(0)
 	}
 

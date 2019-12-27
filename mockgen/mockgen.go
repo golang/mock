@@ -158,7 +158,7 @@ func parseMockNames(names string) map[string]string {
 }
 
 func usage() {
-	io.WriteString(os.Stderr, usageText)
+	_, _ = io.WriteString(os.Stderr, usageText)
 	flag.PrintDefaults()
 }
 
@@ -305,14 +305,14 @@ func (g *generator) Generate(pkg *model.Package, pkgName string, outputPackagePa
 	g.p("")
 	g.p("import (")
 	g.in()
-	for path, pkg := range g.packageMap {
-		if path == outputPackagePath {
+	for pkgPath, pkg := range g.packageMap {
+		if pkgPath == outputPackagePath {
 			continue
 		}
-		g.p("%v %q", pkg, path)
+		g.p("%v %q", pkg, pkgPath)
 	}
-	for _, path := range pkg.DotImports {
-		g.p(". %q", path)
+	for _, pkgPath := range pkg.DotImports {
+		g.p(". %q", pkgPath)
 	}
 	g.out()
 	g.p(")")
@@ -357,9 +357,9 @@ func (g *generator) GenerateMockInterface(intf *model.Interface, outputPackagePa
 	g.p("")
 
 	// TODO: Re-enable this if we can import the interface reliably.
-	//g.p("// Verify that the mock satisfies the interface at compile time.")
-	//g.p("var _ %v = (*%v)(nil)", typeName, mockType)
-	//g.p("")
+	// g.p("// Verify that the mock satisfies the interface at compile time.")
+	// g.p("var _ %v = (*%v)(nil)", typeName, mockType)
+	// g.p("")
 
 	g.p("// New%v creates a new mock instance", mockType)
 	g.p("func New%v(ctrl *gomock.Controller) *%v {", mockType, mockType)
@@ -387,9 +387,9 @@ func (g *generator) GenerateMockInterface(intf *model.Interface, outputPackagePa
 func (g *generator) GenerateMockMethods(mockType string, intf *model.Interface, pkgOverride string) {
 	for _, m := range intf.Methods {
 		g.p("")
-		g.GenerateMockMethod(mockType, m, pkgOverride)
+		_ = g.GenerateMockMethod(mockType, m, pkgOverride)
 		g.p("")
-		g.GenerateMockRecorderMethod(mockType, m)
+		_ = g.GenerateMockRecorderMethod(mockType, m)
 	}
 }
 
