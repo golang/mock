@@ -531,7 +531,7 @@ func (g *generator) getArgNames(m *model.Method) []string {
 	argNames := make([]string, len(m.In))
 	for i, p := range m.In {
 		name := p.Name
-		if name == "" {
+		if name == "" || name == "_" {
 			name = fmt.Sprintf("arg%d", i)
 		}
 		argNames[i] = name
