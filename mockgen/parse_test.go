@@ -110,6 +110,6 @@ func checkGreeterImports(t *testing.T, imports map[string]string) {
 func Benchmark_parseFile(b *testing.B) {
 	source := "internal/tests/performance/big_interface/big_interface.go"
 	for n := 0; n < b.N; n++ {
-		parseFile(source)
+		sourceMode(source)
 	}
 }

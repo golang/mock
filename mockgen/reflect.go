@@ -132,7 +132,8 @@ func runInDir(program []byte, dir string) (*model.Package, error) {
 	return run(filepath.Join(tmpDir, progBinary))
 }
 
-func reflect(importPath string, symbols []string) (*model.Package, error) {
+// reflectMode generates mocks via reflection on interfaces.
+func reflectMode(importPath string, symbols []string) (*model.Package, error) {
 	// TODO: sanity check arguments
 
 	if *execOnly != "" {

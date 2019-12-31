@@ -41,7 +41,8 @@ var (
 
 // TODO: simplify error reporting
 
-func parseFile(source string) (*model.Package, error) {
+// sourceMode generates mocks via source file.
+func sourceMode(source string) (*model.Package, error) {
 	srcDir, err := filepath.Abs(filepath.Dir(source))
 	if err != nil {
 		return nil, fmt.Errorf("failed getting source directory: %v", err)
