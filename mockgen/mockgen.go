@@ -62,13 +62,13 @@ func main() {
 	var pkg *model.Package
 	var err error
 	if *source != "" {
-		pkg, err = parseFile(*source)
+		pkg, err = sourceMode(*source)
 	} else {
 		if flag.NArg() != 2 {
 			usage()
 			log.Fatal("Expected exactly two arguments")
 		}
-		pkg, err = reflect(flag.Arg(0), strings.Split(flag.Arg(1), ","))
+		pkg, err = reflectMode(flag.Arg(0), strings.Split(flag.Arg(1), ","))
 	}
 	if err != nil {
 		log.Fatalf("Loading input failed: %v", err)
