@@ -92,11 +92,11 @@ func main() {
 		dst = f
 	}
 
-	packageName := *packageOut
-	if packageName == "" {
+	outputPackageName := *packageOut
+	if outputPackageName == "" {
 		// pkg.Name in reflect mode is the base name of the import path,
 		// which might have characters that are illegal to have in package names.
-		packageName = "mock_" + sanitize(pkg.Name)
+		outputPackageName = "mock_" + sanitize(pkg.Name)
 	}
 
 	// outputPackagePath represents the fully qualified name of the package of
@@ -137,7 +137,7 @@ func main() {
 
 		g.copyrightHeader = string(header)
 	}
-	if err := g.Generate(pkg, packageName, outputPackagePath); err != nil {
+	if err := g.Generate(pkg, outputPackageName, outputPackagePath); err != nil {
 		log.Fatalf("Failed generating mock: %v", err)
 	}
 	if _, err := dst.Write(g.Output()); err != nil {
@@ -234,8 +234,8 @@ func sanitize(s string) string {
 	return t
 }
 
-func (g *generator) Generate(pkg *model.Package, pkgName string, outputPackagePath string) error {
-	if pkgName != pkg.Name {
+func (g *generator) Generate(pkg *model.Package, outputPkgName string, outputPackagePath string) error {
+	if outputPkgName != pkg.Name {
 		outputPackagePath = ""
 	}
 
@@ -294,22 +294,27 @@ func (g *generator) Generate(pkg *model.Package, pkgName string, outputPackagePa
 			i++
 		}
 
+		// Avoid importing package if source pkg == output pkg
+		if pth == pkg.PkgPath && outputPkgName == pkg.Name {
+			continue
+		}
+
 		g.packageMap[pth] = pkgName
 		localNames[pkgName] = true
 	}
 
 	if *writePkgComment {
-		g.p("// Package %v is a generated GoMock package.", pkgName)
+		g.p("// Package %v is a generated GoMock package.", outputPkgName)
 	}
-	g.p("package %v", pkgName)
+	g.p("package %v", outputPkgName)
 	g.p("")
 	g.p("import (")
 	g.in()
-	for pkgPath, pkg := range g.packageMap {
+	for pkgPath, pkgName := range g.packageMap {
 		if pkgPath == outputPackagePath {
 			continue
 		}
-		g.p("%v %q", pkg, pkgPath)
+		g.p("%v %q", pkgName, pkgPath)
 	}
 	for _, pkgPath := range pkg.DotImports {
 		g.p(". %q", pkgPath)

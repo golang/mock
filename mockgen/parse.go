@@ -187,6 +187,7 @@ func (p *fileParser) parseFile(importPath string, file *ast.File) (*model.Packag
 	}
 	return &model.Package{
 		Name:       file.Name.String(),
+		PkgPath: importPath,
 		Interfaces: is,
 		DotImports: dotImports,
 	}, nil
