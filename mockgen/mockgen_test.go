@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"reflect"
 	"regexp"
 	"strings"
 	"testing"
@@ -327,29 +328,9 @@ func TestGetArgNames(t *testing.T) {
 			g := generator{}
 
 			result := g.getArgNames(testCase.method)
-			if !testEqSliceStr(t, result, testCase.expected) {
+			if !reflect.DeepEqual(result, testCase.expected) {
 				t.Fatalf("expected %s, got %s", result, testCase.expected)
 			}
 		})
 	}
-}
-
-func testEqSliceStr(t *testing.T, a, b []string) bool {
-	t.Helper()
-
-	if a == nil || b == nil {
-		return false
-	}
-
-	if len(a) != len(b) {
-		return false
-	}
-
-	for i := range a {
-		if a[i] != b[i] {
-			return false
-		}
-	}
-
-	return true
 }
