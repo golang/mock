@@ -9,6 +9,7 @@
 
 set -euo pipefail
 
+BASE_DIR="$PWD"
 TEMP_DIR=$( mktemp -d )
 function cleanup() {
     rm -rf "${TEMP_DIR}"
@@ -16,8 +17,9 @@ function cleanup() {
 trap cleanup EXIT
 
 cp -r . "${TEMP_DIR}/"
+cd $TEMP_DIR
 go generate ./...
-if ! diff -r . "${TEMP_DIR}"; then
+if ! diff -r . "${BASE_DIR}"; then
     echo
     echo "The generated files aren't up to date."
     echo "Update them with the 'go generate ./...' command."
