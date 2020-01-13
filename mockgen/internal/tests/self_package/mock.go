@@ -33,10 +33,10 @@ func (m *MockMethods) EXPECT() *MockMethodsMockRecorder {
 }
 
 // getInfo mocks base method
-func (m *MockMethods) getInfo() self_package.Info {
+func (m *MockMethods) getInfo() Info {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "getInfo")
-	ret0, _ := ret[0].(self_package.Info)
+	ret0, _ := ret[0].(Info)
 	return ret0
 }
 
