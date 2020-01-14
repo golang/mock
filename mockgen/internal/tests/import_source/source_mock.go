@@ -6,7 +6,7 @@ package mock_source
 
 import (
 	gomock "github.com/golang/mock/gomock"
-	definition "github.com/golang/mock/mockgen/internal/tests/import_source/definition"
+	source "github.com/golang/mock/mockgen/internal/tests/import_source/definition"
 	reflect "reflect"
 )
 
@@ -34,7 +34,7 @@ func (m *MockS) EXPECT() *MockSMockRecorder {
 }
 
 // F mocks base method
-func (m *MockS) F(arg0 definition.X) {
+func (m *MockS) F(arg0 source.X) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "F", arg0)
 }
