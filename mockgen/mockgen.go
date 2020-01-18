@@ -68,7 +68,18 @@ func main() {
 			usage()
 			log.Fatal("Expected exactly two arguments")
 		}
-		pkg, err = reflectMode(flag.Arg(0), strings.Split(flag.Arg(1), ","))
+		packageName := flag.Arg(0)
+		if packageName == "." {
+			dir, err := os.Getwd()
+			if err != nil {
+				log.Fatalf("Get current directory failed: %v", err)
+			}
+			packageName, err = packageNameOfDir(dir)
+			if err != nil {
+				log.Fatalf("Parse package name failed: %v", err)
+			}
+		}
+		pkg, err = reflectMode(packageName, strings.Split(flag.Arg(1), ","))
 	}
 	if err != nil {
 		log.Fatalf("Loading input failed: %v", err)
