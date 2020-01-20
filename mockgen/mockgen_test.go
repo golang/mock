@@ -334,3 +334,31 @@ func TestGetArgNames(t *testing.T) {
 		})
 	}
 }
+
+func Test_lookupPackageName(t *testing.T) {
+	type args struct {
+		importPath string
+	}
+	tests := []struct {
+		name            string
+		importPath      string
+		wantPackageName string
+		wantOK          bool
+	}{
+		{"golang package", "context", "context", true},
+		{"third party", "golang.org/x/tools/present", "present", true},
+		{"modules", "rsc.io/quote/v3", "quote", true},
+		{"fail", "this/should/not/work", "", false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotPackageName, gotOk := lookupPackageName(tt.importPath)
+			if gotPackageName != tt.wantPackageName {
+				t.Errorf("lookupPackageName() gotPackageName = %v, wantPackageName %v", gotPackageName, tt.wantPackageName)
+			}
+			if gotOk != tt.wantOK {
+				t.Errorf("lookupPackageName() gotOk = %v, wantOK %v", gotOk, tt.wantOK)
+			}
+		})
+	}
+}

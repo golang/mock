@@ -453,15 +453,15 @@ func importsOfFile(file *ast.File) (normalImports map[string]string, dotImports 
 			}
 			pkgName = is.Name.Name
 		} else {
-			pkg, err := build.Import(importPath, "", 0)
-			if err != nil {
+			pkg, ok := lookupPackageName(importPath)
+			if !ok {
 				// Fallback to import path suffix. Note that this is uncertain.
 				_, last := path.Split(importPath)
 				// If the last path component has dots, the first dot-delimited
 				// field is used as the name.
 				pkgName = strings.SplitN(last, ".", 2)[0]
 			} else {
-				pkgName = pkg.Name
+				pkgName = pkg
 			}
 		}
 

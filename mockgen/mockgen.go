@@ -20,6 +20,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"go/build"
@@ -29,6 +30,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"sort"
@@ -287,7 +289,10 @@ func (g *generator) Generate(pkg *model.Package, outputPkgName string, outputPac
 	g.packageMap = make(map[string]string, len(im))
 	localNames := make(map[string]bool, len(im))
 	for _, pth := range sortedPaths {
-		base := sanitize(path.Base(pth))
+		base, ok := lookupPackageName(pth)
+		if !ok {
+			base = sanitize(path.Base(pth))
+		}
 
 		// Local names for an imported package can usually be the basename of the import path.
 		// A couple of situations don't permit that, such as duplicate local names
@@ -597,4 +602,22 @@ func (g *generator) Output() []byte {
 		log.Fatalf("Failed to format generated source code: %s\n%s", err, g.buf.String())
 	}
 	return src
+}
+
+func lookupPackageName(importPath string) (string, bool) {
+	var pkg struct {
+		Name string
+	}
+	b := bytes.NewBuffer(nil)
+	cmd := exec.Command("go", "list", "-json", importPath)
+	cmd.Stdout = b
+	err := cmd.Run()
+	if err != nil {
+		return "", false
+	}
+	err = json.Unmarshal(b.Bytes(), &pkg)
+	if err != nil {
+		return "", false
+	}
+	return pkg.Name, true
 }

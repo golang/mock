@@ -11,7 +11,7 @@ import (
 	imp1 "github.com/golang/mock/sample/imp1"
 	imp2 "github.com/golang/mock/sample/imp2"
 	imp3 "github.com/golang/mock/sample/imp3"
-	imp4 "github.com/golang/mock/sample/imp4"
+	imp_four "github.com/golang/mock/sample/imp4"
 	hash "hash"
 	template "html/template"
 	io "io"
@@ -115,7 +115,7 @@ func (mr *MockIndexMockRecorder) EllipOnly(arg0 ...interface{}) *gomock.Call {
 }
 
 // ForeignFour mocks base method
-func (m *MockIndex) ForeignFour(arg0 imp4.Imp4) {
+func (m *MockIndex) ForeignFour(arg0 imp_four.Imp4) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "ForeignFour", arg0)
 }

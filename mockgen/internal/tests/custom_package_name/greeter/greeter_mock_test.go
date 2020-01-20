@@ -6,7 +6,7 @@ package greeter
 
 import (
 	gomock "github.com/golang/mock/gomock"
-	v1 "github.com/golang/mock/mockgen/internal/tests/custom_package_name/client/v1"
+	client "github.com/golang/mock/mockgen/internal/tests/custom_package_name/client/v1"
 	reflect "reflect"
 )
 
@@ -34,10 +34,10 @@ func (m *MockInputMaker) EXPECT() *MockInputMakerMockRecorder {
 }
 
 // MakeInput mocks base method
-func (m *MockInputMaker) MakeInput() v1.GreetInput {
+func (m *MockInputMaker) MakeInput() client.GreetInput {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "MakeInput")
-	ret0, _ := ret[0].(v1.GreetInput)
+	ret0, _ := ret[0].(client.GreetInput)
 	return ret0
 }
 
