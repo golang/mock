@@ -129,6 +129,7 @@ func runInDir(program []byte, dir string) (*model.Package, error) {
 	if err := cmd.Run(); err != nil {
 		return nil, err
 	}
+
 	return run(filepath.Join(tmpDir, progBinary))
 }
 
@@ -152,6 +153,11 @@ func reflectMode(importPath string, symbols []string) (*model.Package, error) {
 
 	wd, _ := os.Getwd()
 
+	// Try to run the reflection program  in the current working directory.
+	if p, err := runInDir(program, wd); err == nil {
+		return p, nil
+	}
+
 	// Try to run the program in the same directory as the input package.
 	if p, err := build.Import(importPath, wd, build.FindOnly); err == nil {
 		dir := p.Dir
@@ -160,11 +166,7 @@ func reflectMode(importPath string, symbols []string) (*model.Package, error) {
 		}
 	}
 
-	// Since that didn't work, try to run it in the current working directory.
-	if p, err := runInDir(program, wd); err == nil {
-		return p, nil
-	}
-	// Since that didn't work, try to run it in a standard temp directory.
+	// Try to run it in a standard temp directory.
 	return runInDir(program, "")
 }
 
