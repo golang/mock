@@ -20,7 +20,7 @@ import (
 	"log"
 )
 
-func printVersion() {
+func printModuleVersion() {
 	log.Printf("No version information is available for Mockgen compiled with " +
 		"version 1.11")
 }

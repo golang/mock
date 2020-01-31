@@ -23,7 +23,7 @@ import (
 	"runtime/debug"
 )
 
-func printVersion() {
+func printModuleVersion() {
 	if bi, exists := debug.ReadBuildInfo(); exists {
 		fmt.Println(bi.Main.Version)
 	} else {
