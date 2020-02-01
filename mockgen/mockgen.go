@@ -61,6 +61,7 @@ func main() {
 
 	var pkg *model.Package
 	var err error
+	var packageName string
 	if *source != "" {
 		pkg, err = sourceMode(*source)
 	} else {
@@ -68,7 +69,7 @@ func main() {
 			usage()
 			log.Fatal("Expected exactly two arguments")
 		}
-		packageName := flag.Arg(0)
+		packageName = flag.Arg(0)
 		if packageName == "." {
 			dir, err := os.Getwd()
 			if err != nil {
@@ -133,7 +134,7 @@ func main() {
 	if *source != "" {
 		g.filename = *source
 	} else {
-		g.srcPackage = flag.Arg(0)
+		g.srcPackage = packageName
 		g.srcInterfaces = flag.Arg(1)
 	}
 

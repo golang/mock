@@ -521,7 +521,6 @@ func packageNameOfDir(srcDir string) (string, error) {
 
 	var goFilePath string
 	for _, file := range files {
-		log.Println(file.Name())
 		if !file.IsDir() && strings.HasSuffix(file.Name(), ".go") {
 			goFilePath = file.Name()
 			break
