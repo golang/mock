@@ -51,10 +51,15 @@ that uses reflection to understand interfaces. It is enabled
 by passing two non-flag arguments: an import path, and a
 comma-separated list of symbols.
 
+You can use "." to refer to the current path's package.
+
 Example:
 
 ```bash
 mockgen database/sql/driver Conn,Driver
+
+# Convenient for `go:generate`.
+mockgen . Conn,Driver
 ```
 
 The `mockgen` command is used to generate source code for a mock
