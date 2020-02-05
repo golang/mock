@@ -22,15 +22,14 @@ builds:
       - GOPROXY=https://proxy.golang.org
       - GOSUMDB=sum.golang.org
     main: ./mockgen/
-archive:
-  format: tar.gz
-  wrap_in_directory: true
-  name_template: '{{ .Binary }}-{{ .Version }}-{{ .Os }}-{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}'
-  files:
-    - LICENSE
-    - README.md
+
+archives:
+ - format: tar.gz
+   wrap_in_directory: true
+   files:
+     - LICENSE
+     - README.md
 checksum:
-  name_template: '{{ .Binary }}-{{ .Version }}-checksums.txt'
 snapshot:
   name_template: "snap-{{ .Commit }}"
 changelog:

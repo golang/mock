@@ -46,6 +46,12 @@ const (
 )
 
 var (
+	version = ""
+	commit  = "none"
+	date    = "unknown"
+)
+
+var (
 	source          = flag.String("source", "", "(source mode) Input Go source file; enables source mode.")
 	destination     = flag.String("destination", "", "Output file; defaults to stdout.")
 	mockNames       = flag.String("mock_names", "", "Comma-separated interfaceName=mockName pairs of explicit mock names to use. Mock names default to 'Mock'+ interfaceName suffix.")
@@ -55,14 +61,14 @@ var (
 	copyrightFile   = flag.String("copyright_file", "", "Copyright file used to add copyright header")
 
 	debugParser = flag.Bool("debug_parser", false, "Print out parser results only.")
-	version     = flag.Bool("version", false, "Print version.")
+	showVersion = flag.Bool("version", false, "Print version.")
 )
 
 func main() {
 	flag.Usage = usage
 	flag.Parse()
 
-	if *version {
+	if *showVersion {
 		printVersion()
 		return
 	}
@@ -632,4 +638,12 @@ func lookupPackageName(importPath string) (string, bool) {
 		return "", false
 	}
 	return pkg.Name, true
+}
+
+func printVersion() {
+	if version != "" {
+		fmt.Printf("v%s\nCommit: %s\nDate: %s\n", version, commit, date)
+	} else {
+		printModuleVersion()
+	}
 }
