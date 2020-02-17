@@ -19,8 +19,8 @@ package main
 // TODO: This does not support embedding package-local interfaces in a separate file.
 
 import (
+	"bufio"
 	"bytes"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"go/build"
@@ -304,10 +304,16 @@ func (g *generator) Generate(pkg *model.Package, outputPkgName string, outputPac
 	}
 	sort.Strings(sortedPaths)
 
+	importPaths := make([]string, 0)
+	for _, pth := range sortedPaths {
+		importPaths = append(importPaths, pth)
+	}
+	packagesName := lookupPackagesName(importPaths)
+
 	g.packageMap = make(map[string]string, len(im))
 	localNames := make(map[string]bool, len(im))
 	for _, pth := range sortedPaths {
-		base, ok := lookupPackageName(pth)
+		base, ok := packagesName[pth]
 		if !ok {
 			base = sanitize(path.Base(pth))
 		}
@@ -622,22 +628,23 @@ func (g *generator) Output() []byte {
 	return src
 }
 
-func lookupPackageName(importPath string) (string, bool) {
-	var pkg struct {
-		Name string
-	}
+func lookupPackagesName(importPaths []string) map[string]string {
+	names := make(map[string]string)
 	b := bytes.NewBuffer(nil)
-	cmd := exec.Command("go", "list", "-json", importPath)
+	args := []string{"list", "-f", "{{.Name}} {{.ImportPath}}"}
+	args = append(args, importPaths...)
+	cmd := exec.Command("go", args...)
 	cmd.Stdout = b
-	err := cmd.Run()
-	if err != nil {
-		return "", false
+	cmd.Run()
+	sc := bufio.NewScanner(b)
+	for sc.Scan() {
+		pkg := strings.Split(sc.Text(), " ")
+		if len(pkg) != 2 {
+			log.Fatalln("Unable to lookup packages name: invalid output of go list command")
+		}
+		names[pkg[1]] = pkg[0]
 	}
-	err = json.Unmarshal(b.Bytes(), &pkg)
-	if err != nil {
-		return "", false
-	}
-	return pkg.Name, true
+	return names
 }
 
 func printVersion() {

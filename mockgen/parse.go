@@ -432,6 +432,15 @@ func (p *fileParser) parseType(pkg string, typ ast.Expr) (model.Type, error) {
 // importsOfFile returns a map of package name to import path
 // of the imports in file.
 func importsOfFile(file *ast.File) (normalImports map[string]string, dotImports []string) {
+	importPaths := make([]string, 0)
+	for _, is := range file.Imports {
+		if is.Name != nil {
+			continue
+		}
+		importPath := is.Path.Value[1 : len(is.Path.Value)-1] // remove quotes
+		importPaths = append(importPaths, importPath)
+	}
+	packagesName := lookupPackagesName(importPaths)
 	normalImports = make(map[string]string)
 	dotImports = make([]string, 0)
 	for _, is := range file.Imports {
@@ -445,7 +454,7 @@ func importsOfFile(file *ast.File) (normalImports map[string]string, dotImports 
 			}
 			pkgName = is.Name.Name
 		} else {
-			pkg, ok := lookupPackageName(importPath)
+			pkg, ok := packagesName[importPath]
 			if !ok {
 				// Fallback to import path suffix. Note that this is uncertain.
 				_, last := path.Split(importPath)
