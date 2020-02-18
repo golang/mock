@@ -53,6 +53,7 @@ var (
 
 var (
 	source          = flag.String("source", "", "(source mode) Input Go source file; enables source mode.")
+	sourcePackage   = flag.String("source_package", "", "The full package import path of source file. Queried from underlying build system, by default. This option is usefull for build systems that don't support go packages driver protocol.")
 	destination     = flag.String("destination", "", "Output file; defaults to stdout.")
 	mockNames       = flag.String("mock_names", "", "Comma-separated interfaceName=mockName pairs of explicit mock names to use. Mock names default to 'Mock'+ interfaceName suffix.")
 	packageOut      = flag.String("package", "", "Package of the generated code; defaults to the package of the input with a 'mock_' prefix.")
