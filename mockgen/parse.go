@@ -539,22 +539,22 @@ func packageNameOfDir(srcDir string) (string, error) {
 
 // parseImportPackage get package import path via source file
 func parsePackageImport(source, srcDir string) (string, error) {
-	if *sourcePackage == "" {
-		cfg := &packages.Config{Mode: packages.LoadFiles, Tests: true, Dir: srcDir}
-		pkgs, err := packages.Load(cfg, "file="+source)
-		if err != nil {
-			return "", err
-		}
-		if packages.PrintErrors(pkgs) > 0 || len(pkgs) == 0 {
-			return "", errors.New("loading package failed")
-		}
-
-		packageImport := pkgs[0].PkgPath
-
-		// It is illegal to import a _test package.
-		packageImport = strings.TrimSuffix(packageImport, "_test")
-		return packageImport, nil
-	} else {
+	if *sourcePackage != "" {
 		return *sourcePackage, nil
 	}
+
+	cfg := &packages.Config{Mode: packages.LoadFiles, Tests: true, Dir: srcDir}
+	pkgs, err := packages.Load(cfg, "file="+source)
+	if err != nil {
+		return "", err
+	}
+	if packages.PrintErrors(pkgs) > 0 || len(pkgs) == 0 {
+		return "", errors.New("loading package failed")
+	}
+
+	packageImport := pkgs[0].PkgPath
+
+	// It is illegal to import a _test package.
+	packageImport = strings.TrimSuffix(packageImport, "_test")
+	return packageImport, nil
 }
