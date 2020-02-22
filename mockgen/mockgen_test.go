@@ -335,10 +335,7 @@ func TestGetArgNames(t *testing.T) {
 	}
 }
 
-func Test_lookupPackageName(t *testing.T) {
-	type args struct {
-		importPath string
-	}
+func Test_createPackageMap(t *testing.T) {
 	tests := []struct {
 		name            string
 		importPath      string
@@ -350,14 +347,19 @@ func Test_lookupPackageName(t *testing.T) {
 		{"modules", "rsc.io/quote/v3", "quote", true},
 		{"fail", "this/should/not/work", "", false},
 	}
+	var importPaths []string
+	for _, t := range tests {
+		importPaths = append(importPaths, t.importPath)
+	}
+	packages := createPackageMap(importPaths)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotPackageName, gotOk := lookupPackageName(tt.importPath)
+			gotPackageName, gotOk := packages[tt.importPath]
 			if gotPackageName != tt.wantPackageName {
-				t.Errorf("lookupPackageName() gotPackageName = %v, wantPackageName %v", gotPackageName, tt.wantPackageName)
+				t.Errorf("createPackageMap() gotPackageName = %v, wantPackageName = %v", gotPackageName, tt.wantPackageName)
 			}
 			if gotOk != tt.wantOK {
-				t.Errorf("lookupPackageName() gotOk = %v, wantOK %v", gotOk, tt.wantOK)
+				t.Errorf("createPackageMap() gotOk = %v, wantOK = %v", gotOk, tt.wantOK)
 			}
 		})
 	}

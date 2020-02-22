@@ -304,10 +304,12 @@ func (g *generator) Generate(pkg *model.Package, outputPkgName string, outputPac
 	}
 	sort.Strings(sortedPaths)
 
+	packagesName := createPackageMap(sortedPaths)
+
 	g.packageMap = make(map[string]string, len(im))
 	localNames := make(map[string]bool, len(im))
 	for _, pth := range sortedPaths {
-		base, ok := lookupPackageName(pth)
+		base, ok := packagesName[pth]
 		if !ok {
 			base = sanitize(path.Base(pth))
 		}
@@ -622,22 +624,30 @@ func (g *generator) Output() []byte {
 	return src
 }
 
-func lookupPackageName(importPath string) (string, bool) {
+// createPackageMap returns a map of import path to package name
+// for specified importPaths.
+func createPackageMap(importPaths []string) map[string]string {
 	var pkg struct {
-		Name string
+		Name       string
+		ImportPath string
 	}
+	pkgMap := make(map[string]string)
 	b := bytes.NewBuffer(nil)
-	cmd := exec.Command("go", "list", "-json", importPath)
+	args := []string{"list", "-json"}
+	args = append(args, importPaths...)
+	cmd := exec.Command("go", args...)
 	cmd.Stdout = b
-	err := cmd.Run()
-	if err != nil {
-		return "", false
+	cmd.Run()
+	dec := json.NewDecoder(b)
+	for dec.More() {
+		err := dec.Decode(&pkg)
+		if err != nil {
+			log.Printf("failed to decode 'go list' output: %v", err)
+			continue
+		}
+		pkgMap[pkg.ImportPath] = pkg.Name
 	}
-	err = json.Unmarshal(b.Bytes(), &pkg)
-	if err != nil {
-		return "", false
-	}
-	return pkg.Name, true
+	return pkgMap
 }
 
 func printVersion() {
