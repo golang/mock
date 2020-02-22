@@ -304,11 +304,7 @@ func (g *generator) Generate(pkg *model.Package, outputPkgName string, outputPac
 	}
 	sort.Strings(sortedPaths)
 
-	var importPaths []string
-	for _, pth := range sortedPaths {
-		importPaths = append(importPaths, pth)
-	}
-	packagesName := createPackageMap(importPaths)
+	packagesName := createPackageMap(sortedPaths)
 
 	g.packageMap = make(map[string]string, len(im))
 	localNames := make(map[string]bool, len(im))
@@ -635,7 +631,7 @@ func createPackageMap(importPaths []string) map[string]string {
 		Name       string
 		ImportPath string
 	}
-	names := make(map[string]string)
+	pkgMap := make(map[string]string)
 	b := bytes.NewBuffer(nil)
 	args := []string{"list", "-json"}
 	args = append(args, importPaths...)
@@ -645,11 +641,13 @@ func createPackageMap(importPaths []string) map[string]string {
 	dec := json.NewDecoder(b)
 	for dec.More() {
 		err := dec.Decode(&pkg)
-		if err == nil {
-			names[pkg.ImportPath] = pkg.Name
+		if err != nil {
+			log.Printf("failed to decode 'go list' output: %v", err)
+			continue
 		}
+		pkgMap[pkg.ImportPath] = pkg.Name
 	}
-	return names
+	return pkgMap
 }
 
 func printVersion() {
