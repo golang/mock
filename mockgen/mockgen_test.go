@@ -335,29 +335,32 @@ func TestGetArgNames(t *testing.T) {
 	}
 }
 
-func Test_lookupPackagesName(t *testing.T) {
+func Test_createPackageMap(t *testing.T) {
 	tests := []struct {
+		name            string
 		importPath      string
 		wantPackageName string
-		shouldPresent   bool
+		wantOK          bool
 	}{
-		{"context", "context", true},
-		{"golang.org/x/tools/present", "present", true},
-		{"rsc.io/quote/v3", "quote", true},
-		{"this/should/not/work", "", false},
+		{"golang package", "context", "context", true},
+		{"third party", "golang.org/x/tools/present", "present", true},
+		{"modules", "rsc.io/quote/v3", "quote", true},
+		{"fail", "this/should/not/work", "", false},
 	}
-	importPaths := make([]string, 0)
+	var importPaths []string
 	for _, t := range tests {
 		importPaths = append(importPaths, t.importPath)
 	}
-	gotPackagesName := lookupPackagesName(importPaths)
+	packages := createPackageMap(importPaths)
 	for _, tt := range tests {
-		gotPackageName, gotOk := gotPackagesName[tt.importPath]
-		if gotPackageName != tt.wantPackageName {
-			t.Errorf("lookupPackagesName() gotPackageName = %v, wantPackageName = %v", gotPackageName, tt.wantPackageName)
-		}
-		if gotOk != tt.shouldPresent {
-			t.Errorf("lookupPackageName() gotOk = %v, shouldPresent = %v", gotOk, tt.shouldPresent)
-		}
+		t.Run(tt.name, func(t *testing.T) {
+			gotPackageName, gotOk := packages[tt.importPath]
+			if gotPackageName != tt.wantPackageName {
+				t.Errorf("createPackageMap() gotPackageName = %v, wantPackageName = %v", gotPackageName, tt.wantPackageName)
+			}
+			if gotOk != tt.wantOK {
+				t.Errorf("createPackageMap() gotOk = %v, wantOK = %v", gotOk, tt.wantOK)
+			}
+		})
 	}
 }
