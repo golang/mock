@@ -62,7 +62,7 @@ func sourceMode(source string) (*model.Package, error) {
 
 	p := &fileParser{
 		fileSet:            fs,
-		imports:            make(map[string]importedPkg),
+		imports:            make(map[string]importedPackage),
 		importedInterfaces: make(map[string]map[string]*ast.InterfaceType),
 		auxInterfaces:      make(map[string]map[string]*ast.InterfaceType),
 		srcDir:             srcDir,
@@ -100,14 +100,39 @@ func sourceMode(source string) (*model.Package, error) {
 	return pkg, nil
 }
 
+type importedPackage interface {
+	Path() string
+	Parser() *fileParser
+}
+
 type importedPkg struct {
 	path   string
 	parser *fileParser
 }
 
+func (i importedPkg) Path() string        { return i.path }
+func (i importedPkg) Parser() *fileParser { return i.parser }
+
+// duplicateImport is a bit of a misnomer. Currently the parser can't
+// handle cases of multi-file packages importing different packages
+// under the same name. Often these imports would not be problematic,
+// so this type lets us defer raising an error unless the package name
+// is actually used.
+type duplicateImport struct {
+	name       string
+	duplicates []string
+}
+
+func (d duplicateImport) Error() string {
+	return fmt.Sprintf("%q is ambigous because of duplicate imports: %v", d.name, d.duplicates)
+}
+
+func (d duplicateImport) Path() string        { log.Fatal(d.Error()); return "" }
+func (d duplicateImport) Parser() *fileParser { log.Fatal(d.Error()); return nil }
+
 type fileParser struct {
 	fileSet            *token.FileSet
-	imports            map[string]importedPkg                   // package name => import path
+	imports            map[string]importedPackage               // package name => imported package
 	importedInterfaces map[string]map[string]*ast.InterfaceType // package (or "") => name => interface
 
 	auxFiles      []*ast.File
@@ -159,18 +184,18 @@ func (p *fileParser) addAuxInterfacesFromFile(pkg string, file *ast.File) {
 func (p *fileParser) parseFile(importPath string, file *ast.File) (*model.Package, error) {
 	allImports, dotImports := importsOfFile(file)
 	// Don't stomp imports provided by -imports. Those should take precedence.
-	for pkg, pkgPath := range allImports {
+	for pkg, pkgI := range allImports {
 		if _, ok := p.imports[pkg]; !ok {
-			p.imports[pkg] = importedPkg{path: pkgPath}
+			p.imports[pkg] = pkgI
 		}
 	}
 	// Add imports from auxiliary files, which might be needed for embedded interfaces.
 	// Don't stomp any other imports.
 	for _, f := range p.auxFiles {
 		auxImports, _ := importsOfFile(f)
-		for pkg, pkgPath := range auxImports {
+		for pkg, pkgI := range auxImports {
 			if _, ok := p.imports[pkg]; !ok {
-				p.imports[pkg] = importedPkg{path: pkgPath}
+				p.imports[pkg] = pkgI
 			}
 		}
 	}
@@ -196,7 +221,7 @@ func (p *fileParser) parseFile(importPath string, file *ast.File) (*model.Packag
 func (p *fileParser) parsePackage(path string) (*fileParser, error) {
 	newP := &fileParser{
 		fileSet:            token.NewFileSet(),
-		imports:            make(map[string]importedPkg),
+		imports:            make(map[string]importedPackage),
 		importedInterfaces: make(map[string]map[string]*ast.InterfaceType),
 		auxInterfaces:      make(map[string]map[string]*ast.InterfaceType),
 		srcDir:             p.srcDir,
@@ -218,8 +243,8 @@ func (p *fileParser) parsePackage(path string) (*fileParser, error) {
 			newP.importedInterfaces[path][ni.name.Name] = ni.it
 		}
 		imports, _ := importsOfFile(file)
-		for pkgName, pkgPath := range imports {
-			newP.imports[pkgName] = importedPkg{path: pkgPath}
+		for pkgName, pkgI := range imports {
+			newP.imports[pkgName] = pkgI
 		}
 	}
 	return newP, nil
@@ -274,18 +299,23 @@ func (p *fileParser) parseInterface(name, pkg string, it *ast.InterfaceType) (*m
 					return nil, err
 				}
 			} else {
-				fpkg = epkg.path
-				if epkg.parser == nil {
-					ip, err := p.parsePackage(fpkg)
+				path := epkg.Path()
+				parser := epkg.Parser()
+				if parser == nil {
+					ip, err := p.parsePackage(path)
 					if err != nil {
-						return nil, p.errorf(v.Pos(), "could not parse package %s: %v", fpkg, err)
+						return nil, p.errorf(v.Pos(), "could not parse package %s: %v", path, err)
 					}
-					epkg.parser = ip
+					parser = ip
+					p.imports[fpkg] = importedPkg{
+						path:   epkg.Path(),
+						parser: parser,
+					}
 				}
-				if ei = epkg.parser.importedInterfaces[fpkg][sel]; ei == nil {
-					return nil, p.errorf(v.Pos(), "unknown embedded interface %s.%s", fpkg, sel)
+				if ei = parser.importedInterfaces[path][sel]; ei == nil {
+					return nil, p.errorf(v.Pos(), "unknown embedded interface %s.%s", path, sel)
 				}
-				eintf, err = epkg.parser.parseInterface(sel, fpkg, ei)
+				eintf, err = parser.parseInterface(sel, path, ei)
 				if err != nil {
 					return nil, err
 				}
@@ -405,7 +435,7 @@ func (p *fileParser) parseType(pkg string, typ ast.Expr) (model.Type, error) {
 			// if so, patch the import w/ the fully qualified import
 			maybeImportedPkg, ok := p.imports[pkg]
 			if ok {
-				pkg = maybeImportedPkg.path
+				pkg = maybeImportedPkg.Path()
 			}
 			// assume type in this package
 			return &model.NamedType{Package: pkg, Type: v.Name}, nil
@@ -434,7 +464,7 @@ func (p *fileParser) parseType(pkg string, typ ast.Expr) (model.Type, error) {
 		if !ok {
 			return nil, p.errorf(v.Pos(), "unknown package %q", pkgName)
 		}
-		return &model.NamedType{Package: pkg.path, Type: v.Sel.String()}, nil
+		return &model.NamedType{Package: pkg.Path(), Type: v.Sel.String()}, nil
 	case *ast.StarExpr:
 		t, err := p.parseType(pkg, v.X)
 		if err != nil {
@@ -453,7 +483,7 @@ func (p *fileParser) parseType(pkg string, typ ast.Expr) (model.Type, error) {
 
 // importsOfFile returns a map of package name to import path
 // of the imports in file.
-func importsOfFile(file *ast.File) (normalImports map[string]string, dotImports []string) {
+func importsOfFile(file *ast.File) (normalImports map[string]importedPackage, dotImports []string) {
 	var importPaths []string
 	for _, is := range file.Imports {
 		if is.Name != nil {
@@ -463,7 +493,7 @@ func importsOfFile(file *ast.File) (normalImports map[string]string, dotImports 
 		importPaths = append(importPaths, importPath)
 	}
 	packagesName := createPackageMap(importPaths)
-	normalImports = make(map[string]string)
+	normalImports = make(map[string]importedPackage)
 	dotImports = make([]string, 0)
 	for _, is := range file.Imports {
 		var pkgName string
@@ -491,10 +521,22 @@ func importsOfFile(file *ast.File) (normalImports map[string]string, dotImports 
 		if pkgName == "." {
 			dotImports = append(dotImports, importPath)
 		} else {
-			if _, ok := normalImports[pkgName]; ok {
-				log.Fatalf("imported package collision: %q imported twice", pkgName)
+			if pkg, ok := normalImports[pkgName]; ok {
+				switch p := pkg.(type) {
+				case duplicateImport:
+					normalImports[pkgName] = duplicateImport{
+						name:       p.name,
+						duplicates: append([]string{importPath}, p.duplicates...),
+					}
+				case importedPkg:
+					normalImports[pkgName] = duplicateImport{
+						name:       pkgName,
+						duplicates: []string{p.path, importPath},
+					}
+				}
+			} else {
+				normalImports[pkgName] = importedPkg{path: importPath}
 			}
-			normalImports[pkgName] = importPath
 		}
 	}
 	return

@@ -1,0 +1,3 @@
+package log
+
+func Foo() {}
