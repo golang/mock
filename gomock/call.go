@@ -19,6 +19,8 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+
+	"github.com/golang/mock/gomock/internal/validate"
 )
 
 // Call represents an expected call to a mock.
@@ -105,9 +107,23 @@ func (c *Call) MaxTimes(n int) *Call {
 // DoAndReturn declares the action to run when the call is matched.
 // The return values from this function are returned by the mocked function.
 // It takes an interface{} argument to support n-arity functions.
+// If the method signature of f is not compatible with the mocked function a
+// panic will be triggered. Both the arguments and return values of f are
+// validated.
 func (c *Call) DoAndReturn(f interface{}) *Call {
-	// TODO: Check arity and types here, rather than dying badly elsewhere.
 	v := reflect.ValueOf(f)
+
+	switch v.Kind() {
+	case reflect.Func:
+		mt := c.methodType
+
+		ft := v.Type()
+		if err := validate.InputAndOutputSig(ft, mt); err != nil {
+			panic(fmt.Sprintf("DoAndReturn: %s", err))
+		}
+	default:
+		panic("DoAndReturn: argument must be a function")
+	}
 
 	c.addAction(func(args []interface{}) []interface{} {
 		vargs := make([]reflect.Value, len(args))
@@ -134,9 +150,23 @@ func (c *Call) DoAndReturn(f interface{}) *Call {
 // return values are ignored to retain backward compatibility. To use the
 // return values call DoAndReturn.
 // It takes an interface{} argument to support n-arity functions.
+// If the method signature of f is not compatible with the mocked function a
+// panic will be triggered. Only the arguments of f are validated; not the return
+// values.
 func (c *Call) Do(f interface{}) *Call {
-	// TODO: Check arity and types here, rather than dying badly elsewhere.
 	v := reflect.ValueOf(f)
+
+	switch v.Kind() {
+	case reflect.Func:
+		mt := c.methodType
+
+		ft := v.Type()
+		if err := validate.InputSig(ft, mt); err != nil {
+			panic(fmt.Sprintf("Do: %s", err))
+		}
+	default:
+		panic("Do: argument must be a function")
+	}
 
 	c.addAction(func(args []interface{}) []interface{} {
 		vargs := make([]reflect.Value, len(args))
