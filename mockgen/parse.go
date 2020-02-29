@@ -236,7 +236,7 @@ func (p *fileParser) parsePackage(path string) (*fileParser, error) {
 
 	for _, pkg := range pkgs {
 		file := ast.MergePackageFiles(pkg, ast.FilterFuncDuplicates|ast.FilterUnassociatedComments|ast.FilterImportDuplicates)
-		if _, ok := p.importedInterfaces[path]; !ok {
+		if _, ok := newP.importedInterfaces[path]; !ok {
 			newP.importedInterfaces[path] = make(map[string]*ast.InterfaceType)
 		}
 		for ni := range iterInterfaces(file) {
