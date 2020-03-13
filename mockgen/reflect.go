@@ -147,7 +147,9 @@ func reflectMode(importPath string, symbols []string) (*model.Package, error) {
 	}
 
 	if *progOnly {
-		_, _ = os.Stdout.Write(program)
+		if _, err := os.Stdout.Write(program); err != nil {
+			return nil, err
+		}
 		os.Exit(0)
 	}
 
