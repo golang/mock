@@ -492,11 +492,9 @@ func TestDo(t *testing.T) {
 	doCalled := false
 	var argument string
 	ctrl.RecordCall(subject, "FooMethod", "argument").Do(
-		func(arg string) int {
+		func(arg string) {
 			doCalled = true
 			argument = arg
-
-			return 0
 		})
 	if doCalled {
 		t.Error("Do() callback called too early.")
