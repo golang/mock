@@ -9,30 +9,30 @@ import (
 	reflect "reflect"
 )
 
-// MockExample is a mock of Example interface
+// MockExample is a mock of Example interface.
 type MockExample struct {
 	ctrl     *gomock.Controller
 	recorder *MockExampleMockRecorder
 }
 
-// MockExampleMockRecorder is the mock recorder for MockExample
+// MockExampleMockRecorder is the mock recorder for MockExample.
 type MockExampleMockRecorder struct {
 	mock *MockExample
 }
 
-// NewMockExample creates a new mock instance
+// NewMockExample creates a new mock instance.
 func NewMockExample(ctrl *gomock.Controller) *MockExample {
 	mock := &MockExample{ctrl: ctrl}
 	mock.recorder = &MockExampleMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockExample) EXPECT() *MockExampleMockRecorder {
 	return m.recorder
 }
 
-// someMethod mocks base method
+// someMethod mocks base method.
 func (m *MockExample) someMethod(arg0 string) string {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "someMethod", arg0)
@@ -40,7 +40,7 @@ func (m *MockExample) someMethod(arg0 string) string {
 	return ret0
 }
 
-// someMethod indicates an expected call of someMethod
+// someMethod indicates an expected call of someMethod.
 func (mr *MockExampleMockRecorder) someMethod(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "someMethod", reflect.TypeOf((*MockExample)(nil).someMethod), arg0)
