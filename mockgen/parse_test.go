@@ -4,6 +4,9 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"io/ioutil"
+	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -111,5 +114,71 @@ func Benchmark_parseFile(b *testing.B) {
 	source := "internal/tests/performance/big_interface/big_interface.go"
 	for n := 0; n < b.N; n++ {
 		sourceMode(source)
+	}
+}
+
+func TestParsePackageImport(t *testing.T) {
+	for _, testCase := range []struct {
+		name    string
+		envs    map[string]string
+		dir     string
+		pkgPath string
+		err     error
+	}{
+		{
+			name:    "go mod default",
+			envs:    map[string]string{"GO111MODULE": ""},
+			dir:     "testdata/gomod/bar",
+			pkgPath: "github.com/golang/foo/bar",
+		},
+		{
+			name:    "go mod off",
+			envs:    map[string]string{"GO111MODULE": "off", "GOPATH": "testdata/gopath"},
+			dir:     "testdata/gopath/src/example.com/foo",
+			pkgPath: "example.com/foo",
+		},
+		{
+			name: "outside GOPATH",
+			envs: map[string]string{"GO111MODULE": "off", "GOPATH": "testdata/gopath"},
+			dir:  "testdata",
+			err:  errOutsideGoPath,
+		},
+	} {
+		t.Run(testCase.name, func(t *testing.T) {
+			for key, value := range testCase.envs {
+				os.Setenv(key, value)
+			}
+			pkgPath, err := parsePackageImport(filepath.Clean(testCase.dir))
+			if err != testCase.err {
+				t.Errorf("expect %v, got %v", testCase.err, err)
+			}
+			if pkgPath != testCase.pkgPath {
+				t.Errorf("expect %s, got %s", testCase.pkgPath, pkgPath)
+			}
+		})
+	}
+}
+
+func TestParsePackageImport_FallbackGoPath(t *testing.T) {
+	goPath, err := ioutil.TempDir("", "gopath")
+	if err != nil {
+		t.Error(err)
+	}
+	defer func() {
+		if err = os.RemoveAll(goPath); err != nil {
+			t.Error(err)
+		}
+	}()
+	srcDir := filepath.Join(goPath, "src/example.com/foo")
+	err = os.MkdirAll(srcDir, 0755)
+	if err != nil {
+		t.Error(err)
+	}
+	os.Setenv("GOPATH", goPath)
+	os.Setenv("GO111MODULE", "on")
+	pkgPath, err := parsePackageImport(srcDir)
+	expected := "example.com/foo"
+	if pkgPath != expected {
+		t.Errorf("expect %s, got %s", expected, pkgPath)
 	}
 }
