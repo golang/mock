@@ -14,7 +14,7 @@ func (ac *ArgumentCaptor) Matches(x interface{}) bool {
 	return ac.Matcher.Matches(x)
 }
 
-// LastValue returns the last argument (or arguments) the matcher was called with as an interface{}.
+// LastValue returns the last argument the matcher was called with as an interface{}.
 // If the matcher was never called, nil is returned.
 func (ac *ArgumentCaptor) LastValue() interface{} {
 	if len(ac.values) < 1 {
@@ -23,7 +23,7 @@ func (ac *ArgumentCaptor) LastValue() interface{} {
 	return ac.values[len(ac.values)-1]
 }
 
-// Values returns the all arguments the matcher was called with as a slice of interface{}.
+// Values returns the all arguments the matcher was called with as a []interface{}.
 // The values are ordered from first called to last called.
 func (ac *ArgumentCaptor) Values() []interface{} {
 	return ac.values
