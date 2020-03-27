@@ -298,7 +298,7 @@ func TestUnexpectedArgValue_FirstArg(t *testing.T) {
 	})
 }
 
-func TestUnexpectedArgValue_SecondtArg(t *testing.T) {
+func TestUnexpectedArgValue_SecondArg(t *testing.T) {
 	reporter, ctrl := createFixtures(t)
 	defer reporter.recoverUnexpectedFatal()
 	subject := new(Subject)
@@ -310,6 +310,63 @@ func TestUnexpectedArgValue_SecondtArg(t *testing.T) {
 		ctrl.Call(subject, "ActOnTestStructMethod", TestStruct{Number: 123, Message: "hello"}, 3)
 	}, "Unexpected call to", "doesn't match the argument at index 1",
 		"Got: 3\nWant: is equal to 15")
+
+	reporter.assertFatal(func() {
+		// The expected call wasn't made.
+		ctrl.Finish()
+	})
+}
+
+func TestUnexpectedArgValue_WantFormatter(t *testing.T) {
+	reporter, ctrl := createFixtures(t)
+	defer reporter.recoverUnexpectedFatal()
+	subject := new(Subject)
+
+	expectedArg0 := TestStruct{Number: 123, Message: "hello"}
+	ctrl.RecordCall(
+		subject,
+		"ActOnTestStructMethod",
+		expectedArg0,
+		gomock.WantFormatter(
+			gomock.StringerFunc(func() string { return "is equal to fifteen" }),
+			gomock.Eq(15),
+		),
+	)
+
+	reporter.assertFatal(func() {
+		ctrl.Call(subject, "ActOnTestStructMethod", TestStruct{Number: 123, Message: "hello"}, 3)
+	}, "Unexpected call to", "doesn't match the argument at index 1",
+		"Got: 3\nWant: is equal to fifteen")
+
+	reporter.assertFatal(func() {
+		// The expected call wasn't made.
+		ctrl.Finish()
+	})
+}
+
+func TestUnexpectedArgValue_GotFormatter(t *testing.T) {
+	reporter, ctrl := createFixtures(t)
+	defer reporter.recoverUnexpectedFatal()
+	subject := new(Subject)
+
+	expectedArg0 := TestStruct{Number: 123, Message: "hello"}
+	ctrl.RecordCall(
+		subject,
+		"ActOnTestStructMethod",
+		expectedArg0,
+		gomock.GotFormatterAdapter(
+			gomock.GotFormatterFunc(func(i interface{}) string {
+				// Leading 0s
+				return fmt.Sprintf("%02d", i)
+			}),
+			gomock.Eq(15),
+		),
+	)
+
+	reporter.assertFatal(func() {
+		ctrl.Call(subject, "ActOnTestStructMethod", TestStruct{Number: 123, Message: "hello"}, 3)
+	}, "Unexpected call to", "doesn't match the argument at index 1",
+		"Got: 03\nWant: is equal to 15")
 
 	reporter.assertFatal(func() {
 		// The expected call wasn't made.
@@ -369,7 +426,7 @@ func TestMaxTimes1(t *testing.T) {
 	ctrl.Call(subject, "FooMethod", "argument")
 	ctrl.Finish()
 
-	//It fails if there are more
+	// It fails if there are more
 	reporter, ctrl := createFixtures(t)
 	subject = new(Subject)
 	ctrl.RecordCall(subject, "FooMethod", "argument").MaxTimes(1)
@@ -406,6 +463,25 @@ func TestMinMaxTimes(t *testing.T) {
 	ctrl.RecordCall(subject, "FooMethod", "argument").MaxTimes(2).MinTimes(2)
 	ctrl.Call(subject, "FooMethod", "argument")
 	ctrl.Call(subject, "FooMethod", "argument")
+	ctrl.Finish()
+
+	// If MaxTimes is called after MinTimes is called with 1, MaxTimes takes precedence.
+	reporter, ctrl = createFixtures(t)
+	subject = new(Subject)
+	ctrl.RecordCall(subject, "FooMethod", "argument").MinTimes(1).MaxTimes(2)
+	ctrl.Call(subject, "FooMethod", "argument")
+	ctrl.Call(subject, "FooMethod", "argument")
+	reporter.assertFatal(func() {
+		ctrl.Call(subject, "FooMethod", "argument")
+	})
+
+	// If MinTimes is called after MaxTimes is called with 1, MinTimes takes precedence.
+	reporter, ctrl = createFixtures(t)
+	subject = new(Subject)
+	ctrl.RecordCall(subject, "FooMethod", "argument").MaxTimes(1).MinTimes(2)
+	for i := 0; i < 100; i++ {
+		ctrl.Call(subject, "FooMethod", "argument")
+	}
 	ctrl.Finish()
 }
 
@@ -681,7 +757,7 @@ func TestVariadicNoMatch(t *testing.T) {
 	ctrl.RecordCall(s, "VariadicMethod", 0)
 	rep.assertFatal(func() {
 		ctrl.Call(s, "VariadicMethod", 1)
-	}, "Expected call at", "doesn't match the argument at index 0",
+	}, "expected call at", "doesn't match the argument at index 0",
 		"Got: 1\nWant: is equal to 0")
 	ctrl.Call(s, "VariadicMethod", 0)
 	ctrl.Finish()
