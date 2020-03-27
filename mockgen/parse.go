@@ -424,6 +424,8 @@ func (p *fileParser) parseType(pkg string, typ ast.Expr) (model.Type, error) {
 			return nil, p.errorf(v.Pos(), "can't handle non-empty unnamed struct types")
 		}
 		return model.PredeclaredType("struct{}"), nil
+	case *ast.ParenExpr:
+		return p.parseType(pkg, v.X)
 	}
 
 	return nil, fmt.Errorf("don't know how to parse type %T", typ)
