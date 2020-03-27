@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	mock_matcher "github.com/golang/mock/gomock/internal/mock_matcher"
+	"github.com/golang/mock/gomock/internal/mock_gomock"
 )
 
 const (
@@ -20,7 +20,7 @@ func TestValue(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockMatcher := mock_matcher.NewMockMatcher(ctrl)
+	mockMatcher := mock_gomock.NewMockMatcher(ctrl)
 	captor := gomock.Captor(mockMatcher)
 
 	mockMatcher.EXPECT().Matches(intArg).Times(1)
@@ -29,7 +29,7 @@ func TestValue(t *testing.T) {
 	captor.Matches(intArg)
 	captor.Matches(sliceArg)
 
-	actualValue := captor.Value().([]string)
+	actualValue := captor.LastValue().([]string)
 
 	if len(sliceArg) != len(actualValue) {
 		t.Errorf("expected length %d, but was %d", len(sliceArg), len(actualValue))
@@ -46,12 +46,12 @@ func TestValueWithNoElements(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockMatcher := mock_matcher.NewMockMatcher(ctrl)
+	mockMatcher := mock_gomock.NewMockMatcher(ctrl)
 	captor := gomock.Captor(mockMatcher)
 
 	mockMatcher.EXPECT().Matches(gomock.Any()).Times(0)
 
-	actualValue := captor.Value()
+	actualValue := captor.LastValue()
 
 	if actualValue != nil {
 		t.Errorf("expected nil, but was %s", actualValue)
@@ -62,7 +62,7 @@ func TestAllValues(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockMatcher := mock_matcher.NewMockMatcher(ctrl)
+	mockMatcher := mock_gomock.NewMockMatcher(ctrl)
 	captor := gomock.Captor(mockMatcher)
 
 	mockMatcher.EXPECT().Matches(intArg).Times(1)
@@ -71,7 +71,7 @@ func TestAllValues(t *testing.T) {
 	captor.Matches(intArg)
 	captor.Matches(sliceArg)
 
-	actualValues := captor.AllValues()
+	actualValues := captor.Values()
 
 	if len(actualValues) != 2 {
 		t.Errorf("expected 2 values, but got %s", actualValues)
@@ -98,12 +98,12 @@ func TestAllValuesWithNoElements(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockMatcher := mock_matcher.NewMockMatcher(ctrl)
+	mockMatcher := mock_gomock.NewMockMatcher(ctrl)
 	captor := gomock.Captor(mockMatcher)
 
 	mockMatcher.EXPECT().Matches(gomock.Any()).Times(0)
 
-	actualValue := captor.AllValues()
+	actualValue := captor.Values()
 
 	if len(actualValue) != 0 {
 		t.Errorf("expected length 0, but slice had elements: %s", actualValue)
