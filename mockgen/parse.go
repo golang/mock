@@ -548,7 +548,11 @@ func packageNameOfDir(srcDir string) (string, error) {
 
 // parseImportPackage get package import path via source file
 func parsePackageImport(source, srcDir string) (string, error) {
-	cfg := &packages.Config{Mode: packages.LoadFiles, Tests: true, Dir: srcDir}
+	cfg := &packages.Config{
+		Mode:  packages.NeedName,
+		Tests: true,
+		Dir:   srcDir,
+	}
 	pkgs, err := packages.Load(cfg, "file="+source)
 	if err != nil {
 		return "", err
