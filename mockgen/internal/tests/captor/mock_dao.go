@@ -9,36 +9,36 @@ import (
 	reflect "reflect"
 )
 
-// MockDao is a mock of Dao interface
+// MockDao is a mock of Dao interface.
 type MockDao struct {
 	ctrl     *gomock.Controller
 	recorder *MockDaoMockRecorder
 }
 
-// MockDaoMockRecorder is the mock recorder for MockDao
+// MockDaoMockRecorder is the mock recorder for MockDao.
 type MockDaoMockRecorder struct {
 	mock *MockDao
 }
 
-// NewMockDao creates a new mock instance
+// NewMockDao creates a new mock instance.
 func NewMockDao(ctrl *gomock.Controller) *MockDao {
 	mock := &MockDao{ctrl: ctrl}
 	mock.recorder = &MockDaoMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockDao) EXPECT() *MockDaoMockRecorder {
 	return m.recorder
 }
 
-// InsertIDs mocks base method
+// InsertIDs mocks base method.
 func (m *MockDao) InsertIDs(ids []int) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "InsertIDs", ids)
 }
 
-// InsertIDs indicates an expected call of InsertIDs
+// InsertIDs indicates an expected call of InsertIDs.
 func (mr *MockDaoMockRecorder) InsertIDs(ids interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertIDs", reflect.TypeOf((*MockDao)(nil).InsertIDs), ids)
