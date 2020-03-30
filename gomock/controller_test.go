@@ -54,6 +54,17 @@ func (e *ErrorReporter) assertFail(msg string) {
 	}
 }
 
+func (e *ErrorReporter) assertLogf(expectedErrMsgs ...string) {
+	if len(e.log) < len(expectedErrMsgs) {
+		e.t.Fatalf("got %d Logf messages, want %d", len(e.log), len(expectedErrMsgs))
+	}
+	for i, expectedErrMsg := range expectedErrMsgs {
+		if !strings.Contains(e.log[i], expectedErrMsg) {
+			e.t.Errorf("Error message:\ngot: %q\nwant to contain: %q\n", e.log[i], expectedErrMsg)
+		}
+	}
+}
+
 // Use to check that code triggers a fatal test failure.
 func (e *ErrorReporter) assertFatal(fn func(), expectedErrMsgs ...string) {
 	defer func() {
@@ -105,6 +116,10 @@ func (e *ErrorReporter) recoverUnexpectedFatal() {
 		// Some other panic.
 		panic(err)
 	}
+}
+
+func (e *ErrorReporter) Log(args ...interface{}) {
+	e.log = append(e.log, fmt.Sprint(args...))
 }
 
 func (e *ErrorReporter) Logf(format string, args ...interface{}) {
@@ -651,59 +666,6 @@ func TestOrderedCallsCorrect(t *testing.T) {
 	reporter.assertPass("After finish")
 }
 
-func TestOrderedCallsInCorrect(t *testing.T) {
-	reporter, ctrl, subjectOne, subjectTwo := commonTestOrderedCalls(t)
-
-	ctrl.Call(subjectOne, "FooMethod", "1")
-	reporter.assertFatal(func() {
-		// FooMethod(2) should be called before BarMethod(3)
-		ctrl.Call(subjectTwo, "BarMethod", "3")
-	}, "Unexpected call to", "Subject.BarMethod([3])", "doesn't have a prerequisite call satisfied")
-}
-
-// Test that calls that are prerequisites to other calls but have maxCalls >
-// minCalls are removed from the expected call set.
-func TestOrderedCallsWithPreReqMaxUnbounded(t *testing.T) {
-	reporter, ctrl, subjectOne, subjectTwo := commonTestOrderedCalls(t)
-
-	// Initially we should be able to call FooMethod("1") as many times as we
-	// want.
-	ctrl.Call(subjectOne, "FooMethod", "1")
-	ctrl.Call(subjectOne, "FooMethod", "1")
-
-	// But calling something that has it as a prerequite should remove it from
-	// the expected call set. This allows tests to ensure that FooMethod("1") is
-	// *not* called after FooMethod("2").
-	ctrl.Call(subjectTwo, "FooMethod", "2")
-
-	// Therefore this call should fail:
-	reporter.assertFatal(func() {
-		ctrl.Call(subjectOne, "FooMethod", "1")
-	})
-}
-
-func TestCallAfterLoopPanic(t *testing.T) {
-	_, ctrl := createFixtures(t)
-
-	subject := new(Subject)
-
-	firstCall := ctrl.RecordCall(subject, "FooMethod", "1")
-	secondCall := ctrl.RecordCall(subject, "FooMethod", "2")
-	thirdCall := ctrl.RecordCall(subject, "FooMethod", "3")
-
-	gomock.InOrder(firstCall, secondCall, thirdCall)
-
-	defer func() {
-		err := recover()
-		if err == nil {
-			t.Error("Call.After creation of dependency loop did not panic.")
-		}
-	}()
-
-	// This should panic due to dependency loop.
-	firstCall.After(thirdCall)
-}
-
 func TestPanicOverridesExpectationChecks(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	reporter := NewErrorReporter(t)
@@ -785,15 +747,6 @@ func TestVariadicMatchingWithSlice(t *testing.T) {
 			rep.assertPass("slices can be used as matchers for variadic arguments")
 		})
 	}
-}
-
-func TestDuplicateFinishCallFails(t *testing.T) {
-	rep, ctrl := createFixtures(t)
-
-	ctrl.Finish()
-	rep.assertPass("the first Finish call should succeed")
-
-	rep.assertFatal(ctrl.Finish, "Controller.Finish was called more than once. It has to be called exactly once.")
 }
 
 func TestNoHelper(t *testing.T) {
