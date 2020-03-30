@@ -142,7 +142,7 @@ func TestFoo(t *testing.T) {
 ```
 
 In Go versions 1.14+, if you pass a *testing.T into `gomock.NewController(t)`
-you no longer n
+you no longer need to call `ctrl.Finish()`.
 
 Building Stubs
 --------------
