@@ -1,8 +1,22 @@
+// Copyright 2020 Google Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package gomock
 
 // ArgumentCaptor is a struct that composes a Matcher, and extends it by storing given arguments in the values slice.
 type ArgumentCaptor struct {
-	Matcher
+	m      Matcher
 	values []interface{}
 }
 
@@ -11,7 +25,12 @@ type ArgumentCaptor struct {
 // Then the parent Matches method is called.
 func (ac *ArgumentCaptor) Matches(x interface{}) bool {
 	ac.values = append(ac.values, x)
-	return ac.Matcher.Matches(x)
+	return ac.m.Matches(x)
+}
+
+// String simply calls the String method for the composed Matcher
+func (ac *ArgumentCaptor) String() string {
+	return ac.m.String()
 }
 
 // LastValue returns the last argument the matcher was called with as an interface{}.
@@ -31,10 +50,10 @@ func (ac *ArgumentCaptor) Values() []interface{} {
 
 // Captor is a helper method that returns a new *ArgumentCaptor struct with Matcher set to the given matcher m
 func Captor(m Matcher) *ArgumentCaptor {
-	return &ArgumentCaptor{Matcher: m}
+	return &ArgumentCaptor{m: m}
 }
 
 // AnyCaptor is a helper method that returns a new *ArgumentCaptor struct with the matcher set to an anyMatcher
 func AnyCaptor() *ArgumentCaptor {
-	return &ArgumentCaptor{Matcher: Any()}
+	return &ArgumentCaptor{m: Any()}
 }

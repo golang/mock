@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	captorMocks "github.com/golang/mock/sample/captor/mock"
 )
 
 func TestAddIdsWithAnyCaptor(t *testing.T) {
@@ -13,7 +12,7 @@ func TestAddIdsWithAnyCaptor(t *testing.T) {
 
 	expectedIDs := []int{1, 4, 253}
 
-	mockDao := captorMocks.NewMockDao(ctrl)
+	mockDao := NewMockDao(ctrl)
 	idCaptor := gomock.AnyCaptor()
 	mockDao.EXPECT().InsertIDs(idCaptor).Times(1)
 

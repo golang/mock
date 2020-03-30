@@ -2,7 +2,7 @@ package captor
 
 import "fmt"
 
-//go:generate mockgen -destination mock/mock_dao.go github.com/golang/mock/sample/captor Dao
+//go:generate mockgen -destination mock_dao.go -package captor -source dao.go
 
 type Dao interface {
 	InsertIDs(ids []int)
