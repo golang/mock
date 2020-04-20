@@ -16,7 +16,7 @@ func TestFileParser_ParseFile(t *testing.T) {
 
 	p := fileParser{
 		fileSet:            fs,
-		imports:            make(map[string]string),
+		imports:            make(map[string]importedPackage),
 		importedInterfaces: make(map[string]map[string]*ast.InterfaceType),
 	}
 
@@ -47,16 +47,16 @@ func TestFileParser_ParsePackage(t *testing.T) {
 
 	p := fileParser{
 		fileSet:            fs,
-		imports:            make(map[string]string),
+		imports:            make(map[string]importedPackage),
 		importedInterfaces: make(map[string]map[string]*ast.InterfaceType),
 	}
 
-	err = p.parsePackage("github.com/golang/mock/mockgen/internal/tests/custom_package_name/greeter")
+	newP, err := p.parsePackage("github.com/golang/mock/mockgen/internal/tests/custom_package_name/greeter")
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
 
-	checkGreeterImports(t, p.imports)
+	checkGreeterImports(t, newP.imports)
 }
 
 func TestImportsOfFile(t *testing.T) {
@@ -70,14 +70,14 @@ func TestImportsOfFile(t *testing.T) {
 	checkGreeterImports(t, imports)
 }
 
-func checkGreeterImports(t *testing.T, imports map[string]string) {
+func checkGreeterImports(t *testing.T, imports map[string]importedPackage) {
 	// check that imports have stdlib package "fmt"
 	if fmtPackage, ok := imports["fmt"]; !ok {
 		t.Errorf("Expected imports to have key \"fmt\"")
 	} else {
 		expectedFmtPackage := "fmt"
-		if fmtPackage != expectedFmtPackage {
-			t.Errorf("Expected fmt key to have value %s but got %s", expectedFmtPackage, fmtPackage)
+		if fmtPackage.Path() != expectedFmtPackage {
+			t.Errorf("Expected fmt key to have value %s but got %s", expectedFmtPackage, fmtPackage.Path())
 		}
 	}
 
@@ -86,8 +86,8 @@ func checkGreeterImports(t *testing.T, imports map[string]string) {
 		t.Errorf("Expected imports to have key \"fmt\"")
 	} else {
 		expectedValidatorPackage := "github.com/golang/mock/mockgen/internal/tests/custom_package_name/validator"
-		if validatorPackage != expectedValidatorPackage {
-			t.Errorf("Expected validator key to have value %s but got %s", expectedValidatorPackage, validatorPackage)
+		if validatorPackage.Path() != expectedValidatorPackage {
+			t.Errorf("Expected validator key to have value %s but got %s", expectedValidatorPackage, validatorPackage.Path())
 		}
 	}
 
@@ -96,8 +96,8 @@ func checkGreeterImports(t *testing.T, imports map[string]string) {
 		t.Errorf("Expected imports to have key \"client\"")
 	} else {
 		expectedClientPackage := "github.com/golang/mock/mockgen/internal/tests/custom_package_name/client/v1"
-		if clientPackage != expectedClientPackage {
-			t.Errorf("Expected client key to have value %s but got %s", expectedClientPackage, clientPackage)
+		if clientPackage.Path() != expectedClientPackage {
+			t.Errorf("Expected client key to have value %s but got %s", expectedClientPackage, clientPackage.Path())
 		}
 	}
 
