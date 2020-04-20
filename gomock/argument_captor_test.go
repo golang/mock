@@ -30,7 +30,7 @@ const (
 
 var sliceArg = []string{item1, item2}
 
-func TestLastValue(t *testing.T) {
+func TestValue(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -56,7 +56,7 @@ func TestLastValue(t *testing.T) {
 	}
 }
 
-func TestLastValueWithNoElements(t *testing.T) {
+func TestValueWithNoElements(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -72,7 +72,7 @@ func TestLastValueWithNoElements(t *testing.T) {
 	}
 }
 
-func TestValues(t *testing.T) {
+func TestAllValues(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -108,7 +108,7 @@ func TestValues(t *testing.T) {
 	}
 }
 
-func TestValuesWithNoElements(t *testing.T) {
+func TestAllValuesWithNoElements(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
