@@ -10,30 +10,30 @@ import (
 	reflect "reflect"
 )
 
-// MockVendorsDep is a mock of VendorsDep interface
+// MockVendorsDep is a mock of VendorsDep interface.
 type MockVendorsDep struct {
 	ctrl     *gomock.Controller
 	recorder *MockVendorsDepMockRecorder
 }
 
-// MockVendorsDepMockRecorder is the mock recorder for MockVendorsDep
+// MockVendorsDepMockRecorder is the mock recorder for MockVendorsDep.
 type MockVendorsDepMockRecorder struct {
 	mock *MockVendorsDep
 }
 
-// NewMockVendorsDep creates a new mock instance
+// NewMockVendorsDep creates a new mock instance.
 func NewMockVendorsDep(ctrl *gomock.Controller) *MockVendorsDep {
 	mock := &MockVendorsDep{ctrl: ctrl}
 	mock.recorder = &MockVendorsDepMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockVendorsDep) EXPECT() *MockVendorsDepMockRecorder {
 	return m.recorder
 }
 
-// Foo mocks base method
+// Foo mocks base method.
 func (m *MockVendorsDep) Foo() present.Elem {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Foo")
@@ -41,7 +41,7 @@ func (m *MockVendorsDep) Foo() present.Elem {
 	return ret0
 }
 
-// Foo indicates an expected call of Foo
+// Foo indicates an expected call of Foo.
 func (mr *MockVendorsDepMockRecorder) Foo() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Foo", reflect.TypeOf((*MockVendorsDep)(nil).Foo))
