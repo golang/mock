@@ -43,7 +43,7 @@ func TestLastValue(t *testing.T) {
 	captor.Matches(intArg)
 	captor.Matches(sliceArg)
 
-	actualValue := captor.LastValue().([]string)
+	actualValue := captor.Value().([]string)
 
 	if len(sliceArg) != len(actualValue) {
 		t.Errorf("expected length %d, but was %d", len(sliceArg), len(actualValue))
@@ -65,7 +65,7 @@ func TestLastValueWithNoElements(t *testing.T) {
 
 	mockMatcher.EXPECT().Matches(gomock.Any()).Times(0)
 
-	actualValue := captor.LastValue()
+	actualValue := captor.Value()
 
 	if actualValue != nil {
 		t.Errorf("expected nil, but was %s", actualValue)
@@ -85,7 +85,7 @@ func TestValues(t *testing.T) {
 	captor.Matches(intArg)
 	captor.Matches(sliceArg)
 
-	actualValues := captor.Values()
+	actualValues := captor.AllValues()
 
 	if len(actualValues) != 2 {
 		t.Errorf("expected 2 values, but got %s", actualValues)
@@ -117,7 +117,7 @@ func TestValuesWithNoElements(t *testing.T) {
 
 	mockMatcher.EXPECT().Matches(gomock.Any()).Times(0)
 
-	actualValue := captor.Values()
+	actualValue := captor.AllValues()
 
 	if len(actualValue) != 0 {
 		t.Errorf("expected length 0, but slice had elements: %s", actualValue)

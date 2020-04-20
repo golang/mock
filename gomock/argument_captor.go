@@ -33,18 +33,18 @@ func (ac *ArgumentCaptor) String() string {
 	return ac.m.String()
 }
 
-// LastValue returns the last argument the matcher was called with as an interface{}.
+// Value returns the last argument the matcher was called with as an interface{}.
 // If the matcher was never called, nil is returned.
-func (ac *ArgumentCaptor) LastValue() interface{} {
+func (ac *ArgumentCaptor) Value() interface{} {
 	if len(ac.values) < 1 {
 		return nil
 	}
 	return ac.values[len(ac.values)-1]
 }
 
-// Values returns the all arguments the matcher was called with as a []interface{}.
+// AllValues returns the all arguments the matcher was called with as a []interface{}.
 // The values are ordered from first called to last called.
-func (ac *ArgumentCaptor) Values() []interface{} {
+func (ac *ArgumentCaptor) AllValues() []interface{} {
 	return ac.values
 }
 

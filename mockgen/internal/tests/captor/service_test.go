@@ -18,7 +18,7 @@ func TestAddIdsWithAnyCaptor(t *testing.T) {
 
 	AddIDs(mockDao, expectedIDs)
 
-	actualIDs := idCaptor.LastValue().([]int)
+	actualIDs := idCaptor.Value().([]int)
 	if len(expectedIDs) != len(actualIDs) {
 		t.Errorf("expected ids length to be %d, but got %d", len(expectedIDs), len(actualIDs))
 	}
