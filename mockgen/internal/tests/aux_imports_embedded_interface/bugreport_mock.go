@@ -10,30 +10,30 @@ import (
 	reflect "reflect"
 )
 
-// MockSource is a mock of Source interface.
+// MockSource is a mock of Source interface
 type MockSource struct {
 	ctrl     *gomock.Controller
 	recorder *MockSourceMockRecorder
 }
 
-// MockSourceMockRecorder is the mock recorder for MockSource.
+// MockSourceMockRecorder is the mock recorder for MockSource
 type MockSourceMockRecorder struct {
 	mock *MockSource
 }
 
-// NewMockSource creates a new mock instance.
+// NewMockSource creates a new mock instance
 func NewMockSource(ctrl *gomock.Controller) *MockSource {
 	mock := &MockSource{ctrl: ctrl}
 	mock.recorder = &MockSourceMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use.
+// EXPECT returns an object that allows the caller to indicate expected use
 func (m *MockSource) EXPECT() *MockSourceMockRecorder {
 	return m.recorder
 }
 
-// Method mocks base method.
+// Method mocks base method
 func (m *MockSource) Method() faux.Return {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Method")
@@ -41,7 +41,7 @@ func (m *MockSource) Method() faux.Return {
 	return ret0
 }
 
-// Method indicates an expected call of Method.
+// Method indicates an expected call of Method
 func (mr *MockSourceMockRecorder) Method() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Method", reflect.TypeOf((*MockSource)(nil).Method))

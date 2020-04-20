@@ -9,30 +9,30 @@ import (
 	reflect "reflect"
 )
 
-// MockElem is a mock of Elem interface.
+// MockElem is a mock of Elem interface
 type MockElem struct {
 	ctrl     *gomock.Controller
 	recorder *MockElemMockRecorder
 }
 
-// MockElemMockRecorder is the mock recorder for MockElem.
+// MockElemMockRecorder is the mock recorder for MockElem
 type MockElemMockRecorder struct {
 	mock *MockElem
 }
 
-// NewMockElem creates a new mock instance.
+// NewMockElem creates a new mock instance
 func NewMockElem(ctrl *gomock.Controller) *MockElem {
 	mock := &MockElem{ctrl: ctrl}
 	mock.recorder = &MockElemMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use.
+// EXPECT returns an object that allows the caller to indicate expected use
 func (m *MockElem) EXPECT() *MockElemMockRecorder {
 	return m.recorder
 }
 
-// TemplateName mocks base method.
+// TemplateName mocks base method
 func (m *MockElem) TemplateName() string {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "TemplateName")
@@ -40,7 +40,7 @@ func (m *MockElem) TemplateName() string {
 	return ret0
 }
 
-// TemplateName indicates an expected call of TemplateName.
+// TemplateName indicates an expected call of TemplateName
 func (mr *MockElemMockRecorder) TemplateName() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TemplateName", reflect.TypeOf((*MockElem)(nil).TemplateName))

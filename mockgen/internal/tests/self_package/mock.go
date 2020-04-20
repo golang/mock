@@ -9,30 +9,30 @@ import (
 	reflect "reflect"
 )
 
-// MockMethods is a mock of Methods interface.
+// MockMethods is a mock of Methods interface
 type MockMethods struct {
 	ctrl     *gomock.Controller
 	recorder *MockMethodsMockRecorder
 }
 
-// MockMethodsMockRecorder is the mock recorder for MockMethods.
+// MockMethodsMockRecorder is the mock recorder for MockMethods
 type MockMethodsMockRecorder struct {
 	mock *MockMethods
 }
 
-// NewMockMethods creates a new mock instance.
+// NewMockMethods creates a new mock instance
 func NewMockMethods(ctrl *gomock.Controller) *MockMethods {
 	mock := &MockMethods{ctrl: ctrl}
 	mock.recorder = &MockMethodsMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use.
+// EXPECT returns an object that allows the caller to indicate expected use
 func (m *MockMethods) EXPECT() *MockMethodsMockRecorder {
 	return m.recorder
 }
 
-// getInfo mocks base method.
+// getInfo mocks base method
 func (m *MockMethods) getInfo() Info {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "getInfo")
@@ -40,7 +40,7 @@ func (m *MockMethods) getInfo() Info {
 	return ret0
 }
 
-// getInfo indicates an expected call of getInfo.
+// getInfo indicates an expected call of getInfo
 func (mr *MockMethodsMockRecorder) getInfo() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "getInfo", reflect.TypeOf((*MockMethods)(nil).getInfo))
