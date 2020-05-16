@@ -301,14 +301,9 @@ func (c *Call) matches(args []interface{}) error {
 
 		for i, m := range c.args {
 			if !m.Matches(args[i]) {
-				got := fmt.Sprintf("%v", args[i])
-				if gs, ok := m.(GotFormatter); ok {
-					got = gs.Got(args[i])
-				}
-
 				return fmt.Errorf(
 					"expected call at %s doesn't match the argument at index %d.\nGot: %v\nWant: %v",
-					c.origin, i, got, m,
+					c.origin, i, formatGottenArg(m, args[i]), m,
 				)
 			}
 		}
@@ -331,7 +326,7 @@ func (c *Call) matches(args []interface{}) error {
 				// Non-variadic args
 				if !m.Matches(args[i]) {
 					return fmt.Errorf("expected call at %s doesn't match the argument at index %s.\nGot: %v\nWant: %v",
-						c.origin, strconv.Itoa(i), args[i], m)
+						c.origin, strconv.Itoa(i), formatGottenArg(m, args[i]), m)
 				}
 				continue
 			}
@@ -373,9 +368,9 @@ func (c *Call) matches(args []interface{}) error {
 			// Got Foo(a, b, c, d) want Foo(matcherA, matcherB, matcherC, matcherD, matcherE)
 			// Got Foo(a, b, c, d, e) want Foo(matcherA, matcherB, matcherC, matcherD)
 			// Got Foo(a, b, c) want Foo(matcherA, matcherB)
-			return fmt.Errorf("Expected call at %s doesn't match the argument at index %s.\nGot: %v\nWant: %v",
-				c.origin, strconv.Itoa(i), args[i:], c.args[i])
 
+			return fmt.Errorf("expected call at %s doesn't match the argument at index %s.\nGot: %v\nWant: %v",
+				c.origin, strconv.Itoa(i), formatGottenArg(m, args[i:]), c.args[i])
 		}
 	}
 
@@ -424,4 +419,12 @@ func setSlice(arg interface{}, v reflect.Value) {
 
 func (c *Call) addAction(action func([]interface{}) []interface{}) {
 	c.actions = append(c.actions, action)
+}
+
+func formatGottenArg(m Matcher, arg interface{}) string {
+	got := fmt.Sprintf("%v", arg)
+	if gs, ok := m.(GotFormatter); ok {
+		got = gs.Got(arg)
+	}
+	return got
 }
