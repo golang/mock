@@ -118,6 +118,26 @@ func Benchmark_parseFile(b *testing.B) {
 }
 
 func TestParsePackageImport(t *testing.T) {
+	testRoot, err := ioutil.TempDir("", "test_root")
+	if err != nil {
+		t.Fatal("cannot create tempdir")
+	}
+	defer func() {
+		if err = os.RemoveAll(testRoot); err != nil {
+			t.Errorf("cannot clean up tempdir at %s: %v", testRoot, err)
+		}
+	}()
+	barDir := filepath.Join(testRoot, "gomod/bar")
+	if err = os.MkdirAll(barDir, 0755); err != nil {
+		t.Fatalf("error creating %s: %v", barDir, err)
+	}
+	if err = ioutil.WriteFile(filepath.Join(barDir, "bar.go"), []byte("package bar"), 0644); err != nil {
+		t.Fatalf("error creating gomod/bar/bar.go: %v", err)
+	}
+	if err = ioutil.WriteFile(filepath.Join(testRoot, "gomod/go.mod"), []byte("module github.com/golang/foo"), 0644); err != nil {
+		t.Fatalf("error creating gomod/go.mod: %v", err)
+	}
+	goPath := filepath.Join(testRoot, "gopath")
 	for _, testCase := range []struct {
 		name    string
 		envs    map[string]string
@@ -128,18 +148,18 @@ func TestParsePackageImport(t *testing.T) {
 		{
 			name:    "go mod default",
 			envs:    map[string]string{"GO111MODULE": ""},
-			dir:     "testdata/gomod/bar",
+			dir:     barDir,
 			pkgPath: "github.com/golang/foo/bar",
 		},
 		{
 			name:    "go mod off",
-			envs:    map[string]string{"GO111MODULE": "off", "GOPATH": "testdata/gopath"},
-			dir:     "testdata/gopath/src/example.com/foo",
+			envs:    map[string]string{"GO111MODULE": "off", "GOPATH": goPath},
+			dir:     filepath.Join(testRoot, "gopath/src/example.com/foo"),
 			pkgPath: "example.com/foo",
 		},
 		{
 			name: "outside GOPATH",
-			envs: map[string]string{"GO111MODULE": "off", "GOPATH": "testdata/gopath"},
+			envs: map[string]string{"GO111MODULE": "off", "GOPATH": goPath},
 			dir:  "testdata",
 			err:  errOutsideGoPath,
 		},
