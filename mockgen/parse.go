@@ -26,13 +26,14 @@ import (
 	"go/token"
 	"io/ioutil"
 	"log"
+	"os"
 	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
 
 	"github.com/golang/mock/mockgen/model"
-	"golang.org/x/tools/go/packages"
+	"golang.org/x/mod/modfile"
 )
 
 var (
@@ -49,7 +50,7 @@ func sourceMode(source string) (*model.Package, error) {
 		return nil, fmt.Errorf("failed getting source directory: %v", err)
 	}
 
-	packageImport, err := parsePackageImport(source, srcDir)
+	packageImport, err := parsePackageImport(srcDir)
 	if err != nil {
 		return nil, err
 	}
@@ -604,31 +605,49 @@ func packageNameOfDir(srcDir string) (string, error) {
 		return "", fmt.Errorf("go source file not found %s", srcDir)
 	}
 
-	packageImport, err := parsePackageImport(goFilePath, srcDir)
+	packageImport, err := parsePackageImport(srcDir)
 	if err != nil {
 		return "", err
 	}
 	return packageImport, nil
 }
 
+var errOutsideGoPath = errors.New("Source directory is outside GOPATH")
+
 // parseImportPackage get package import path via source file
-func parsePackageImport(source, srcDir string) (string, error) {
-	cfg := &packages.Config{
-		Mode:  packages.NeedName,
-		Tests: true,
-		Dir:   srcDir,
+// an alternative implementation is to use:
+// cfg := &packages.Config{Mode: packages.NeedName, Tests: true, Dir: srcDir}
+// pkgs, err := packages.Load(cfg, "file="+source)
+// However, it will call "go list" and slow down the performance
+func parsePackageImport(srcDir string) (string, error) {
+	moduleMode := os.Getenv("GO111MODULE")
+	// trying to find the module
+	if moduleMode != "off" {
+		currentDir := srcDir
+		for {
+			dat, err := ioutil.ReadFile(filepath.Join(currentDir, "go.mod"))
+			if os.IsNotExist(err) {
+				if currentDir == filepath.Dir(currentDir) {
+					// at the root
+					break
+				}
+				currentDir = filepath.Dir(currentDir)
+				continue
+			} else if err != nil {
+				return "", err
+			}
+			modulePath := modfile.ModulePath(dat)
+			return filepath.ToSlash(filepath.Join(modulePath, strings.TrimPrefix(srcDir, currentDir))), nil
+		}
 	}
-	pkgs, err := packages.Load(cfg, "file="+source)
-	if err != nil {
-		return "", err
+	// fall back to GOPATH mode
+	goPath := os.Getenv("GOPATH")
+	if goPath == "" {
+		return "", fmt.Errorf("GOPATH is not set")
 	}
-	if packages.PrintErrors(pkgs) > 0 || len(pkgs) == 0 {
-		return "", errors.New("loading package failed")
+	sourceRoot := filepath.Join(goPath, "src") + string(os.PathSeparator)
+	if !strings.HasPrefix(srcDir, sourceRoot) {
+		return "", errOutsideGoPath
 	}
-
-	packageImport := pkgs[0].PkgPath
-
-	// It is illegal to import a _test package.
-	packageImport = strings.TrimSuffix(packageImport, "_test")
-	return packageImport, nil
+	return filepath.ToSlash(strings.TrimPrefix(srcDir, sourceRoot)), nil
 }

@@ -11,30 +11,30 @@ import (
 	reflect "reflect"
 )
 
-// MockSource is a mock of Source interface
+// MockSource is a mock of Source interface.
 type MockSource struct {
 	ctrl     *gomock.Controller
 	recorder *MockSourceMockRecorder
 }
 
-// MockSourceMockRecorder is the mock recorder for MockSource
+// MockSourceMockRecorder is the mock recorder for MockSource.
 type MockSourceMockRecorder struct {
 	mock *MockSource
 }
 
-// NewMockSource creates a new mock instance
+// NewMockSource creates a new mock instance.
 func NewMockSource(ctrl *gomock.Controller) *MockSource {
 	mock := &MockSource{ctrl: ctrl}
 	mock.recorder = &MockSourceMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockSource) EXPECT() *MockSourceMockRecorder {
 	return m.recorder
 }
 
-// Ersatz mocks base method
+// Ersatz mocks base method.
 func (m *MockSource) Ersatz() ersatz.Return {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Ersatz")
@@ -42,13 +42,13 @@ func (m *MockSource) Ersatz() ersatz.Return {
 	return ret0
 }
 
-// Ersatz indicates an expected call of Ersatz
+// Ersatz indicates an expected call of Ersatz.
 func (mr *MockSourceMockRecorder) Ersatz() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Ersatz", reflect.TypeOf((*MockSource)(nil).Ersatz))
 }
 
-// OtherErsatz mocks base method
+// OtherErsatz mocks base method.
 func (m *MockSource) OtherErsatz() ersatz0.Return {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "OtherErsatz")
@@ -56,7 +56,7 @@ func (m *MockSource) OtherErsatz() ersatz0.Return {
 	return ret0
 }
 
-// OtherErsatz indicates an expected call of OtherErsatz
+// OtherErsatz indicates an expected call of OtherErsatz.
 func (mr *MockSourceMockRecorder) OtherErsatz() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OtherErsatz", reflect.TypeOf((*MockSource)(nil).OtherErsatz))
