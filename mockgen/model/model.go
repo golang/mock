@@ -28,10 +28,11 @@ const pkgPath = "github.com/golang/mock/mockgen/model"
 
 // Package is a Go package. It may be a subset.
 type Package struct {
-	Name       string
-	PkgPath    string
-	Interfaces []*Interface
-	DotImports []string
+	Name          string
+	SrcImportPath string
+	PkgPath       string
+	Interfaces    []*Interface
+	DotImports    []string
 }
 
 // Print writes the package name and its exported interfaces.
