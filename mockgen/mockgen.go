@@ -73,35 +73,24 @@ func main() {
 		return
 	}
 
-	var pkg *model.Package
+	var pkgs []*model.Package
 	var err error
-	var packageName string
 	if *source != "" {
+		var pkg *model.Package
 		pkg, err = sourceMode(*source)
+		pkgs = append(pkgs, pkg)
 	} else {
-		if flag.NArg() != 2 {
-			usage()
-			log.Fatal("Expected exactly two arguments")
-		}
-		packageName = flag.Arg(0)
-		if packageName == "." {
-			dir, err := os.Getwd()
-			if err != nil {
-				log.Fatalf("Get current directory failed: %v", err)
-			}
-			packageName, err = packageNameOfDir(dir)
-			if err != nil {
-				log.Fatalf("Parse package name failed: %v", err)
-			}
-		}
-		pkg, err = reflectMode(packageName, strings.Split(flag.Arg(1), ","))
+		pkgs = reflectModePkgs()
 	}
 	if err != nil {
 		log.Fatalf("Loading input failed: %v", err)
 	}
 
 	if *debugParser {
-		pkg.Print(os.Stdout)
+		for _, pkg := range pkgs {
+			fmt.Printf("Package %v\n", pkg)
+			pkg.Print(os.Stdout)
+		}
 		return
 	}
 
@@ -122,7 +111,10 @@ func main() {
 	if outputPackageName == "" {
 		// pkg.Name in reflect mode is the base name of the import path,
 		// which might have characters that are illegal to have in package names.
-		outputPackageName = "mock_" + sanitize(pkg.Name)
+		if len(pkgs) > 1 {
+			log.Fatal("Can not set package name to multiple package file without declaration. Set use `-package` flag")
+		}
+		outputPackageName = "mock_" + sanitize(pkgs[0].Name)
 	}
 
 	// outputPackagePath represents the fully qualified name of the package of
@@ -147,9 +139,6 @@ func main() {
 	g := new(generator)
 	if *source != "" {
 		g.filename = *source
-	} else {
-		g.srcPackage = packageName
-		g.srcInterfaces = flag.Arg(1)
 	}
 
 	if *mockNames != "" {
@@ -163,12 +152,61 @@ func main() {
 
 		g.copyrightHeader = string(header)
 	}
-	if err := g.Generate(pkg, outputPackageName, outputPackagePath); err != nil {
+	if err := g.Generate(pkgs, outputPackageName, outputPackagePath); err != nil {
 		log.Fatalf("Failed generating mock: %v", err)
 	}
 	if _, err := dst.Write(g.Output()); err != nil {
 		log.Fatalf("Failed writing to destination: %v", err)
 	}
+}
+
+func reflectModePkgs() []*model.Package {
+	interfacesByPkgName := make(map[string][]string)
+	i := 0
+	for {
+		var packageName string
+		if flag.NArg()%2 != 0 {
+			usage()
+			log.Fatal("Expected exactly two arguments")
+		}
+
+		packageName = flag.Arg(i)
+		if packageName == "." {
+			dir, err := os.Getwd()
+			if err != nil {
+				log.Fatalf("Get current directory failed: %v", err)
+			}
+			packageName, err = packageNameOfDir(dir)
+			if err != nil {
+				log.Fatalf("Parse package name failed: %v", err)
+			}
+		}
+
+		interfaces := strings.Split(flag.Arg(i+1), ",")
+
+		if packageName == "" && len(interfaces) == 1 && interfaces[0] == "" {
+			break
+		} else if packageName == "" {
+			log.Fatalf("Package is empry: [%s]", packageName)
+		} else if len(interfaces) == 1 && interfaces[0] == "" {
+			log.Fatalf("Package's interfaces has not define: [%v]", interfaces)
+		}
+
+		definedInterfaces := interfacesByPkgName[packageName]
+		definedInterfaces = append(definedInterfaces, interfaces...)
+		interfacesByPkgName[packageName] = definedInterfaces
+		i = i + 2
+	}
+
+	var pkgs []*model.Package
+	for pkgName, interfaces := range interfacesByPkgName {
+		if pkg, err := reflectMode(pkgName, interfaces); err != nil {
+			log.Fatalf("Loading input failed: %v", err)
+		} else if pkg != nil {
+			pkgs = append(pkgs, pkg)
+		}
+	}
+	return pkgs
 }
 
 func parseMockNames(names string) map[string]string {
@@ -206,12 +244,11 @@ Example:
 `
 
 type generator struct {
-	buf                       bytes.Buffer
-	indent                    string
-	mockNames                 map[string]string // may be empty
-	filename                  string            // may be empty
-	srcPackage, srcInterfaces string            // may be empty
-	copyrightHeader           string
+	buf             bytes.Buffer
+	indent          string
+	mockNames       map[string]string // may be empty
+	filename        string            // may be empty
+	copyrightHeader string
 
 	packageMap map[string]string // map from import path to package name
 }
@@ -260,8 +297,8 @@ func sanitize(s string) string {
 	return t
 }
 
-func (g *generator) Generate(pkg *model.Package, outputPkgName string, outputPackagePath string) error {
-	if outputPkgName != pkg.Name && *selfPackage == "" {
+func (g *generator) Generate(pkg []*model.Package, outputPkgName string, outputPackagePath string) error {
+	if outputPkgName != pkg[0].Name && *selfPackage == "" {
 		// reset outputPackagePath if it's not passed in through -self_package
 		outputPackagePath = ""
 	}
@@ -278,20 +315,30 @@ func (g *generator) Generate(pkg *model.Package, outputPkgName string, outputPac
 	if g.filename != "" {
 		g.p("// Source: %v", g.filename)
 	} else {
-		g.p("// Source: %v (interfaces: %v)", g.srcPackage, g.srcInterfaces)
+		for _, p := range pkg {
+			var interfaceNames []string
+			for _, in := range p.Interfaces {
+				interfaceNames = append(interfaceNames, in.Name)
+			}
+			g.p("// Source: %v (interfaces: %v)", p.SrcImportPath, strings.Join(interfaceNames, ","))
+		}
 	}
 	g.p("")
 
 	// Get all required imports, and generate unique names for them all.
-	im := pkg.Imports()
+	im := make(map[string]bool)
 	im[gomockImportPath] = true
-
-	// Only import reflect if it's used. We only use reflect in mocked methods
-	// so only import if any of the mocked interfaces have methods.
-	for _, intf := range pkg.Interfaces {
-		if len(intf.Methods) > 0 {
-			im["reflect"] = true
-			break
+	for _, p := range pkg {
+		for k, v := range p.Imports() {
+			im[k] = v
+		}
+		// Only import reflect if it's used. We only use reflect in mocked methods
+		// so only import if any of the mocked interfaces have methods.
+		for _, intf := range p.Interfaces {
+			if len(intf.Methods) > 0 {
+				im["reflect"] = true
+				break
+			}
 		}
 	}
 
@@ -308,6 +355,7 @@ func (g *generator) Generate(pkg *model.Package, outputPkgName string, outputPac
 
 	g.packageMap = make(map[string]string, len(im))
 	localNames := make(map[string]bool, len(im))
+sourcePkgs:
 	for _, pth := range sortedPaths {
 		base, ok := packagesName[pth]
 		if !ok {
@@ -327,8 +375,10 @@ func (g *generator) Generate(pkg *model.Package, outputPkgName string, outputPac
 		}
 
 		// Avoid importing package if source pkg == output pkg
-		if pth == pkg.PkgPath && outputPkgName == pkg.Name {
-			continue
+		for _, p := range pkg {
+			if pth == p.PkgPath && outputPkgName == p.Name {
+				continue sourcePkgs
+			}
 		}
 
 		g.packageMap[pth] = pkgName
@@ -348,15 +398,19 @@ func (g *generator) Generate(pkg *model.Package, outputPkgName string, outputPac
 		}
 		g.p("%v %q", pkgName, pkgPath)
 	}
-	for _, pkgPath := range pkg.DotImports {
-		g.p(". %q", pkgPath)
+	for _, p := range pkg {
+		for _, pkgPath := range p.DotImports {
+			g.p(". %q", pkgPath)
+		}
 	}
 	g.out()
 	g.p(")")
 
-	for _, intf := range pkg.Interfaces {
-		if err := g.GenerateMockInterface(intf, outputPackagePath); err != nil {
-			return err
+	for _, p := range pkg {
+		for _, intf := range p.Interfaces {
+			if err := g.GenerateMockInterface(intf, outputPackagePath); err != nil {
+				return err
+			}
 		}
 	}
 

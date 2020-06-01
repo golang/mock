@@ -157,6 +157,7 @@ func reflectMode(importPath string, symbols []string) (*model.Package, error) {
 
 	// Try to run the reflection program  in the current working directory.
 	if p, err := runInDir(program, wd); err == nil {
+		p.SrcImportPath = importPath
 		return p, nil
 	}
 
@@ -164,12 +165,17 @@ func reflectMode(importPath string, symbols []string) (*model.Package, error) {
 	if p, err := build.Import(importPath, wd, build.FindOnly); err == nil {
 		dir := p.Dir
 		if p, err := runInDir(program, dir); err == nil {
+			p.SrcImportPath = importPath
 			return p, nil
 		}
 	}
 
 	// Try to run it in a standard temp directory.
-	return runInDir(program, "")
+	if p, err := runInDir(program, ""); err == nil {
+		p.SrcImportPath = importPath
+		return p, nil
+	}
+	return nil, err
 }
 
 type reflectData struct {
