@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -195,6 +196,48 @@ func TestParsePackageImport_FallbackGoPath(t *testing.T) {
 		t.Error(err)
 	}
 	os.Setenv("GOPATH", goPath)
+	os.Setenv("GO111MODULE", "on")
+	pkgPath, err := parsePackageImport(srcDir)
+	expected := "example.com/foo"
+	if pkgPath != expected {
+		t.Errorf("expect %s, got %s", expected, pkgPath)
+	}
+}
+
+func TestParsePackageImport_FallbackMultiGoPath(t *testing.T) {
+	var goPathList []string
+
+	// first gopath
+	goPath, err := ioutil.TempDir("", "gopath1")
+	if err != nil {
+		t.Error(err)
+	}
+	goPathList = append(goPathList, goPath)
+	defer func() {
+		if err = os.RemoveAll(goPath); err != nil {
+			t.Error(err)
+		}
+	}()
+	srcDir := filepath.Join(goPath, "src/example.com/foo")
+	err = os.MkdirAll(srcDir, 0755)
+	if err != nil {
+		t.Error(err)
+	}
+
+	// second gopath
+	goPath, err = ioutil.TempDir("", "gopath2")
+	if err != nil {
+		t.Error(err)
+	}
+	goPathList = append(goPathList, goPath)
+	defer func() {
+		if err = os.RemoveAll(goPath); err != nil {
+			t.Error(err)
+		}
+	}()
+
+	goPaths := strings.Join(goPathList, string(os.PathListSeparator))
+	os.Setenv("GOPATH", goPaths)
 	os.Setenv("GO111MODULE", "on")
 	pkgPath, err := parsePackageImport(srcDir)
 	expected := "example.com/foo"
