@@ -645,7 +645,7 @@ func parsePackageImport(srcDir string) (string, error) {
 	if goPaths == "" {
 		return "", fmt.Errorf("GOPATH is not set")
 	}
-	goPathList := strings.Split(goPaths, string(os.PathSeparator))
+	goPathList := strings.Split(goPaths, string(os.PathListSeparator))
 	for _, goPath := range goPathList {
 		sourceRoot := filepath.Join(goPath, "src") + string(os.PathSeparator)
 		if strings.HasPrefix(srcDir, sourceRoot) {
