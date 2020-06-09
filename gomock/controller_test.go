@@ -451,6 +451,22 @@ func TestMaxTimes1(t *testing.T) {
 	})
 	ctrl.Finish()
 }
+func TestNever(t *testing.T) {
+	// It succeeds if there are no calls
+	_, ctrl := createFixtures(t)
+	subject := new(Subject)
+	ctrl.RecordCall(subject, "FooMethod", "argument").Never()
+	ctrl.Finish()
+
+	// It fails if there is one call
+	reporter, ctrl := createFixtures(t)
+	subject = new(Subject)
+	ctrl.RecordCall(subject, "FooMethod", "argument").Never()
+	reporter.assertFatal(func() {
+		ctrl.Call(subject, "FooMethod", "argument")
+	})
+	ctrl.Finish()
+}
 
 func TestMinMaxTimes(t *testing.T) {
 	// It fails if there are less calls than specified
