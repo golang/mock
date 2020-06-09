@@ -451,6 +451,7 @@ func TestMaxTimes1(t *testing.T) {
 	})
 	ctrl.Finish()
 }
+
 func TestNever(t *testing.T) {
 	// It succeeds if there are no calls
 	_, ctrl := createFixtures(t)
