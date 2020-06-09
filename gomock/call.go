@@ -82,6 +82,7 @@ func (c *Call) AnyTimes() *Call {
 	return c
 }
 
+// Never requires the call to never occur.
 func (c *Call) Never() *Call {
 	c.minCalls, c.maxCalls = 0, 0
 	return c
