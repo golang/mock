@@ -63,6 +63,9 @@ func newCall(t TestHelper, receiver interface{}, method string, methodType refle
 		}
 	}
 
+	// callerInfo's skip should be updated if the number of calls between the user's test
+	// and this line changes, i.e. this code is wrapped in another anonymous function.
+	// 0 is us, 1 is RecordCallWithMethodType(), 2 is the generated recorder, and 3 is the user's test.
 	origin := callerInfo(3)
 	actions := []func([]interface{}) []interface{}{func([]interface{}) []interface{} {
 		// Synthesize the zero value for each of the return args' types.

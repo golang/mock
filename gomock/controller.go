@@ -224,7 +224,10 @@ func (ctrl *Controller) Call(receiver interface{}, method string, args ...interf
 
 		expected, err := ctrl.expectedCalls.FindMatch(receiver, method, args)
 		if err != nil {
-			origin := callerInfo(2)
+			// callerInfo's skip should be updated if the number of calls between the user's test
+			// and this line changes, i.e. this code is wrapped in another anonymous function.
+			// 0 is us, 1 is controller.Call(), 2 is the generated mock, and 3 is the user's test.
+			origin := callerInfo(3)
 			ctrl.T.Fatalf("Unexpected call to %T.%v(%v) at %s because: %s", receiver, method, args, origin, err)
 		}
 
@@ -291,6 +294,8 @@ func (ctrl *Controller) Finish() {
 	}
 }
 
+// callerInfo returns the file:line of the call site. skip is the number
+// of stack frames to skip when reporting. 0 is callerInfo's call site.
 func callerInfo(skip int) string {
 	if _, file, line, ok := runtime.Caller(skip + 1); ok {
 		return fmt.Sprintf("%s:%d", file, line)
