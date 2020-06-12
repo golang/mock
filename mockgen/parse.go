@@ -641,13 +641,16 @@ func parsePackageImport(srcDir string) (string, error) {
 		}
 	}
 	// fall back to GOPATH mode
-	goPath := os.Getenv("GOPATH")
-	if goPath == "" {
+	goPaths := os.Getenv("GOPATH")
+	if goPaths == "" {
 		return "", fmt.Errorf("GOPATH is not set")
 	}
-	sourceRoot := filepath.Join(goPath, "src") + string(os.PathSeparator)
-	if !strings.HasPrefix(srcDir, sourceRoot) {
-		return "", errOutsideGoPath
+	goPathList := strings.Split(goPaths, string(os.PathListSeparator))
+	for _, goPath := range goPathList {
+		sourceRoot := filepath.Join(goPath, "src") + string(os.PathSeparator)
+		if strings.HasPrefix(srcDir, sourceRoot) {
+			return filepath.ToSlash(strings.TrimPrefix(srcDir, sourceRoot)), nil
+		}
 	}
-	return filepath.ToSlash(strings.TrimPrefix(srcDir, sourceRoot)), nil
+	return "", errOutsideGoPath
 }
