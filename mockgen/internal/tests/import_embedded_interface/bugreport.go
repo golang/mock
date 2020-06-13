@@ -27,6 +27,7 @@ import (
 type Source interface {
 	ersatz.Embedded
 	faux.Foreign
+	error
 }
 
 func CallForeignMethod(s Source) {

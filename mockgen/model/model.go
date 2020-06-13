@@ -468,3 +468,19 @@ func impPath(imp string) string {
 	}
 	return imp
 }
+
+// ErrorInterface represent built-in error interface.
+var ErrorInterface = Interface{
+	Name: "error",
+	Methods: []*Method{
+		{
+			Name: "Error",
+			Out: []*Parameter{
+				{
+					Name: "",
+					Type: PredeclaredType("string"),
+				},
+			},
+		},
+	},
+}

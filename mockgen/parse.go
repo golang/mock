@@ -272,13 +272,23 @@ func (p *fileParser) parseInterface(name, pkg string, it *ast.InterfaceType) (*m
 			// Embedded interface in this package.
 			ei := p.auxInterfaces[pkg][v.String()]
 			if ei == nil {
-				if ei = p.importedInterfaces[pkg][v.String()]; ei == nil {
+				ei = p.importedInterfaces[pkg][v.String()]
+			}
+
+			var eintf *model.Interface
+			if ei != nil {
+				var err error
+				eintf, err = p.parseInterface(v.String(), pkg, ei)
+				if err != nil {
+					return nil, err
+				}
+			} else {
+				// This is built-in error interface.
+				if v.String() == model.ErrorInterface.Name {
+					eintf = &model.ErrorInterface
+				} else {
 					return nil, p.errorf(v.Pos(), "unknown embedded interface %s", v.String())
 				}
-			}
-			eintf, err := p.parseInterface(v.String(), pkg, ei)
-			if err != nil {
-				return nil, err
 			}
 			// Copy the methods.
 			// TODO: apply shadowing rules.
