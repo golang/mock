@@ -245,7 +245,7 @@ func Not(x interface{}) Matcher {
 //   AssignableToTypeOf(s).Matches(time.Second) // returns true
 //   AssignableToTypeOf(s).Matches(99) // returns false
 //
-//   var ctx = reflect.TypeOf((*context.Context)).Elem()
+//   var ctx = reflect.TypeOf((*context.Context)(nil)).Elem()
 //   AssignableToTypeOf(ctx).Matches(context.Background()) // returns true
 func AssignableToTypeOf(x interface{}) Matcher {
 	if xt, ok := x.(reflect.Type); ok {
