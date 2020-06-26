@@ -28,32 +28,34 @@ func (ac *ArgumentCaptor) Matches(x interface{}) bool {
 	return ac.m.Matches(x)
 }
 
-// String simply calls the String method for the composed Matcher
+// String calls the String method for the composed Matcher.
 func (ac *ArgumentCaptor) String() string {
 	return ac.m.String()
 }
 
-// Value returns the last argument the matcher was called with as an interface{}.
-// If the matcher was never called, nil is returned.
+// Value returns the last argument value captured by previous calls to Matches.
+// If Matches was never called, nil is returned.
 func (ac *ArgumentCaptor) Value() interface{} {
-	if len(ac.values) < 1 {
+	if len(ac.values) == 0 {
 		return nil
 	}
 	return ac.values[len(ac.values)-1]
 }
 
-// AllValues returns the all arguments the matcher was called with as a []interface{}.
+// AllValues returns all of the argument values captured by previous calls to Matches.
 // The values are ordered from first called to last called.
 func (ac *ArgumentCaptor) AllValues() []interface{} {
 	return ac.values
 }
 
-// Captor is a helper method that returns a new *ArgumentCaptor struct with Matcher set to the given matcher m
+// Captor returns an ArgumentCaptor, which can be used in place the given Matcher.
+// It will call Matches using the given Matcher and capture all argument values.
 func Captor(m Matcher) *ArgumentCaptor {
 	return &ArgumentCaptor{m: m}
 }
 
-// AnyCaptor is a helper method that returns a new *ArgumentCaptor struct with the matcher set to an anyMatcher
+// AnyCaptor returns an ArgumentCaptor that accepts any argument type.
+// It will capture all argument values.
 func AnyCaptor() *ArgumentCaptor {
 	return &ArgumentCaptor{m: Any()}
 }

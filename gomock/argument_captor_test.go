@@ -43,16 +43,19 @@ func TestValue(t *testing.T) {
 	captor.Matches(intArg)
 	captor.Matches(sliceArg)
 
-	actualValue := captor.Value().([]string)
-
-	if len(sliceArg) != len(actualValue) {
-		t.Errorf("expected length %d, but was %d", len(sliceArg), len(actualValue))
-	}
-	if item1 != actualValue[0] {
-		t.Errorf("expected %s, but was %s", item1, actualValue[0])
-	}
-	if item2 != actualValue[1] {
-		t.Errorf("expected %s, but was %s", item2, actualValue[1])
+	switch actualValue := captor.Value().(type) {
+	case []string:
+		if len(sliceArg) != len(actualValue) {
+			t.Errorf("expected length %d, but was %d", len(sliceArg), len(actualValue))
+		}
+		if item1 != actualValue[0] {
+			t.Errorf("expected %s, but was %s", item1, actualValue[0])
+		}
+		if item2 != actualValue[1] {
+			t.Errorf("expected %s, but was %s", item2, actualValue[1])
+		}
+	default:
+		t.Errorf("expected value type []string, but was %T", actualValue)
 	}
 }
 
