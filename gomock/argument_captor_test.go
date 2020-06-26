@@ -37,8 +37,8 @@ func TestValue(t *testing.T) {
 	mockMatcher := mock_gomock.NewMockMatcher(ctrl)
 	captor := gomock.Captor(mockMatcher)
 
-	mockMatcher.EXPECT().Matches(intArg).Times(1)
-	mockMatcher.EXPECT().Matches(sliceArg).Times(1)
+	mockMatcher.EXPECT().Matches(intArg)
+	mockMatcher.EXPECT().Matches(sliceArg)
 
 	captor.Matches(intArg)
 	captor.Matches(sliceArg)
@@ -82,8 +82,8 @@ func TestAllValues(t *testing.T) {
 	mockMatcher := mock_gomock.NewMockMatcher(ctrl)
 	captor := gomock.Captor(mockMatcher)
 
-	mockMatcher.EXPECT().Matches(intArg).Times(1)
-	mockMatcher.EXPECT().Matches(sliceArg).Times(1)
+	mockMatcher.EXPECT().Matches(intArg)
+	mockMatcher.EXPECT().Matches(sliceArg)
 
 	captor.Matches(intArg)
 	captor.Matches(sliceArg)
