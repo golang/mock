@@ -14,18 +14,32 @@
 
 package captor
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/golang/mock/mockgen/internal/tests/captor/models"
+)
 
 //go:generate mockgen -destination mock_dao.go -package captor -source dao.go
 
 type Dao interface {
 	InsertIDs(ids []int)
+	InsertIDPointer(id *int)
+	InsertCar(car models.Car)
 }
 
 type realDao struct{}
 
 func (realDao) InsertIDs(ids []int) {
-	fmt.Println(fmt.Sprintf("inserting ids %d", ids))
+	fmt.Printf("inserting ids %d", ids)
+}
+
+func (realDao) InsertIDPointer(id *int) {
+	fmt.Printf("inserting ids %v", id)
+}
+
+func (realDao) InsertCar(car models.Car) {
+	fmt.Printf("inserting car %v", car)
 }
 
 func NewDao() Dao {

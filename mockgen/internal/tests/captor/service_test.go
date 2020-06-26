@@ -18,9 +18,11 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/golang/mock/mockgen/internal/tests/captor/models"
 )
 
-func TestAddIdsWithAnyCaptor(t *testing.T) {
+// TestAddIDs is an example of how to use an ArgumentCaptor with a slice of int values
+func TestAddIDs(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -28,7 +30,7 @@ func TestAddIdsWithAnyCaptor(t *testing.T) {
 
 	mockDao := NewMockDao(ctrl)
 	idCaptor := gomock.AnyCaptor()
-	mockDao.EXPECT().InsertIDs(idCaptor).Times(1)
+	mockDao.EXPECT().InsertIDs(idCaptor)
 
 	AddIDs(mockDao, expectedIDs)
 
@@ -39,6 +41,74 @@ func TestAddIdsWithAnyCaptor(t *testing.T) {
 	for i, expectedID := range expectedIDs {
 		if expectedID != actualIDs[i] {
 			t.Errorf("expected id to be %d, but got %d", expectedID, actualIDs[i])
+		}
+	}
+}
+
+// TestAddIDPointerWithMutation is an example of how to use an ArgumentCaptor with an Eq Matcher.
+// In this case the Eq Matcher alone is not enough to test the pointer value's mutation.
+// The ArgumentCaptor is used to ensure the mutation happens as expected.
+func TestAddIDPointerWithMutation(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	expectedID := 100
+
+	mockDao := NewMockDao(ctrl)
+	idCaptor := gomock.Captor(gomock.Eq(&expectedID))
+	mockDao.EXPECT().InsertIDPointer(idCaptor)
+
+	AddIDPointerWithMutation(mockDao, &expectedID)
+
+	actualID := idCaptor.Value().(*int)
+	if *actualID != 101 {
+		t.Errorf("expected actualID value to be %d, but got %d", 101, *actualID)
+	}
+}
+
+// TestAddSportsCarAndSUV is an example of how to use an ArgumentCaptor for a more complex use case.
+// In this case an AnyCaptor is used to capture multiple values being passed to the same method, dao.InsertCar.
+// AllValues is used to verify that InsertCar was called with both Car values, in the expected order.
+func TestAddCars(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockDao := NewMockDao(ctrl)
+	carCaptor := gomock.AnyCaptor()
+
+	mockDao.EXPECT().InsertCar(carCaptor).Times(2)
+
+	AddCars(mockDao)
+
+	if len(carCaptor.AllValues()) != 2 {
+		t.Errorf("expected values length to be %d, but got %d", 2, len(carCaptor.AllValues()))
+	}
+
+	for i, val := range carCaptor.AllValues() {
+		actualCar := val.(models.Car)
+		if i == 0 {
+			verifyCar(t, actualCar, false, "red", []models.Seat{models.LeatherSeat, models.LeatherSeat})
+		} else {
+			verifyCar(t, actualCar, true, "blue", []models.Seat{
+				models.ClothSeat, models.ClothSeat, models.ClothSeat, models.ClothSeat, models.ClothSeat})
+		}
+	}
+}
+
+func verifyCar(t *testing.T, actual models.Car, expectedAutomatic bool, expectedColor string, expectedSeats []models.Seat) {
+	if expectedAutomatic != actual.Automatic() {
+		t.Errorf("expected automatic to be %v, but got %v", expectedAutomatic, actual.Automatic())
+	}
+	if expectedColor != actual.Color() {
+		t.Errorf("expected color to be %s, but got %s", expectedColor, actual.Color())
+	}
+	if len(expectedSeats) != len(actual.Seats()) {
+		t.Errorf("expected %d seats but got %d", len(expectedSeats), len(actual.Seats()))
+		return
+	}
+	for i, seat := range actual.Seats() {
+		if seat != expectedSeats[i] {
+			t.Errorf("expected seat material to be %v but got %v", seat, expectedSeats[i])
 		}
 	}
 }

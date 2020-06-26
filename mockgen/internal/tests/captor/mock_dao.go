@@ -6,6 +6,7 @@ package captor
 
 import (
 	gomock "github.com/golang/mock/gomock"
+	models "github.com/golang/mock/mockgen/internal/tests/captor/models"
 	reflect "reflect"
 )
 
@@ -42,4 +43,28 @@ func (m *MockDao) InsertIDs(ids []int) {
 func (mr *MockDaoMockRecorder) InsertIDs(ids interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertIDs", reflect.TypeOf((*MockDao)(nil).InsertIDs), ids)
+}
+
+// InsertIDPointer mocks base method.
+func (m *MockDao) InsertIDPointer(id *int) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "InsertIDPointer", id)
+}
+
+// InsertIDPointer indicates an expected call of InsertIDPointer.
+func (mr *MockDaoMockRecorder) InsertIDPointer(id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertIDPointer", reflect.TypeOf((*MockDao)(nil).InsertIDPointer), id)
+}
+
+// InsertCar mocks base method.
+func (m *MockDao) InsertCar(car models.Car) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "InsertCar", car)
+}
+
+// InsertCar indicates an expected call of InsertCar.
+func (mr *MockDaoMockRecorder) InsertCar(car interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertCar", reflect.TypeOf((*MockDao)(nil).InsertCar), car)
 }

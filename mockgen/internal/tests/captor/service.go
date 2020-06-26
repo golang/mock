@@ -14,6 +14,31 @@
 
 package captor
 
+import "github.com/golang/mock/mockgen/internal/tests/captor/models"
+
 func AddIDs(dao Dao, ids []int) {
 	dao.InsertIDs(ids)
+}
+
+func AddIDPointerWithMutation(dao Dao, id *int) {
+	*id += 1
+	dao.InsertIDPointer(id)
+}
+
+func AddCars(dao Dao) {
+	sportsCar := models.NewCar(
+		false,
+		"red",
+		[]models.Seat{models.LeatherSeat, models.LeatherSeat})
+
+	suv := models.NewCar(
+		true,
+		"blue",
+		[]models.Seat{models.ClothSeat, models.ClothSeat, models.ClothSeat, models.ClothSeat, models.ClothSeat})
+
+	cars := []models.Car{sportsCar, suv}
+
+	for _, car := range cars {
+		dao.InsertCar(car)
+	}
 }
