@@ -749,6 +749,55 @@ func TestVariadicMatchingWithSlice(t *testing.T) {
 	}
 }
 
+func TestVariadicArgumentsGotFormatter(t *testing.T) {
+	rep, ctrl := createFixtures(t)
+	defer rep.recoverUnexpectedFatal()
+
+	s := new(Subject)
+	ctrl.RecordCall(
+		s,
+		"VariadicMethod",
+		gomock.GotFormatterAdapter(
+			gomock.GotFormatterFunc(func(i interface{}) string {
+				return fmt.Sprintf("test{%v}", i)
+			}),
+			gomock.Eq(0),
+		),
+	)
+
+	rep.assertFatal(func() {
+		ctrl.Call(s, "VariadicMethod", 1)
+	}, "expected call to", "doesn't match the argument at index 0",
+		"Got: test{1}\nWant: is equal to 0")
+	ctrl.Call(s, "VariadicMethod", 0)
+	ctrl.Finish()
+}
+
+func TestVariadicArgumentsGotFormatterTooManyArgsFailure(t *testing.T) {
+	rep, ctrl := createFixtures(t)
+	defer rep.recoverUnexpectedFatal()
+
+	s := new(Subject)
+	ctrl.RecordCall(
+		s,
+		"VariadicMethod",
+		0,
+		gomock.GotFormatterAdapter(
+			gomock.GotFormatterFunc(func(i interface{}) string {
+				return fmt.Sprintf("test{%v}", i)
+			}),
+			gomock.Eq("1"),
+		),
+	)
+
+	rep.assertFatal(func() {
+		ctrl.Call(s, "VariadicMethod", 0, "2", "3")
+	}, "expected call to", "doesn't match the argument at index 1",
+		"Got: test{[2 3]}\nWant: is equal to 1")
+	ctrl.Call(s, "VariadicMethod", 0, "1")
+	ctrl.Finish()
+}
+
 func TestNoHelper(t *testing.T) {
 	ctrlNoHelper := gomock.NewController(NewErrorReporter(t))
 
