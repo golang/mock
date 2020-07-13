@@ -19,6 +19,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // Call represents an expected call to a mock.
@@ -102,6 +103,15 @@ func (c *Call) MaxTimes(n int) *Call {
 	if c.minCalls == 1 {
 		c.minCalls = 0
 	}
+	return c
+}
+
+// Latency is a convenience method that simulates execution time of a call.
+func (c *Call) Latency(d time.Duration) *Call {
+	c.addAction(func(i []interface{}) []interface{} {
+		time.Sleep(d)
+		return nil
+	})
 	return c
 }
 

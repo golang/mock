@@ -17,9 +17,9 @@ package gomock_test
 import (
 	"fmt"
 	"reflect"
-	"testing"
-
 	"strings"
+	"testing"
+	"time"
 
 	"github.com/golang/mock/gomock"
 )
@@ -174,6 +174,12 @@ func (s *Subject) SetArgMethod(sliceArg []byte, ptrArg *int) {}
 func assertEqual(t *testing.T, expected interface{}, actual interface{}) {
 	if !reflect.DeepEqual(expected, actual) {
 		t.Errorf("Expected %+v, but got %+v", expected, actual)
+	}
+}
+
+func assertTrue(t *testing.T, value bool) {
+	if !value {
+		t.Error("Should be true")
 	}
 }
 
@@ -497,6 +503,28 @@ func TestMinMaxTimes(t *testing.T) {
 	for i := 0; i < 100; i++ {
 		ctrl.Call(subject, "FooMethod", "argument")
 	}
+	ctrl.Finish()
+}
+
+func TestLatency(t *testing.T) {
+	latency := 2 * time.Millisecond
+
+	// No latency
+	_, ctrl := createFixtures(t)
+	subject := new(Subject)
+	ctrl.RecordCall(subject, "FooMethod", "argument")
+	before := time.Now()
+	ctrl.Call(subject, "FooMethod", "argument")
+	assertTrue(t, time.Now().Sub(before) < latency)
+	ctrl.Finish()
+
+	// Some latency
+	_, ctrl = createFixtures(t)
+	subject = new(Subject)
+	ctrl.RecordCall(subject, "FooMethod", "argument").Latency(latency)
+	before = time.Now()
+	ctrl.Call(subject, "FooMethod", "argument")
+	assertTrue(t, time.Now().Sub(before) > latency)
 	ctrl.Finish()
 }
 
