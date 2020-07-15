@@ -5,8 +5,9 @@
 package users_test
 
 import (
-	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
+
+	gomock "github.com/golang/mock/gomock"
 )
 
 // MockFinder is a mock of Finder interface.

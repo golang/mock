@@ -5,8 +5,9 @@
 package vendor_pkg
 
 import (
-	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
+
+	gomock "github.com/golang/mock/gomock"
 )
 
 // MockElem is a mock of Elem interface.

@@ -5,9 +5,10 @@
 package bugreport
 
 import (
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	faux "github.com/golang/mock/mockgen/internal/tests/aux_imports_embedded_interface/faux"
-	reflect "reflect"
 )
 
 // MockSource is a mock of Source interface.

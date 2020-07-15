@@ -5,9 +5,10 @@
 package mock_vendor_dep
 
 import (
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	present "golang.org/x/tools/present"
-	reflect "reflect"
 )
 
 // MockVendorsDep is a mock of VendorsDep interface.
