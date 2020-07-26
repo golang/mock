@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/golang/mock/sample"
+	user "github.com/golang/mock/sample"
 	"github.com/golang/mock/sample/imp1"
 	mock_user "github.com/golang/mock/sample/mock_user"
 )
@@ -158,4 +158,40 @@ func TestExpectTrueNil(t *testing.T) {
 	mockIndex := mock_user.NewMockIndex(ctrl)
 	mockIndex.EXPECT().Ptr(nil) // this nil is a nil interface{}
 	mockIndex.Ptr(nil)          // this nil is a nil *int
+}
+
+func TestDoAndReturnSignature(t *testing.T) {
+	t.Run("wrong number of return args", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockIndex := mock_user.NewMockIndex(ctrl)
+
+		mockIndex.EXPECT().Slice(gomock.Any(), gomock.Any()).DoAndReturn(
+			func(_ []int, _ []byte) {
+				return
+			})
+
+		defer func() {
+			if r := recover(); r == nil {
+				t.Error("expected panic")
+			}
+		}()
+
+		mockIndex.Slice([]int{0}, []byte("meow"))
+	})
+
+	t.Run("wrong type of return arg", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockIndex := mock_user.NewMockIndex(ctrl)
+
+		mockIndex.EXPECT().Slice(gomock.Any(), gomock.Any()).DoAndReturn(
+			func(_ []int, _ []byte) bool {
+				return true
+			})
+
+		mockIndex.Slice([]int{0}, []byte("meow"))
+	})
 }
