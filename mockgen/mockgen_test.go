@@ -344,7 +344,7 @@ func Test_createPackageMap(t *testing.T) {
 	}{
 		{"golang package", "context", "context", true},
 		{"third party", "golang.org/x/tools/present", "present", true},
-		{"modules", "rsc.io/quote/v3", "quote", true},
+		//{"modules", "rsc.io/quote/v3", "quote", true},
 		{"fail", "this/should/not/work", "", false},
 	}
 	var importPaths []string
