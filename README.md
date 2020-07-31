@@ -141,8 +141,10 @@ func TestFoo(t *testing.T) {
 }
 ```
 
-In Go versions 1.14+, if you pass a *testing.T into `gomock.NewController(t)`
-you no longer need to call `ctrl.Finish()`.
+If you are using a Go version of 1.14+, a mockgen version of 1.5.0+, and are
+passing a *testing.T into `gomock.NewController(t)` you no longer need to call
+`ctrl.Finish()` explicitly. It will be called for you automatically from a self
+registered [Cleanup](https://pkg.go.dev/testing?tab=doc#T.Cleanup) function.
 
 Building Stubs
 --------------
