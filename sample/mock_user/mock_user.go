@@ -7,17 +7,18 @@ package mock_sample
 import (
 	bufio "bufio"
 	bytes "bytes"
-	gomock "github.com/golang/mock/gomock"
-	imp1 "github.com/golang/mock/sample/imp1"
-	imp2 "github.com/golang/mock/sample/imp2"
-	imp3 "github.com/golang/mock/sample/imp3"
-	imp_four "github.com/golang/mock/sample/imp4"
 	hash "hash"
 	template "html/template"
 	io "io"
 	http "net/http"
 	reflect "reflect"
 	template0 "text/template"
+
+	gomock "github.com/golang/mock/gomock"
+	imp1 "github.com/golang/mock/sample/imp1"
+	imp2 "github.com/golang/mock/sample/imp2"
+	imp3 "github.com/golang/mock/sample/imp3"
+	imp_four "github.com/golang/mock/sample/imp4"
 )
 
 // MockIndex is a mock of Index interface.

@@ -24,7 +24,6 @@ import (
 	"flag"
 	"fmt"
 	"go/build"
-	"go/format"
 	"go/token"
 	"io"
 	"io/ioutil"
@@ -39,6 +38,8 @@ import (
 	"unicode"
 
 	"github.com/golang/mock/mockgen/model"
+
+	toolsimports "golang.org/x/tools/imports"
 )
 
 const (
@@ -151,6 +152,7 @@ func main() {
 		g.srcPackage = packageName
 		g.srcInterfaces = flag.Arg(1)
 	}
+	g.destination = *destination
 
 	if *mockNames != "" {
 		g.mockNames = parseMockNames(*mockNames)
@@ -210,6 +212,7 @@ type generator struct {
 	indent                    string
 	mockNames                 map[string]string // may be empty
 	filename                  string            // may be empty
+	destination               string            // may be empty
 	srcPackage, srcInterfaces string            // may be empty
 	copyrightHeader           string
 
@@ -617,7 +620,7 @@ func (o identifierAllocator) allocateIdentifier(want string) string {
 
 // Output returns the generator's output, formatted in the standard Go style.
 func (g *generator) Output() []byte {
-	src, err := format.Source(g.buf.Bytes())
+	src, err := toolsimports.Process(g.destination, g.buf.Bytes(), nil)
 	if err != nil {
 		log.Fatalf("Failed to format generated source code: %s\n%s", err, g.buf.String())
 	}
