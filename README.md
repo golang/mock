@@ -167,11 +167,15 @@ func TestFoo(t *testing.T) {
 
   m := NewMockFoo(ctrl)
 
-  // Does not make any assertions. Returns 101 when Bar is invoked with 99.
+  // Does not make any assertions. Executes the anonymous functions and returns
+  // its result when Bar is invoked with 99.
   m.
     EXPECT().
     Bar(gomock.Eq(99)).
-    Return(101).
+    DoAndReturn(func(_ int) int {
+      time.Sleep(1*time.Second)
+      return 101
+    }).
     AnyTimes()
 
   // Does not make any assertions. Returns 103 when Bar is invoked with 101.
