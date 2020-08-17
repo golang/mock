@@ -256,6 +256,13 @@ func (ctrl *Controller) Call(receiver interface{}, method string, args ...interf
 	return rets
 }
 
+// ResetCalls - Reset expectedCalls
+func (ctrl *Controller) ResetCalls() {
+	ctrl.mu.Lock()
+	defer ctrl.mu.Unlock()
+	ctrl.expectedCalls = newCallSet()
+}
+
 // Finish checks to see if all the methods that were expected to be called
 // were called. It should be invoked for each Controller. It is not idempotent
 // and therefore can only be invoked once.
