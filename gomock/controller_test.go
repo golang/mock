@@ -815,3 +815,37 @@ func TestWithHelper(t *testing.T) {
 		t.Fatal("expected Helper to be invoked")
 	}
 }
+
+func TestContinue_call_multiple_times(t *testing.T) {
+	// It doesn't throw an error when expected call is made
+	reporter, ctrl := createFixtures(t)
+	subject := new(Subject)
+	ctrl.RecordCall(subject, "FooMethod", "argument").Times(1)
+	ctrl.Call(subject, "FooMethod", "argument")
+	ctrl.Continue()
+
+	// It fails when Continue is called again without calling Reset
+	reporter.assertFatal(func() {
+		ctrl.Continue()
+	})
+
+	ctrl.Reset()
+
+	// It doesn't fail when Continue is called again after calling reset
+	ctrl.Continue()
+}
+
+func TestContinue_called_after_finish(t *testing.T) {
+	// It doesn't throw an error when expected call is made
+	reporter, ctrl := createFixtures(t)
+	subject := new(Subject)
+	ctrl.RecordCall(subject, "FooMethod", "argument").Times(1)
+	ctrl.Call(subject, "FooMethod", "argument")
+	ctrl.Finish()
+
+	// It fails when Continue is called after calling Finish
+	reporter.assertFatal(func() {
+		ctrl.Continue()
+	})
+}
+
