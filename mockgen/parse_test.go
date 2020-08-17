@@ -167,7 +167,10 @@ func TestParsePackageImport(t *testing.T) {
 	} {
 		t.Run(testCase.name, func(t *testing.T) {
 			for key, value := range testCase.envs {
-				os.Setenv(key, value)
+				err = os.Setenv(key, value)
+				if err != nil {
+					t.Errorf("unexpected error: %s", err.Error())
+				}
 			}
 			pkgPath, err := parsePackageImport(filepath.Clean(testCase.dir))
 			if err != testCase.err {
@@ -195,8 +198,14 @@ func TestParsePackageImport_FallbackGoPath(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	os.Setenv("GOPATH", goPath)
-	os.Setenv("GO111MODULE", "on")
+	err = os.Setenv("GOPATH", goPath)
+	if err != nil {
+		t.Errorf("unexpected error: %s", err.Error())
+	}
+	err = os.Setenv("GO111MODULE", "on")
+	if err != nil {
+		t.Errorf("unexpected error: %s", err.Error())
+	}
 	pkgPath, err := parsePackageImport(srcDir)
 	expected := "example.com/foo"
 	if pkgPath != expected {
@@ -237,8 +246,14 @@ func TestParsePackageImport_FallbackMultiGoPath(t *testing.T) {
 	}()
 
 	goPaths := strings.Join(goPathList, string(os.PathListSeparator))
-	os.Setenv("GOPATH", goPaths)
-	os.Setenv("GO111MODULE", "on")
+	err = os.Setenv("GOPATH", goPaths)
+	if err != nil {
+		t.Errorf("unexpected error: %s", err.Error())
+	}
+	err = os.Setenv("GO111MODULE", "on")
+	if err != nil {
+		t.Errorf("unexpected error: %s", err.Error())
+	}
 	pkgPath, err := parsePackageImport(srcDir)
 	expected := "example.com/foo"
 	if pkgPath != expected {
