@@ -302,6 +302,38 @@ func (ctrl *Controller) Finish() {
 	}
 }
 
+// Continue is same as Finish with the following fundamental differences.
+// 1. It can be called multiple times by the user code.
+// 2. It doesn't set finished to true but instead checks if finished has been called. If it was called, it errors
+// out.
+// 3. It checks whether all the expected calls are satisfied. If not, it calls Fatalf
+func (ctrl *Controller) Continue() {
+	ctrl.T.Helper()
+
+	ctrl.mu.Lock()
+	defer ctrl.mu.Unlock()
+
+	if ctrl.finished {
+		ctrl.T.Fatalf("Controller.Continue was called after ctrl.Finish. It has to be called before ctrl.Finish.")
+		return
+	}
+
+	// If we're currently panicking, probably because this is a deferred call,
+	// pass through the panic.
+	if err := recover(); err != nil {
+		panic(err)
+	}
+
+	// Check that all remaining expected calls are satisfied.
+	failures := ctrl.expectedCalls.Failures()
+	for _, call := range failures {
+		ctrl.T.Errorf("missing call(s) to %v", call)
+	}
+	if len(failures) != 0 {
+		ctrl.T.Fatalf("aborting test due to missing call(s)")
+	}
+}
+
 // callerInfo returns the file:line of the call site. skip is the number
 // of stack frames to skip when reporting. 0 is callerInfo's call site.
 func callerInfo(skip int) string {
