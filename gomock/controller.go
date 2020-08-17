@@ -256,8 +256,9 @@ func (ctrl *Controller) Call(receiver interface{}, method string, args ...interf
 	return rets
 }
 
-// ResetCalls - Reset expectedCalls
-func (ctrl *Controller) ResetCalls() {
+// ResetExpectedCalls Reset expectedCalls so that we can reuse the same controller to define
+// new set of expected calls. See https://github.com/golang/mock/issues/459
+func (ctrl *Controller) ResetExpectedCalls() {
 	ctrl.mu.Lock()
 	defer ctrl.mu.Unlock()
 	ctrl.expectedCalls = newCallSet()
