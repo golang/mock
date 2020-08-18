@@ -256,9 +256,9 @@ func (ctrl *Controller) Call(receiver interface{}, method string, args ...interf
 	return rets
 }
 
-// ResetExpectedCalls Reset expectedCalls so that we can reuse the same controller to define
+// Reset expectedCalls so that we can reuse the same controller to define
 // new set of expected calls. See https://github.com/golang/mock/issues/459
-func (ctrl *Controller) ResetExpectedCalls() {
+func (ctrl *Controller) reset() {
 	ctrl.mu.Lock()
 	defer ctrl.mu.Unlock()
 	ctrl.expectedCalls = newCallSet()
@@ -314,7 +314,7 @@ func (ctrl *Controller) Continue() {
 	defer ctrl.mu.Unlock()
 
 	if ctrl.finished {
-		ctrl.T.Fatalf("Controller.Continue was called after ctrl.Finish. It has to be called before ctrl.Finish.")
+		ctrl.T.Fatalf("Controller.Continue was called after ctrl.Finish. It has to be called before ctrl.Finish when you want to reuse the controller.")
 		return
 	}
 
@@ -332,6 +332,9 @@ func (ctrl *Controller) Continue() {
 	if len(failures) != 0 {
 		ctrl.T.Fatalf("aborting test due to missing call(s)")
 	}
+
+	// Reset the calls
+	ctrl.reset()
 }
 
 // callerInfo returns the file:line of the call site. skip is the number
