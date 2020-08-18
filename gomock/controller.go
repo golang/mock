@@ -256,14 +256,6 @@ func (ctrl *Controller) Call(receiver interface{}, method string, args ...interf
 	return rets
 }
 
-// Reset expectedCalls so that we can reuse the same controller to define
-// new set of expected calls. See https://github.com/golang/mock/issues/459
-func (ctrl *Controller) reset() {
-	ctrl.mu.Lock()
-	defer ctrl.mu.Unlock()
-	ctrl.expectedCalls = newCallSet()
-}
-
 // Finish checks to see if all the methods that were expected to be called
 // were called. It should be invoked for each Controller. It is not idempotent
 // and therefore can only be invoked once.
@@ -333,8 +325,9 @@ func (ctrl *Controller) Continue() {
 		ctrl.T.Fatalf("aborting test due to missing call(s)")
 	}
 
-	// Reset the calls
-	ctrl.reset()
+	// Reset expectedCalls so that we can reuse the same controller to define
+	// new set of expected calls. See https://github.com/golang/mock/issues/459
+	ctrl.expectedCalls = newCallSet()
 }
 
 // callerInfo returns the file:line of the call site. skip is the number
