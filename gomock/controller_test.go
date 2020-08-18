@@ -22,6 +22,7 @@ import (
 	"strings"
 
 	"github.com/golang/mock/gomock"
+	mock_user "github.com/golang/mock/sample/mock_user"
 )
 
 type ErrorReporter struct {
@@ -827,4 +828,39 @@ func TestContinueThrowsErrorAfterCallingFinish(t *testing.T) {
 	reporter.assertFatal(func() {
 		ctrl.Continue()
 	})
+}
+
+func TestContinueWithSubTests(t *testing.T) {
+	ctrl := gomock.NewController(t)
+
+	mockIndex := mock_user.NewMockIndex(ctrl)
+
+	tests := []struct {
+		desc        string
+		name        string
+		calledTimes int
+	}{{
+		desc:        "Test for Ed",
+		name:        "Ed",
+		calledTimes: 1,
+	}, {
+		desc:        "Test for Edd",
+		name:        "Edd",
+		calledTimes: 2,
+	}, {
+		desc:        "Test for Eddy",
+		name:        "Eddy",
+		calledTimes: 3,
+	}}
+
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			defer ctrl.Continue()
+			mockIndex.EXPECT().Anon(test.name).Times(test.calledTimes)
+
+			for i := 0; i < test.calledTimes; i++ {
+				mockIndex.Anon(test.name)
+			}
+		})
+	}
 }

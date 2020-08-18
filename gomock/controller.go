@@ -296,9 +296,9 @@ func (ctrl *Controller) Finish() {
 
 // Continue is same as Finish with the following fundamental differences.
 // 1. It can be called multiple times by the user code.
-// 2. It doesn't set finished to true but instead checks if finished has been called. If it was called, it errors
-// out.
+// 2. Errors out if finished has already been called
 // 3. It checks whether all the expected calls are satisfied. If not, it calls Fatalf
+// 4. If all expected calls are satisfied then it resets the callset at the end.
 func (ctrl *Controller) Continue() {
 	ctrl.T.Helper()
 
