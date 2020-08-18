@@ -169,7 +169,7 @@ func TestParsePackageImport(t *testing.T) {
 			for key, value := range testCase.envs {
 				err = os.Setenv(key, value)
 				if err != nil {
-					t.Errorf("unexpected error: %s", err.Error())
+					t.Fatalf("unable to set environment variable %q to %q: %v", key, value, err)
 				}
 			}
 			pkgPath, err := parsePackageImport(filepath.Clean(testCase.dir))
@@ -198,13 +198,17 @@ func TestParsePackageImport_FallbackGoPath(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	err = os.Setenv("GOPATH", goPath)
+	key := "GOPATH"
+	value := goPath
+	err = os.Setenv(key, value)
 	if err != nil {
-		t.Errorf("unexpected error: %s", err.Error())
+		t.Fatalf("unable to set environment variable %q to %q: %v", key, value, err)
 	}
-	err = os.Setenv("GO111MODULE", "on")
+	key = "GO111MODULE"
+	value = "on"
+	err = os.Setenv(key, value)
 	if err != nil {
-		t.Errorf("unexpected error: %s", err.Error())
+		t.Fatalf("unable to set environment variable %q to %q: %v", key, value, err)
 	}
 	pkgPath, err := parsePackageImport(srcDir)
 	expected := "example.com/foo"
@@ -246,13 +250,17 @@ func TestParsePackageImport_FallbackMultiGoPath(t *testing.T) {
 	}()
 
 	goPaths := strings.Join(goPathList, string(os.PathListSeparator))
-	err = os.Setenv("GOPATH", goPaths)
+	key := "GOPATH"
+	value := goPaths
+	err = os.Setenv(key, value)
 	if err != nil {
-		t.Errorf("unexpected error: %s", err.Error())
+		t.Fatalf("unable to set environment variable %q to %q: %v", key, value, err)
 	}
-	err = os.Setenv("GO111MODULE", "on")
+	key = "GO111MODULE"
+	value = "on"
+	err = os.Setenv(key, value)
 	if err != nil {
-		t.Errorf("unexpected error: %s", err.Error())
+		t.Fatalf("unable to set environment variable %q to %q: %v", key, value, err)
 	}
 	pkgPath, err := parsePackageImport(srcDir)
 	expected := "example.com/foo"
