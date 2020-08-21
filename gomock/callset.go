@@ -87,7 +87,7 @@ func (cs callSet) FindMatch(receiver interface{}, method string, args []interfac
 			continue
 		}
 		_, _ = fmt.Fprintf(
-			&callsErrors, "all expected calls of the method %q have been exhausted for that received", method,
+			&callsErrors, "all expected calls for method %q have been exhausted", method,
 		)
 	}
 
