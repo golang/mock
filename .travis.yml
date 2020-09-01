@@ -17,4 +17,5 @@ script:
   - ./ci/check_go_lint.sh
   - ./ci/check_go_generate.sh
   - ./ci/check_go_mod.sh
+  - ./ci/check_panic_handling.sh
   - go test -v ./...
