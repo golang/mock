@@ -18,6 +18,6 @@
 set -eux
 
 pushd mockgen/internal/tests/panicing_test
-go test -v -tags=panictest -run TestSomething_Panics_Explicit | grep "Danger, Will Robinson!"
-go test -v -tags=panictest -run TestSomething_Panics_Implicit | grep "Danger, Will Robinson!"
+go test -v -tags=panictest -run TestDanger_Panics_Explicit | grep "Danger, Will Robinson!"
+go test -v -tags=panictest -run TestDanger_Panics_Implicit | grep "Danger, Will Robinson!"
 popd

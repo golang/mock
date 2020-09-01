@@ -22,7 +22,7 @@ import (
 	"github.com/golang/mock/gomock"
 )
 
-func TestSomething_Panics_Explicit(t *testing.T) {
+func TestDanger_Panics_Explicit(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	mock := NewMockFoo(ctrl)
@@ -31,7 +31,7 @@ func TestSomething_Panics_Explicit(t *testing.T) {
 	Danger(mock)
 }
 
-func TestSomething_Panics_Implicit(t *testing.T) {
+func TestDanger_Panics_Implicit(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mock := NewMockFoo(ctrl)
 	mock.EXPECT().Bar().Return("Bar")
