@@ -263,7 +263,7 @@ func (ctrl *Controller) Finish() {
 	// If we're currently panicking, probably because this is a deferred call.
 	// This must be recovered in the deferred function.
 	err := recover()
-	defer ctrl.finish(false, err)
+	ctrl.finish(false, err)
 }
 
 func (ctrl *Controller) finish(cleanup bool, panicErr interface{}) {
