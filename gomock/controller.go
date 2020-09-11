@@ -136,7 +136,7 @@ func NewController(t TestReporter) *Controller {
 	if c, ok := isCleanuper(ctrl.T); ok {
 		c.Cleanup(func() {
 			ctrl.T.Helper()
-			ctrl.Finish()
+			ctrl.finish(true, nil)
 		})
 	}
 
@@ -260,6 +260,13 @@ func (ctrl *Controller) Call(receiver interface{}, method string, args ...interf
 // were called. It should be invoked for each Controller. It is not idempotent
 // and therefore can only be invoked once.
 func (ctrl *Controller) Finish() {
+	// If we're currently panicking, probably because this is a deferred call.
+	// This must be recovered in the deferred function.
+	err := recover()
+	ctrl.finish(false, err)
+}
+
+func (ctrl *Controller) finish(cleanup bool, panicErr interface{}) {
 	ctrl.T.Helper()
 
 	ctrl.mu.Lock()
@@ -269,19 +276,13 @@ func (ctrl *Controller) Finish() {
 		if _, ok := isCleanuper(ctrl.T); !ok {
 			ctrl.T.Fatalf("Controller.Finish was called more than once. It has to be called exactly once.")
 		}
-		// provide a log message to guide users to remove `defer ctrl.Finish()` in Go 1.14+
-		tr := unwrapTestReporter(ctrl.T)
-		if l, ok := tr.(interface{ Log(args ...interface{}) }); ok {
-			l.Log("In Go 1.14+ you no longer need to `ctrl.Finish()` if a *testing.T is passed to `NewController(...)`")
-		}
 		return
 	}
 	ctrl.finished = true
 
-	// If we're currently panicking, probably because this is a deferred call,
-	// pass through the panic.
-	if err := recover(); err != nil {
-		panic(err)
+	// Short-circuit, pass through the panic.
+	if panicErr != nil {
+		panic(panicErr)
 	}
 
 	// Check that all remaining expected calls are satisfied.
@@ -290,7 +291,11 @@ func (ctrl *Controller) Finish() {
 		ctrl.T.Errorf("missing call(s) to %v", call)
 	}
 	if len(failures) != 0 {
-		ctrl.T.Fatalf("aborting test due to missing call(s)")
+		if !cleanup {
+			ctrl.T.Fatalf("aborting test due to missing call(s)")
+			return
+		}
+		ctrl.T.Errorf("aborting test due to missing call(s)")
 	}
 }
 

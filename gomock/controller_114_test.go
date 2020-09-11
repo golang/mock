@@ -30,7 +30,7 @@ func (e *ErrorReporter) Cleanup(f func()) {
 func TestMultipleDefers(t *testing.T) {
 	reporter := NewErrorReporter(t)
 	reporter.Cleanup(func() {
-		reporter.assertLogf("In Go 1.14+ you no longer need to `ctrl.Finish()` if a *testing.T is passed to `NewController(...)`")
+		reporter.assertPass("No errors for multiple calls to Finish")
 	})
 	ctrl := gomock.NewController(reporter)
 	ctrl.Finish()
