@@ -26,6 +26,8 @@ import (
 	"github.com/golang/mock/gomock/internal/mock_gomock"
 )
 
+type A []string
+
 func TestMatchers(t *testing.T) {
 	type e interface{}
 	tests := []struct {
@@ -43,6 +45,10 @@ func TestMatchers(t *testing.T) {
 		{"test Len", gomock.Len(2),
 			[]e{[]int{1, 2}, "ab", map[string]int{"a": 0, "b": 1}, [2]string{"a", "b"}},
 			[]e{[]int{1}, "a", 42, 42.0, false, [1]string{"a"}},
+		},
+		{"test assignable types", gomock.Eq(A{"a", "b"}),
+			[]e{[]string{"a", "b"}, A{"a", "b"}},
+			[]e{[]string{"a"}, A{"b"}},
 		},
 	}
 	for _, tt := range tests {
