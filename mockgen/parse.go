@@ -183,7 +183,10 @@ func (p *fileParser) addAuxInterfacesFromFile(pkg string, file *ast.File) {
 // parseFile loads all file imports and auxiliary files import into the
 // fileParser, parses all file interfaces and returns package model.
 func (p *fileParser) parseFile(importPath string, file *ast.File) (*model.Package, error) {
-	allImports, dotImports := importsOfFile(file)
+	allImports, dotImports, err := importsOfFile(file)
+	if err != nil {
+		return nil, err
+	}
 	// Don't stomp imports provided by -imports. Those should take precedence.
 	for pkg, pkgI := range allImports {
 		if _, ok := p.imports[pkg]; !ok {
@@ -193,7 +196,10 @@ func (p *fileParser) parseFile(importPath string, file *ast.File) (*model.Packag
 	// Add imports from auxiliary files, which might be needed for embedded interfaces.
 	// Don't stomp any other imports.
 	for _, f := range p.auxFiles {
-		auxImports, _ := importsOfFile(f)
+		auxImports, _, err := importsOfFile(f)
+		if err != nil {
+			return nil, err
+		}
 		for pkg, pkgI := range auxImports {
 			if _, ok := p.imports[pkg]; !ok {
 				p.imports[pkg] = pkgI
@@ -243,7 +249,10 @@ func (p *fileParser) parsePackage(path string) (*fileParser, error) {
 		for ni := range iterInterfaces(file) {
 			newP.importedInterfaces[path][ni.name.Name] = ni.it
 		}
-		imports, _ := importsOfFile(file)
+		imports, _, err := importsOfFile(file)
+		if err != nil {
+			return nil, err
+		}
 		for pkgName, pkgI := range imports {
 			newP.imports[pkgName] = pkgI
 		}
@@ -496,7 +505,7 @@ func (p *fileParser) parseType(pkg string, typ ast.Expr) (model.Type, error) {
 
 // importsOfFile returns a map of package name to import path
 // of the imports in file.
-func importsOfFile(file *ast.File) (normalImports map[string]importedPackage, dotImports []string) {
+func importsOfFile(file *ast.File) (normalImports map[string]importedPackage, dotImports []string, err error) {
 	var importPaths []string
 	for _, is := range file.Imports {
 		if is.Name != nil {
@@ -505,7 +514,10 @@ func importsOfFile(file *ast.File) (normalImports map[string]importedPackage, do
 		importPath := is.Path.Value[1 : len(is.Path.Value)-1] // remove quotes
 		importPaths = append(importPaths, importPath)
 	}
-	packagesName := createPackageMap(importPaths)
+	packagesName, err := createPackageMap(importPaths)
+	if err != nil {
+		return nil, nil, err
+	}
 	normalImports = make(map[string]importedPackage)
 	dotImports = make([]string, 0)
 	for _, is := range file.Imports {

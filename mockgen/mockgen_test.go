@@ -337,29 +337,30 @@ func TestGetArgNames(t *testing.T) {
 
 func Test_createPackageMap(t *testing.T) {
 	tests := []struct {
-		name            string
-		importPath      string
-		wantPackageName string
-		wantOK          bool
+		name             string
+		importPaths      []string
+		wantPackageNames []string
+		wantOK           bool
 	}{
-		{"golang package", "context", "context", true},
-		{"third party", "golang.org/x/tools/present", "present", true},
-		//{"modules", "rsc.io/quote/v3", "quote", true},
-		{"fail", "this/should/not/work", "", false},
+		{"works", []string{"context", "golang.org/x/tools/present"}, []string{"context", "present"}, true},
+		{"fail", []string{"this/should/not/work"}, nil, false},
 	}
-	var importPaths []string
-	for _, t := range tests {
-		importPaths = append(importPaths, t.importPath)
-	}
-	packages := createPackageMap(importPaths)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotPackageName, gotOk := packages[tt.importPath]
-			if gotPackageName != tt.wantPackageName {
-				t.Errorf("createPackageMap() gotPackageName = %v, wantPackageName = %v", gotPackageName, tt.wantPackageName)
+			packages, err := createPackageMap(tt.importPaths)
+			if err != nil && tt.wantOK {
+				t.Fatalf("wantOk = true, got err %v", err)
 			}
-			if gotOk != tt.wantOK {
-				t.Errorf("createPackageMap() gotOk = %v, wantOK = %v", gotOk, tt.wantOK)
+			if !tt.wantOK && err == nil {
+				t.Fatalf("wantOK = false, got err == nil")
+			}
+			if !tt.wantOK {
+				return
+			}
+			for i, v := range tt.importPaths {
+				if packages[v] != tt.wantPackageNames[i] {
+					t.Errorf("got pkgName %q, want %q", packages[v], tt.wantPackageNames[i])
+				}
 			}
 		})
 	}

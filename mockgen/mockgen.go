@@ -307,7 +307,10 @@ func (g *generator) Generate(pkg *model.Package, outputPkgName string, outputPac
 	}
 	sort.Strings(sortedPaths)
 
-	packagesName := createPackageMap(sortedPaths)
+	packagesName, err := createPackageMap(sortedPaths)
+	if err != nil {
+		return err
+	}
 
 	g.packageMap = make(map[string]string, len(im))
 	localNames := make(map[string]bool, len(im))
@@ -629,19 +632,23 @@ func (g *generator) Output() []byte {
 
 // createPackageMap returns a map of import path to package name
 // for specified importPaths.
-func createPackageMap(importPaths []string) map[string]string {
+func createPackageMap(importPaths []string) (map[string]string, error) {
 	var pkg struct {
 		Name       string
 		ImportPath string
 	}
 	pkgMap := make(map[string]string)
-	b := bytes.NewBuffer(nil)
+	stdout := bytes.NewBuffer(nil)
+	stderr := bytes.NewBuffer(nil)
 	args := []string{"list", "-json"}
 	args = append(args, importPaths...)
 	cmd := exec.Command("go", args...)
-	cmd.Stdout = b
-	cmd.Run()
-	dec := json.NewDecoder(b)
+	cmd.Stdout = stdout
+	cmd.Stderr = stderr
+	if err := cmd.Run(); err != nil {
+		return nil, fmt.Errorf("failed to resolve import:\n%s", stderr.String())
+	}
+	dec := json.NewDecoder(stdout)
 	for dec.More() {
 		err := dec.Decode(&pkg)
 		if err != nil {
@@ -650,7 +657,7 @@ func createPackageMap(importPaths []string) map[string]string {
 		}
 		pkgMap[pkg.ImportPath] = pkg.Name
 	}
-	return pkgMap
+	return pkgMap, nil
 }
 
 func printVersion() {
