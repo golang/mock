@@ -109,6 +109,25 @@ func (e eqMatcher) String() string {
 	return fmt.Sprintf("is equal to %v", e.x)
 }
 
+type eqErrorMatcher struct {
+	err error
+}
+
+func (e eqErrorMatcher) Matches(x interface{}) bool {
+	err, ok := x.(error)
+	if !ok {
+		return false
+	}
+	if err.Error() != e.err.Error() {
+		return false
+	}
+	return true
+}
+
+func (e eqErrorMatcher) String() string {
+	return fmt.Sprintf("is equal to %s", e.err.Error())
+}
+
 type nilMatcher struct{}
 
 func (nilMatcher) Matches(x interface{}) bool {
@@ -209,6 +228,19 @@ func Any() Matcher { return anyMatcher{} }
 //   Eq(5).Matches(5) // returns true
 //   Eq(5).Matches(4) // returns false
 func Eq(x interface{}) Matcher { return eqMatcher{x} }
+
+// EqError returns a matcher that matches on equality message error (only one an error interface type)
+//
+// Example usage:
+//   var err1 error = errors.New("content error 1")
+//   var err2 error = errors.New("content error 2")
+//   var errCustom1 error = CustomError.Error{msg: "content error 1"}
+//   var errCustom2 error = CustomError.Error{msg: "content error 2"}
+//   EqError(err1).Matches(err1) // true
+//   EqError(err1).Matches(err2) // false
+//   EqError(err1).Matches(errCustom1) // true
+//   EqError(err1).Matches(errCustom2) // false
+func EqError(err error) Matcher { return eqErrorMatcher{err} }
 
 // Len returns a matcher that matches on length. This matcher returns false if
 // is compared to a type that is not an array, chan, map, slice, or string.

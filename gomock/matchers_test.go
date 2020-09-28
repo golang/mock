@@ -26,7 +26,21 @@ import (
 	"github.com/golang/mock/gomock/internal/mock_gomock"
 )
 
+// CustomError to provide a specific use case in the test
+type CustomError struct {
+	msg string
+}
+
+// Error method to implement error interface
+func (c CustomError) Error() string {
+	return c.msg
+}
+
 func TestMatchers(t *testing.T) {
+	err1 := errors.New("content error 1")
+	err2 := errors.New("content error 2")
+	var errCustom1 error = &CustomError{msg: "content error 1"}
+	var errCustom2 error = &CustomError{msg: "content error 2"}
 	type e interface{}
 	tests := []struct {
 		name    string
@@ -34,7 +48,7 @@ func TestMatchers(t *testing.T) {
 		yes, no []e
 	}{
 		{"test Any", gomock.Any(), []e{3, nil, "foo"}, nil},
-		{"test All", gomock.Eq(4), []e{4}, []e{3, "blah", nil, int64(4)}},
+		{"test Eq", gomock.Eq(4), []e{4}, []e{3, "blah", nil, int64(4)}},
 		{"test Nil", gomock.Nil(),
 			[]e{nil, (error)(nil), (chan bool)(nil), (*int)(nil)},
 			[]e{"", 0, make(chan bool), errors.New("err"), new(int)}},
@@ -44,6 +58,7 @@ func TestMatchers(t *testing.T) {
 			[]e{[]int{1, 2}, "ab", map[string]int{"a": 0, "b": 1}, [2]string{"a", "b"}},
 			[]e{[]int{1}, "a", 42, 42.0, false, [1]string{"a"}},
 		},
+		{"test EqError", gomock.EqError(errors.New("content error 1")), []e{err1, errCustom1}, []e{err2, errCustom2, 42, 42.0, "42"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
