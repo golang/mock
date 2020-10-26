@@ -36,6 +36,7 @@ Running mockgen
 ---------------
 
 `mockgen` has two modes of operation: source and reflect.
+
 #### Source mode
 Source mode generates mock interfaces from a source file.
 It is enabled by using the -source flag. Other flags that
