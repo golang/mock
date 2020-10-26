@@ -64,6 +64,7 @@ mockgen database/sql/driver Conn,Driver
 # Convenient for `go:generate`.
 mockgen . Conn,Driver
 ```
+
 #### Flags
 The `mockgen` command is used to generate source code for a mock
 class given a Go source file containing interfaces to be mocked.
