@@ -10,6 +10,9 @@
 # Vim temporary files.
 .*.swp
 
+# IntelliJ files.
+.idea/*
+
 # The mockgen binary.
 mockgen/mockgen
 
