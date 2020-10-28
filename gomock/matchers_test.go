@@ -50,17 +50,18 @@ func TestMatchers(t *testing.T) {
 			[]e{[]string{"a", "b"}, A{"a", "b"}},
 			[]e{[]string{"a"}, A{"b"}},
 		},
-		{
-			"test Custom", gomock.Custom(func(arg interface{}) error {
-				number, ok := arg.(int)
-				if !ok {
-					return errors.New("is not integer")
-				}
-				if number%2 != 0 || number < 2 {
-					return errors.New("is not even")
-				}
-				return nil
-			}), []e{2, 6, 20, 100}, []e{nil, "2", false, 2.0, 0, -1},
+		{"test Custom", gomock.Custom(func(arg interface{}) error {
+			number, ok := arg.(int)
+			if !ok {
+				return errors.New("is not integer")
+			}
+			if number%2 != 0 || number < 2 {
+				return errors.New("is not even")
+			}
+			return nil
+		}),
+			[]e{2, 6, 20, 100},
+			[]e{nil, "2", false, 2.0, 0, -1},
 		},
 	}
 	for _, tt := range tests {
