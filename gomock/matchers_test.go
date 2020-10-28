@@ -36,7 +36,7 @@ func TestMatchers(t *testing.T) {
 		yes, no []e
 	}{
 		{"test Any", gomock.Any(), []e{3, nil, "foo"}, nil},
-		{"test All", gomock.Eq(4), []e{4}, []e{3, "blah", nil, int64(4)}},
+		{"test Eq", gomock.Eq(4), []e{4}, []e{3, "blah", nil, int64(4)}},
 		{"test Nil", gomock.Nil(),
 			[]e{nil, (error)(nil), (chan bool)(nil), (*int)(nil)},
 			[]e{"", 0, make(chan bool), errors.New("err"), new(int)}},
@@ -49,6 +49,18 @@ func TestMatchers(t *testing.T) {
 		{"test assignable types", gomock.Eq(A{"a", "b"}),
 			[]e{[]string{"a", "b"}, A{"a", "b"}},
 			[]e{[]string{"a"}, A{"b"}},
+		},
+		{
+			"test Custom", gomock.Custom(func(arg interface{}) error {
+				number, ok := arg.(int)
+				if !ok {
+					return errors.New("is not integer")
+				}
+				if number%2 != 0 || number < 2 {
+					return errors.New("is not even")
+				}
+				return nil
+			}), []e{2, 6, 20, 100}, []e{nil, "2", false, 2.0, 0, -1},
 		},
 	}
 	for _, tt := range tests {

@@ -208,6 +208,27 @@ func (m lenMatcher) String() string {
 	return fmt.Sprintf("has length %d", m.i)
 }
 
+type customMatcher struct {
+	matcherFunction func(arg interface{}) error
+	err             error
+}
+
+func (o *customMatcher) Matches(x interface{}) bool {
+	// in case of this matcher has been used in a failed test before
+	o.err = nil
+	if err := o.matcherFunction(x); err != nil {
+		o.err = err
+	}
+	return o.err == nil
+}
+
+func (o *customMatcher) String() string {
+	if o.err == nil {
+		return "is as expected"
+	}
+	return o.err.Error()
+}
+
 // Constructors
 
 // All returns a composite Matcher that returns true if and only all of the
@@ -266,4 +287,21 @@ func AssignableToTypeOf(x interface{}) Matcher {
 		return assignableToTypeOfMatcher{xt}
 	}
 	return assignableToTypeOfMatcher{reflect.TypeOf(x)}
+}
+
+// Custom returns a Matcher that uses a custom function to evaluate the value.
+//
+// Example usage:
+// Custom(func(_ interface{}) error {
+//			return nill
+//		}).Matches(99) // returns true
+//
+// Custom(func(_ interface{}) error {
+//			return errors.New("wrong")
+//		}).Matches(99) // returns false
+//
+func Custom(f func(arg interface{}) error) Matcher {
+	return &customMatcher{
+		matcherFunction: f,
+	}
 }
