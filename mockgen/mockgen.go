@@ -424,7 +424,14 @@ func (g *generator) GenerateMockInterface(intf *model.Interface, outputPackagePa
 	return nil
 }
 
+type byMethodName []*model.Method
+
+func (b byMethodName) Len() int           { return len(b) }
+func (b byMethodName) Swap(i, j int)      { b[i], b[j] = b[j], b[i] }
+func (b byMethodName) Less(i, j int) bool { return b[i].Name < b[j].Name }
+
 func (g *generator) GenerateMockMethods(mockType string, intf *model.Interface, pkgOverride string) {
+	sort.Sort(byMethodName(intf.Methods))
 	for _, m := range intf.Methods {
 		g.p("")
 		_ = g.GenerateMockMethod(mockType, m, pkgOverride)
