@@ -35,6 +35,20 @@ func (m *MockSource) EXPECT() *MockSourceMockRecorder {
 	return m.recorder
 }
 
+// Error mocks base method.
+func (m *MockSource) Error() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Error")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// Error indicates an expected call of Error.
+func (mr *MockSourceMockRecorder) Error() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Error", reflect.TypeOf((*MockSource)(nil).Error))
+}
+
 // Ersatz mocks base method.
 func (m *MockSource) Ersatz() ersatz.Return {
 	m.ctrl.T.Helper()
@@ -61,18 +75,4 @@ func (m *MockSource) OtherErsatz() ersatz0.Return {
 func (mr *MockSourceMockRecorder) OtherErsatz() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OtherErsatz", reflect.TypeOf((*MockSource)(nil).OtherErsatz))
-}
-
-// Error mocks base method.
-func (m *MockSource) Error() string {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Error")
-	ret0, _ := ret[0].(string)
-	return ret0
-}
-
-// Error indicates an expected call of Error.
-func (mr *MockSourceMockRecorder) Error() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Error", reflect.TypeOf((*MockSource)(nil).Error))
 }

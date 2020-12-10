@@ -33,6 +33,18 @@ func (m *MockFinder) EXPECT() *MockFinderMockRecorder {
 	return m.recorder
 }
 
+// Add mocks base method.
+func (m *MockFinder) Add(u User) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Add", u)
+}
+
+// Add indicates an expected call of Add.
+func (mr *MockFinderMockRecorder) Add(u interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockFinder)(nil).Add), u)
+}
+
 // FindUser mocks base method.
 func (m *MockFinder) FindUser(name string) User {
 	m.ctrl.T.Helper()
@@ -45,16 +57,4 @@ func (m *MockFinder) FindUser(name string) User {
 func (mr *MockFinderMockRecorder) FindUser(name interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindUser", reflect.TypeOf((*MockFinder)(nil).FindUser), name)
-}
-
-// Add mocks base method.
-func (m *MockFinder) Add(u User) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Add", u)
-}
-
-// Add indicates an expected call of Add.
-func (mr *MockFinderMockRecorder) Add(u interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockFinder)(nil).Add), u)
 }
