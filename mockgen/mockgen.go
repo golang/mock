@@ -637,25 +637,27 @@ func (g *generator) Output() []byte {
 // createPackageMap returns a map of import path to package name
 // for specified importPaths.
 func createPackageMap(importPaths []string) map[string]string {
-	var pkg struct {
-		Name       string
-		ImportPath string
-	}
 	pkgMap := make(map[string]string)
 	b := bytes.NewBuffer(nil)
-	args := []string{"list", "-json"}
+	args := []string{"list", "-e", "-json"}
 	args = append(args, importPaths...)
 	cmd := exec.Command("go", args...)
 	cmd.Stdout = b
 	cmd.Run()
 	dec := json.NewDecoder(b)
 	for dec.More() {
+		var pkg struct {
+			Name       string
+			ImportPath string
+		}
 		err := dec.Decode(&pkg)
 		if err != nil {
 			log.Printf("failed to decode 'go list' output: %v", err)
 			continue
 		}
-		pkgMap[pkg.ImportPath] = pkg.Name
+		if pkg.Name != "" {
+			pkgMap[pkg.ImportPath] = pkg.Name
+		}
 	}
 	return pkgMap
 }
