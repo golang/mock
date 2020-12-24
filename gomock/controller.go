@@ -26,7 +26,7 @@
 //           defer mockCtrl.Finish()
 //
 //           mockObj := something.NewMockMyInterface(mockCtrl)
-//           mockObj.EXPECT().SomeMethod(4, "blah")
+//           mockObj.EXPECT().SomeMethod(int64(4), "blah")
 //           // pass mockObj to a real object and play with it.
 //         }
 //
