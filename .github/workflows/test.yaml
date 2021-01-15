@@ -1,0 +1,45 @@
+name: Run tests
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+env:
+  GO111MODULE: on
+jobs:
+  test:
+    strategy:
+      matrix:
+        go-version: [1.11.x, 1.15.x]
+        os: [ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+
+    - name: Install Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: ${{ matrix.go-version }}
+
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Vet and build
+      run: |
+        go vet ./...
+        go build ./...
+
+    - name: Install tools
+      run: |
+        go install github.com/golang/mock/mockgen
+        GO111MODULE=off go get -u golang.org/x/lint/golint
+
+    - name: Run test scripts
+      run: |
+        ./ci/check_go_fmt.sh
+        ./ci/check_go_lint.sh
+        ./ci/check_go_generate.sh
+        ./ci/check_go_mod.sh
+        ./ci/check_panic_handling.sh
+
+    - name: Run Go tests
+      run: go test -v ./...
