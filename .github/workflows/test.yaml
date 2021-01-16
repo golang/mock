@@ -47,4 +47,9 @@ jobs:
         ./ci/check_panic_handling.sh
 
     - name: Run Go tests
-      run: go test -v ./...
+      run: |
+        for i in $(find $PWD -name go.mod); do
+          pushd $(dirname $i)
+          go test ./...
+          popd
+        done 
