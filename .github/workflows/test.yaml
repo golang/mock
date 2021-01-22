@@ -23,6 +23,11 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
+    # Needed for versions <1.14 tests
+    - name: Install mock
+      run: |
+        GO111MODULE=off go get github.com/golang/mock | true
+
     - name: Vet and build
       run: |
         go vet ./...
