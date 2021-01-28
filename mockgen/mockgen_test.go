@@ -237,10 +237,12 @@ func TestGenerateMockInterface_Helper(t *testing.T) {
 				}
 			}
 
-			if err := g.GenerateMockInterface(&model.Interface{
-				Name:    "Somename",
-				Methods: test.Methods,
-			}, "somepackage"); err != nil {
+			intf := &model.Interface{Name: "Somename"}
+			for _, m := range test.Methods {
+				intf.AddMethod(m)
+			}
+
+			if err := g.GenerateMockInterface(intf, "somepackage"); err != nil {
 				t.Fatal(err)
 			}
 
@@ -344,8 +346,6 @@ func Test_createPackageMap(t *testing.T) {
 	}{
 		{"golang package", "context", "context", true},
 		{"third party", "golang.org/x/tools/present", "present", true},
-		//{"modules", "rsc.io/quote/v3", "quote", true},
-		{"fail", "this/should/not/work", "", false},
 	}
 	var importPaths []string
 	for _, t := range tests {

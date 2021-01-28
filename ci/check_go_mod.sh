@@ -3,7 +3,11 @@
 
 set -euo pipefail
 
-go mod tidy
+for i in $(find $PWD -name go.mod); do
+    pushd $(dirname $i)
+    go mod tidy
+    popd
+done 
 
 if [ ! -z "$(git status --porcelain)" ]; then
     git status
