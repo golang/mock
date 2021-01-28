@@ -267,7 +267,7 @@ func (p *fileParser) parseInterface(name, pkg string, it *ast.InterfaceType) (*m
 			if err != nil {
 				return nil, err
 			}
-			intf.Methods = append(intf.Methods, m)
+			intf.AddMethod(m)
 		case *ast.Ident:
 			// Embedded interface in this package.
 			ei := p.auxInterfaces[pkg][v.String()]
@@ -291,8 +291,9 @@ func (p *fileParser) parseInterface(name, pkg string, it *ast.InterfaceType) (*m
 				}
 			}
 			// Copy the methods.
-			// TODO: apply shadowing rules.
-			intf.Methods = append(intf.Methods, eintf.Methods...)
+			for _, m := range eintf.Methods {
+				intf.AddMethod(m)
+			}
 		case *ast.SelectorExpr:
 			// Embedded interface in another package.
 			fpkg, sel := v.X.(*ast.Ident).String(), v.Sel.String()
@@ -333,7 +334,9 @@ func (p *fileParser) parseInterface(name, pkg string, it *ast.InterfaceType) (*m
 			}
 			// Copy the methods.
 			// TODO: apply shadowing rules.
-			intf.Methods = append(intf.Methods, eintf.Methods...)
+			for _, m := range eintf.Methods {
+				intf.AddMethod(m)
+			}
 		default:
 			return nil, fmt.Errorf("don't know how to mock method of type %T", field.Type)
 		}

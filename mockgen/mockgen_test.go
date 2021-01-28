@@ -237,10 +237,12 @@ func TestGenerateMockInterface_Helper(t *testing.T) {
 				}
 			}
 
-			if err := g.GenerateMockInterface(&model.Interface{
-				Name:    "Somename",
-				Methods: test.Methods,
-			}, "somepackage"); err != nil {
+			intf := &model.Interface{Name: "Somename"}
+			for _, m := range test.Methods {
+				intf.AddMethod(m)
+			}
+
+			if err := g.GenerateMockInterface(intf, "somepackage"); err != nil {
 				t.Fatal(err)
 			}
 

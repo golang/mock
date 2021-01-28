@@ -18,7 +18,13 @@ trap cleanup EXIT
 
 cp -r . "${TEMP_DIR}/"
 cd $TEMP_DIR
-go generate ./...
+
+for i in $(find $PWD -name go.mod); do
+    pushd $(dirname $i)
+    go generate ./...
+    popd
+done 
+
 if ! diff -r . "${BASE_DIR}"; then
     echo
     echo "The generated files aren't up to date."
