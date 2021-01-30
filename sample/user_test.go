@@ -2,7 +2,9 @@
 package user_test
 
 import (
+	"reflect"
 	"testing"
+	"time"
 
 	"github.com/golang/mock/gomock"
 	user "github.com/golang/mock/sample"
@@ -194,4 +196,78 @@ func TestDoAndReturnSignature(t *testing.T) {
 
 		mockIndex.Slice([]int{0}, []byte("meow"))
 	})
+}
+
+func TestStructChan(t *testing.T) {
+	t.Run("set struct arg", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockIndex := mock_user.NewMockIndex(ctrl)
+
+		v := struct{}{}
+		mockIndex.EXPECT().StructChan(
+			gomock.Not(nil),
+		).SetArg(0, v)
+
+		resChan := make(chan struct{})
+		mockIndex.StructChan(resChan)
+		select {
+		case res := <-resChan:
+			if res != v {
+				t.Errorf("diff")
+			}
+		case <-time.After(time.Second):
+			t.Errorf("timeout")
+		}
+	})
+
+	t.Run("set chan struct arg", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockIndex := mock_user.NewMockIndex(ctrl)
+
+		v := struct{}{}
+		vChan := make(chan struct{})
+		go func() {
+			vChan <- v
+			close(vChan)
+		}()
+		mockIndex.EXPECT().StructChan(
+			gomock.Not(nil),
+		).SetArg(0, vChan)
+
+		resChan := make(chan struct{})
+		mockIndex.StructChan(resChan)
+		select {
+		case res := <-resChan:
+			if res != v {
+				t.Errorf("diff")
+			}
+		case <-time.After(time.Second):
+			t.Errorf("timeout")
+		}
+	})
+}
+
+func TestReflectValue(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockIndex := mock_user.NewMockIndex(ctrl)
+
+	mockIndex.EXPECT().ReflectValue(
+		gomock.Not(nil),
+	).SetArg(
+		0,
+		reflect.ValueOf(11),
+	)
+
+	var v int
+	rv := reflect.ValueOf(&v)
+	mockIndex.ReflectValue(rv)
+	if v != 11 {
+		t.Errorf("diff")
+	}
 }

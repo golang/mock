@@ -221,6 +221,8 @@ func (c *Call) SetArg(n int, value interface{}) *Call {
 	// In the interface case, we don't (nay, can't) check the type here.
 	at := mt.In(n)
 	switch at.Kind() {
+	case reflect.Chan:
+		// nothing to do
 	case reflect.Ptr:
 		dt := at.Elem()
 		if vt := reflect.TypeOf(value); !vt.AssignableTo(dt) {
@@ -231,6 +233,8 @@ func (c *Call) SetArg(n int, value interface{}) *Call {
 		// nothing to do
 	case reflect.Slice:
 		// nothing to do
+	case reflect.Struct:
+		// nothing to do
 	default:
 		c.t.Fatalf("SetArg(%d, ...) referring to argument of non-pointer non-interface non-slice type %v [%s]",
 			n, at, c.origin)
@@ -238,11 +242,24 @@ func (c *Call) SetArg(n int, value interface{}) *Call {
 
 	c.addAction(func(args []interface{}) []interface{} {
 		v := reflect.ValueOf(value)
+		av := reflect.ValueOf(args[n])
 		switch reflect.TypeOf(args[n]).Kind() {
+		case reflect.Chan:
+			if v.Kind() == reflect.Chan {
+				v, _ = v.Recv()
+			}
+			av.TrySend(v)
+			av.Close()
 		case reflect.Slice:
 			setSlice(args[n], v)
 		default:
-			reflect.ValueOf(args[n]).Elem().Set(v)
+			var ok bool
+			if av, ok = args[0].(reflect.Value); ok {
+				v = value.(reflect.Value)
+			} else {
+				av = reflect.ValueOf(args[n])
+			}
+			av.Elem().Set(v)
 		}
 		return nil
 	})
