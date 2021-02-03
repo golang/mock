@@ -384,6 +384,7 @@ func (g *generator) GenerateMockInterface(intf *model.Interface, outputPackagePa
 	g.p("type %v struct {", mockType)
 	g.in()
 	g.p("t *testing.T")
+	g.p("")
 	for _, m := range intf.Methods {
 		g.p("allow%v allow%v%v", m.Name, intf.Name, m.Name)
 	}
@@ -424,14 +425,14 @@ func (g *generator) GenerateMockInterface(intf *model.Interface, outputPackagePa
 	// "allower" type
 	g.p("type allower%v struct {", intf.Name)
 	g.in()
-	g.p("mock%v *%v", intf.Name, mockType)
+	g.p("mock *%v", mockType)
 	g.out()
 	g.p("}")
 
 	// "expecter" type
 	g.p("type expecter%v struct {", intf.Name)
 	g.in()
-	g.p("mock%v *%v", intf.Name, mockType)
+	g.p("mock *%v", mockType)
 	g.out()
 	g.p("}")
 
@@ -447,7 +448,7 @@ func (g *generator) GenerateMockInterface(intf *model.Interface, outputPackagePa
 	for _, m := range intf.Methods {
 		g.p("type receiver%v%v struct {", intf.Name, m.Name)
 		g.in()
-		g.p("receiver%v *receiver%v", intf.Name, intf.Name)
+		g.p("receiver *receiver%v", intf.Name)
 		g.out()
 		g.p("}")
 	}
@@ -456,7 +457,7 @@ func (g *generator) GenerateMockInterface(intf *model.Interface, outputPackagePa
 	// "expecterHelper" type
 	g.p("type expecterHelper%v struct {", intf.Name)
 	g.in()
-	g.p("expecter%v *expecter%v", intf.Name, intf.Name)
+	g.p("expecter *expecter%v", intf.Name)
 	g.p("expectedFuncName string")
 	g.out()
 	g.p("}")
@@ -511,13 +512,13 @@ func (g *generator) GenerateMockInterface(intf *model.Interface, outputPackagePa
 
 	g.p("func (m *%v) ALLOW() *allower%v {", mockType, intf.Name)
 	g.in()
-	g.p("return &allower%v{mock%v: m}", intf.Name, intf.Name)
+	g.p("return &allower%v{mock: m}", intf.Name)
 	g.out()
 	g.p("}")
 
 	g.p("func (m *%v) EXPECT() *expecter%v {", mockType, intf.Name)
 	g.in()
-	g.p("return &expecter%v{mock%v: m}", intf.Name, intf.Name)
+	g.p("return &expecter%v{mock: m}", intf.Name)
 	g.out()
 	g.p("}")
 	g.p("")
@@ -526,9 +527,6 @@ func (g *generator) GenerateMockInterface(intf *model.Interface, outputPackagePa
 	g.in()
 	g.p("if !reflect.DeepEqual(got, want) {")
 	g.in()
-	// g.p("// m.expecterQuerier.mockQuerier.g.Assert(got).Eql(want)")
-	// g.p("// m.expecterQuerier.mockQuerier.g.Failf(\"`want` does not match expectation:\\n      Want: %%#v\\n       Got: %%#v\", want, got)")
-	// g.p("// m.expecterQuerier.mockQuerier.t.Errorf(\"`want` does not match expectation:\\n      Want: %%#v\\n       Got: %%#v\", want, got)")
 	g.p("formattedWant, err1 := json.MarshalIndent(want, \"\", \"  \")")
 	g.p("formattedGot, err2 := json.MarshalIndent(got, \"\", \"  \")")
 	g.p("if err1 == nil && err2 == nil {")
@@ -543,6 +541,20 @@ func (g *generator) GenerateMockInterface(intf *model.Interface, outputPackagePa
 	g.p("m.printStack()")
 	g.out()
 	g.p("}")
+	g.out()
+	g.p("}")
+
+	g.p("func (m *%v) errorf(format string, args ...interface{}) {", mockType)
+	g.in()
+	g.p("m.t.Errorf(format, args...)")
+	g.p("m.printStack()")
+	g.out()
+	g.p("}")
+
+	g.p("func (m *%v) error(args ...interface{}) {", mockType)
+	g.in()
+	g.p("m.t.Error(args...)")
+	g.p("m.printStack()")
 	g.out()
 	g.p("}")
 
@@ -574,7 +586,7 @@ func (g *generator) GenerateMockInterface(intf *model.Interface, outputPackagePa
 	for _, m := range intf.Methods {
 		g.p("func (m *receiver%v) %v() *receiver%v%v {", intf.Name, m.Name, intf.Name, m.Name)
 		g.in()
-		g.p("return &receiver%v%v{receiver%v: m}", intf.Name, m.Name, intf.Name)
+		g.p("return &receiver%v%v{receiver: m}", intf.Name, m.Name)
 		g.out()
 		g.p("}")
 
@@ -585,7 +597,7 @@ func (g *generator) GenerateMockInterface(intf *model.Interface, outputPackagePa
 
 		g.p("func (m *receiver%v%v) AndReturn(%v) {", intf.Name, m.Name, strings.Join(rets, ", "))
 		g.in()
-		g.p("m.receiver%v.allower.mock%v.allow%v = allow%v%v{", intf.Name, intf.Name, m.Name, intf.Name, m.Name)
+		g.p("m.receiver.allower.mock.allow%v = allow%v%v{", m.Name, intf.Name, m.Name)
 		g.in()
 		for i, _ := range m.Out {
 			g.p("ret%v: ret%v,", i+1, i+1)
@@ -603,15 +615,15 @@ func (g *generator) GenerateMockInterface(intf *model.Interface, outputPackagePa
 	g.in()
 	g.p("if len(expectedFuncName) > 1 {")
 	g.in()
-	g.p("log.Fatalln(\"Use one function name only, not\", len(expectedFuncName))")
+	g.p("m.mock.error(\"Use one function name only, not\", len(expectedFuncName))")
 	g.out()
 	g.p("}")
 	g.p("if len(expectedFuncName) == 1 {")
 	g.in()
-	g.p("return &expecterHelper%v{expecter%v: m, expectedFuncName: expectedFuncName[0]}", intf.Name, intf.Name)
+	g.p("return &expecterHelper%v{expecter: m, expectedFuncName: expectedFuncName[0]}", intf.Name)
 	g.out()
 	g.p("}")
-	g.p("return &expecterHelper%v{expecter%v: m}", intf.Name, intf.Name)
+	g.p("return &expecterHelper%v{expecter: m}", intf.Name)
 	g.out()
 	g.p("}")
 
@@ -620,10 +632,10 @@ func (g *generator) GenerateMockInterface(intf *model.Interface, outputPackagePa
 	for _, m := range intf.Methods {
 		g.p("if m.expectedFuncName == \"%v\" {", m.Name)
 		g.in()
-		g.p("callCount := len(m.expecter%v.mock%v.calls%v)", intf.Name, intf.Name, m.Name)
+		g.p("callCount := len(m.expecter.mock.calls%v)", m.Name)
 		g.p("if callCount != n {")
 		g.in()
-		g.p("log.Fatalln(\"Expected %v to have been called\", n, \"times but it was called\", callCount, \"time(s)\")", m.Name)
+		g.p("m.expecter.mock.error(\"Expected %v to have been called\", n, \"times but it was called\", callCount, \"time(s)\")", m.Name)
 		g.out()
 		g.p("}")
 		g.p("return")
@@ -631,7 +643,7 @@ func (g *generator) GenerateMockInterface(intf *model.Interface, outputPackagePa
 		g.p("}")
 	}
 	// if expectedFuncName is not a valid method name then raise error
-	g.p("log.Fatalln(m.expectedFuncName, \"is not a method of %v\")", intf.Name)
+	g.p("m.expecter.mock.error(m.expectedFuncName, \"is not a method of %v\")", intf.Name)
 	g.out()
 	g.p("}")
 
@@ -642,25 +654,19 @@ func (g *generator) GenerateMockInterface(intf *model.Interface, outputPackagePa
 
 		g.p("func (m *expecterHelper%v) %v(%v) {", intf.Name, m.Name, argString)
 		g.in()
-		g.p("if len(m.expecter%v.mock%v.calls%v) == 0 {", intf.Name, intf.Name, m.Name)
+		g.p("if len(m.expecter.mock.calls%v) == 0 {", m.Name)
 		g.in()
-		g.p("log.Fatalln(\"%v has not been called!\")", m.Name)
+		g.p("m.expecter.mock.error(\"%v has not been called!\")", m.Name)
 		g.out()
 		g.p("}")
-		g.p("if len(m.expecter%v.mock%v.calls%v) > 1 {", intf.Name, intf.Name, m.Name)
+		g.p("if len(m.expecter.mock.calls%v) > 1 {", m.Name)
 		g.in()
-		g.p("log.Fatalln(\"%v has been called multiple times. Can only use matchers for one call!\")", m.Name)
+		g.p("m.expecter.mock.error(\"%v has been called multiple times. Can only use matchers for one call!\")", m.Name)
 		g.out()
 		g.p("}")
-		g.p("funcCall := m.expecter%v.mock%v.calls%v[0]", intf.Name, intf.Name, m.Name)
+		g.p("funcCall := m.expecter.mock.calls%v[0]", m.Name)
 		for _, in := range m.In {
-			g.p("m.expecter%v.mock%v.deepEqual(funcCall.%v, %v, \"%v\")", intf.Name, intf.Name, in.Name, in.Name, in.Name)
-
-			// g.p("if !reflect.DeepEqual(funcCall.%v, %v) {", in.Name, in.Name)
-			// g.in()
-			// g.p("log.Fatalln(\"Expected %v to eq\", %v, \"but it was\", funcCall.%v)", in.Name, in.Name, in.Name)
-			// g.out()
-			// g.p("}")
+			g.p("m.expecter.mock.deepEqual(funcCall.%v, %v, \"%v\")", in.Name, in.Name, in.Name)
 		}
 
 		g.out()
