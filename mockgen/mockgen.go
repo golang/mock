@@ -414,8 +414,8 @@ func (g *generator) GenerateMockInterface(intf *model.Interface, outputPackagePa
 	for _, m := range intf.Methods {
 		g.p("type call%v%v struct {", intf.Name, m.Name)
 		g.in()
-		for _, in := range m.In {
-			g.p("%v %v", in.Name, in.Type.String(g.packageMap, outputPackagePath))
+		for i, in := range m.In {
+			g.p("%v %v", inputArgName(in, i), in.Type.String(g.packageMap, outputPackagePath))
 		}
 		g.out()
 		g.p("}")
@@ -492,8 +492,8 @@ func (g *generator) GenerateMockInterface(intf *model.Interface, outputPackagePa
 
 		g.p("m.calls%v = append(m.calls%v, call%v%v{", m.Name, m.Name, intf.Name, m.Name)
 		g.in()
-		for _, in := range m.In {
-			g.p("%v: %v,", in.Name, in.Name)
+		for i, in := range m.In {
+			g.p("%v: %v,", inputArgName(in, i), inputArgName(in, i))
 		}
 		g.out()
 		g.p("})")
@@ -664,9 +664,11 @@ func (g *generator) GenerateMockInterface(intf *model.Interface, outputPackagePa
 		g.p("m.expecter.mock.error(\"%v has been called multiple times. Can only use matchers for one call!\")", m.Name)
 		g.out()
 		g.p("}")
-		g.p("funcCall := m.expecter.mock.calls%v[0]", m.Name)
-		for _, in := range m.In {
-			g.p("m.expecter.mock.deepEqual(funcCall.%v, %v, \"%v\")", in.Name, in.Name, in.Name)
+		if len(m.In) > 0 {
+			g.p("funcCall := m.expecter.mock.calls%v[0]", m.Name)
+			for i, in := range m.In {
+				g.p("m.expecter.mock.deepEqual(funcCall.%v, %v, \"%v\")", inputArgName(in, i), inputArgName(in, i), inputArgName(in, i))
+			}
 		}
 
 		g.out()
@@ -707,6 +709,13 @@ func (g *generator) GenerateMockInterface(intf *model.Interface, outputPackagePa
 	// g.GenerateMockMethods(mockType, intf, outputPackagePath)
 
 	return nil
+}
+
+func inputArgName(in *model.Parameter, index int) string {
+	if in.Name != "" {
+		return in.Name
+	}
+	return fmt.Sprintf("arg%v", index)
 }
 
 type byMethodName []*model.Method
