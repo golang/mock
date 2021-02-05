@@ -328,7 +328,7 @@ func (g *generator) Generate(pkg *model.Package, outputPkgName string, outputPac
 		}
 
 		// Avoid importing package if source pkg == output pkg
-		if pth == pkg.PkgPath && outputPackagePath == pkg.PkgPath{
+		if pth == pkg.PkgPath && outputPackagePath == pkg.PkgPath {
 			continue
 		}
 
