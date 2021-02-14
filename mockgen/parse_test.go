@@ -263,3 +263,27 @@ func TestParsePackageImport_FallbackMultiGoPath(t *testing.T) {
 		t.Errorf("expect %s, got %s", expected, pkgPath)
 	}
 }
+
+func TestParseArrayWithConstLength(t *testing.T) {
+	fs := token.NewFileSet()
+
+	file, err := parser.ParseFile(fs, "internal/tests/const_array_length/input.go", nil, 0)
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+
+	p := fileParser{
+		fileSet: fs,
+	}
+
+	pkg, err := p.parseFile("", file)
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+
+	expect := "[2]int"
+	got := pkg.Interfaces[0].Methods[0].Out[0].Type.String(nil, "")
+	if got != expect {
+		t.Fatalf("Expected return type %v but got %v", expect, got)
+	}
+}
