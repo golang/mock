@@ -242,7 +242,7 @@ If the received value is `3`, then it will be printed as `03`.
 [golang]:              http://golang.org/
 [golang-install]:      http://golang.org/doc/install.html#releases
 [gomock-reference]:    https://pkg.go.dev/github.com/golang/mock/gomock
-[ci-badge]:            https://github.com/golang/mock/actions/workflows/test.yml/badge.svg
+[ci-badge]:            https://github.com/golang/mock/actions/workflows/test.yaml/badge.svg
 [ci-runs]:             https://github.com/golang/mock/actions
 [reference-badge]:     https://pkg.go.dev/badge/github.com/golang/mock.svg
 [reference]:           https://pkg.go.dev/github.com/golang/mock
