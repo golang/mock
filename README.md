@@ -1,4 +1,6 @@
-# gomock ![Build Status][ci-badge] [![Go Reference][reference-badge]][reference]
+# gomock
+
+[![Build Status][ci-badge]][ci-runs] [![Go Reference][reference-badge]][reference]
 
 gomock is a mocking framework for the [Go programming language][golang]. It
 integrates well with Go's built-in `testing` package, but can be used in other
@@ -241,5 +243,6 @@ If the received value is `3`, then it will be printed as `03`.
 [golang-install]:      http://golang.org/doc/install.html#releases
 [gomock-reference]:    https://pkg.go.dev/github.com/golang/mock/gomock
 [ci-badge]:            https://github.com/golang/mock/actions/workflows/test.yml/badge.svg
+[ci-runs]:             https://github.com/golang/mock/actions
 [reference-badge]:     https://pkg.go.dev/badge/github.com/golang/mock.svg
 [reference]:           https://pkg.go.dev/github.com/golang/mock
