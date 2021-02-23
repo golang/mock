@@ -1,12 +1,12 @@
-gomock [![Build Status][travis-ci-badge]][travis-ci] [![GoDoc][godoc-badge]][godoc]
-======
+# gomock
 
-GoMock is a mocking framework for the [Go programming language][golang]. It
+[![Build Status][ci-badge]][ci-runs] [![Go Reference][reference-badge]][reference]
+
+gomock is a mocking framework for the [Go programming language][golang]. It
 integrates well with Go's built-in `testing` package, but can be used in other
 contexts too.
 
-Installation
-------------
+## Installation
 
 Once you have [installed Go][golang-install], install the `mockgen` tool.
 
@@ -19,9 +19,7 @@ GO111MODULE=on go get github.com/golang/mock/mockgen@v1.5.0
 If you use `mockgen` in your CI pipeline, it may be more appropriate to fixate
 on a specific mockgen version.
 
-
-Documentation
--------------
+## Documentation
 
 After installing, you can use `go doc` to get documentation:
 
@@ -30,14 +28,14 @@ go doc github.com/golang/mock/gomock
 ```
 
 Alternatively, there is an online reference for the package hosted on GoPkgDoc
-[here][gomock-ref].
+[here][gomock-reference].
 
-Running mockgen
----------------
+## Running mockgen
 
 `mockgen` has two modes of operation: source and reflect.
 
-#### Source mode
+### Source mode
+
 Source mode generates mock interfaces from a source file.
 It is enabled by using the -source flag. Other flags that
 may be useful in this mode are -imports and -aux_files.
@@ -48,7 +46,8 @@ Example:
 mockgen -source=foo.go [other options]
 ```
 
-#### Reflect mode
+### Reflect mode
+
 Reflect mode generates mock interfaces by building a program
 that uses reflection to understand interfaces. It is enabled
 by passing two non-flag arguments: an import path, and a
@@ -65,54 +64,55 @@ mockgen database/sql/driver Conn,Driver
 mockgen . Conn,Driver
 ```
 
-#### Flags
+### Flags
+
 The `mockgen` command is used to generate source code for a mock
 class given a Go source file containing interfaces to be mocked.
 It supports the following flags:
 
-* `-source`: A file containing interfaces to be mocked.
+- `-source`: A file containing interfaces to be mocked.
 
-* `-destination`: A file to which to write the resulting source code. If you
-    don't set this, the code is printed to standard output.
+- `-destination`: A file to which to write the resulting source code. If you
+  don't set this, the code is printed to standard output.
 
-* `-package`: The package to use for the resulting mock class
-    source code. If you don't set this, the package name is `mock_` concatenated
-    with the package of the input file.
+- `-package`: The package to use for the resulting mock class
+  source code. If you don't set this, the package name is `mock_` concatenated
+  with the package of the input file.
 
-* `-imports`: A list of explicit imports that should be used in the resulting
-    source code, specified as a comma-separated list of elements of the form
-    `foo=bar/baz`, where `bar/baz` is the package being imported and `foo` is
-    the identifier to use for the package in the generated source code.
+- `-imports`: A list of explicit imports that should be used in the resulting
+  source code, specified as a comma-separated list of elements of the form
+  `foo=bar/baz`, where `bar/baz` is the package being imported and `foo` is
+  the identifier to use for the package in the generated source code.
 
-* `-aux_files`: A list of additional files that should be consulted to
-    resolve e.g. embedded interfaces defined in a different file. This is
-    specified as a comma-separated list of elements of the form
-    `foo=bar/baz.go`, where `bar/baz.go` is the source file and `foo` is the
-    package name of that file used by the -source file.
+- `-aux_files`: A list of additional files that should be consulted to
+  resolve e.g. embedded interfaces defined in a different file. This is
+  specified as a comma-separated list of elements of the form
+  `foo=bar/baz.go`, where `bar/baz.go` is the source file and `foo` is the
+  package name of that file used by the -source file.
 
-* `-build_flags`: (reflect mode only) Flags passed verbatim to `go build`.
+- `-build_flags`: (reflect mode only) Flags passed verbatim to `go build`.
 
-* `-mock_names`: A list of custom names for generated mocks. This is specified
-    as a comma-separated list of elements of the form
-    `Repository=MockSensorRepository,Endpoint=MockSensorEndpoint`, where
-    `Repository` is the interface name and `MockSensorRepository` is the desired
-    mock name (mock factory method and mock recorder will be named after the mock).
-    If one of the interfaces has no custom name specified, then default naming
-    convention will be used.
-    
-* `-self_package`: The full package import path for the generated code. The purpose 
-    of this flag is to prevent import cycles in the generated code by trying to include 
-    its own package. This can happen if the mock's package is set to one of its 
-    inputs (usually the main one) and the output is stdio so mockgen cannot detect the 
-    final output package. Setting this flag will then tell mockgen which import to exclude.
+- `-mock_names`: A list of custom names for generated mocks. This is specified
+  as a comma-separated list of elements of the form
+  `Repository=MockSensorRepository,Endpoint=MockSensorEndpoint`, where
+  `Repository` is the interface name and `MockSensorRepository` is the desired
+  mock name (mock factory method and mock recorder will be named after the mock).
+  If one of the interfaces has no custom name specified, then default naming
+  convention will be used.
 
-* `-copyright_file`: Copyright file used to add copyright header to the resulting source code.
+- `-self_package`: The full package import path for the generated code. The
+  purpose of this flag is to prevent import cycles in the generated code by
+  trying to include its own package. This can happen if the mock's package is
+  set to one of its inputs (usually the main one) and the output is stdio so
+  mockgen cannot detect the final output package. Setting this flag will then
+  tell mockgen which import to exclude.
+
+- `-copyright_file`: Copyright file used to add copyright header to the resulting source code.
 
 For an example of the use of `mockgen`, see the `sample/` directory. In simple
 cases, you will need only the `-source` flag.
 
-Building Mocks
---------------
+## Building Mocks
 
 ```go
 type Foo interface {
@@ -150,8 +150,7 @@ passing a *testing.T into `gomock.NewController(t)` you no longer need to call
 `ctrl.Finish()` explicitly. It will be called for you automatically from a self
 registered [Cleanup](https://pkg.go.dev/testing?tab=doc#T.Cleanup) function.
 
-Building Stubs
---------------
+## Building Stubs
 
 ```go
 type Foo interface {
@@ -193,12 +192,12 @@ func TestFoo(t *testing.T) {
 }
 ```
 
-### Modifying Failure Messages
+## Modifying Failure Messages
 
 When a matcher reports a failure, it prints the received (`Got`) vs the
 expected (`Want`) value.
 
-```
+```shell
 Got: [3]
 Want: is equal to 2
 Expected call at user_test.go:33 doesn't match the argument at index 1.
@@ -206,7 +205,7 @@ Got: [0 1 1 2 3]
 Want: is equal to 1
 ```
 
-##### Modifying `Want`
+### Modifying `Want`
 
 The `Want` value comes from the matcher's `String()` method. If the matcher's
 default output doesn't meet your needs, then it can be modified as follows:
@@ -221,7 +220,7 @@ gomock.WantFormatter(
 This modifies the `gomock.Eq(15)` matcher's output for `Want:` from `is equal
 to 15` to `is equal to fifteen`.
 
-##### Modifying `Got`
+### Modifying `Got`
 
 The `Got` value comes from the object's `String()` method if it is available.
 In some cases the output of an object is difficult to read (e.g., `[]byte`) and
@@ -240,10 +239,10 @@ gomock.GotFormatterAdapter(
 
 If the received value is `3`, then it will be printed as `03`.
 
-[golang]:          http://golang.org/
-[golang-install]:  http://golang.org/doc/install.html#releases
-[gomock-ref]:      http://godoc.org/github.com/golang/mock/gomock
-[travis-ci-badge]: https://travis-ci.org/golang/mock.svg?branch=master
-[travis-ci]:       https://travis-ci.org/golang/mock
-[godoc-badge]:     https://godoc.org/github.com/golang/mock/gomock?status.svg
-[godoc]:           https://godoc.org/github.com/golang/mock/gomock
+[golang]:              http://golang.org/
+[golang-install]:      http://golang.org/doc/install.html#releases
+[gomock-reference]:    https://pkg.go.dev/github.com/golang/mock/gomock
+[ci-badge]:            https://github.com/golang/mock/actions/workflows/test.yaml/badge.svg
+[ci-runs]:             https://github.com/golang/mock/actions
+[reference-badge]:     https://pkg.go.dev/badge/github.com/golang/mock.svg
+[reference]:           https://pkg.go.dev/github.com/golang/mock

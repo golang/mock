@@ -7,14 +7,12 @@
 # Any file prefixed by an underscore.
 */_*
 
-# Vim temporary files.
+# System
 .*.swp
+.DS_Store
 
 # The mockgen binary.
 mockgen/mockgen
-
-# A binary produced by gotest.
-#gomock/[568]\.out
 
 # Editors
 .vscode
