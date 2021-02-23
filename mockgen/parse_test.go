@@ -284,6 +284,6 @@ func TestParseArrayWithConstLength(t *testing.T) {
 	expect := "[2]int"
 	got := pkg.Interfaces[0].Methods[0].Out[0].Type.String(nil, "")
 	if got != expect {
-		t.Fatalf("Expected return type %v but got %v", expect, got)
+		t.Fatalf("got %v; expected %v", got, expect)
 	}
 }
