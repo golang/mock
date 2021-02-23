@@ -1,7 +1,7 @@
-//go:generate mockgen -destination mock_user/mock_user.go github.com/golang/mock/sample Index,Embed,Embedded
-
-// An example package with an interface.
+// Package user is an example package with an interface.
 package user
+
+//go:generate mockgen -destination mock_user/mock_user.go github.com/golang/mock/sample Index,Embed,Embedded
 
 // Random bunch of imports to test mockgen.
 import "io"
