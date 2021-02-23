@@ -33,16 +33,30 @@ func (m *MockI) EXPECT() *MockIMockRecorder {
 	return m.recorder
 }
 
-// F mocks base method.
-func (m *MockI) F() [2]int {
+// Bar mocks base method.
+func (m *MockI) Bar() [2]int {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "F")
+	ret := m.ctrl.Call(m, "Bar")
 	ret0, _ := ret[0].([2]int)
 	return ret0
 }
 
-// F indicates an expected call of F.
-func (mr *MockIMockRecorder) F() *gomock.Call {
+// Bar indicates an expected call of Bar.
+func (mr *MockIMockRecorder) Bar() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "F", reflect.TypeOf((*MockI)(nil).F))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Bar", reflect.TypeOf((*MockI)(nil).Bar))
+}
+
+// Foo mocks base method.
+func (m *MockI) Foo() [2]int {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Foo")
+	ret0, _ := ret[0].([2]int)
+	return ret0
+}
+
+// Foo indicates an expected call of Foo.
+func (mr *MockIMockRecorder) Foo() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Foo", reflect.TypeOf((*MockI)(nil).Foo))
 }
