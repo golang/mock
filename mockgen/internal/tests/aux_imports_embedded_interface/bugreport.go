@@ -1,6 +1,6 @@
-//go:generate mockgen -aux_files faux=faux/faux.go -destination bugreport_mock.go -package bugreport -source=bugreport.go Example
-
 package bugreport
+
+//go:generate mockgen -aux_files faux=faux/faux.go -destination bugreport_mock.go -package bugreport -source=bugreport.go Example
 
 import (
 	"log"
