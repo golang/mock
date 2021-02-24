@@ -410,7 +410,16 @@ func (p *fileParser) parseType(pkg string, typ ast.Expr) (model.Type, error) {
 	case *ast.ArrayType:
 		ln := -1
 		if v.Len != nil {
-			x, err := strconv.Atoi(v.Len.(*ast.BasicLit).Value)
+			var value string
+			switch val := v.Len.(type) {
+			case (*ast.BasicLit):
+				value = val.Value
+			case (*ast.Ident):
+				// when the length is a const
+				value = val.Obj.Decl.(*ast.ValueSpec).Values[0].(*ast.BasicLit).Value
+			}
+
+			x, err := strconv.Atoi(value)
 			if err != nil {
 				return nil, p.errorf(v.Len.Pos(), "bad array size: %v", err)
 			}
