@@ -38,7 +38,7 @@ Alternatively, there is an online reference for the package hosted on GoPkgDoc
 
 Source mode generates mock interfaces from a source file.
 It is enabled by using the -source flag. Other flags that
-may be useful in this mode are -imports and -aux_files.
+may be useful in this mode are -imports, -aux_files and -source_package.
 
 Example:
 
@@ -89,6 +89,10 @@ It supports the following flags:
   specified as a comma-separated list of elements of the form
   `foo=bar/baz.go`, where `bar/baz.go` is the source file and `foo` is the
   package name of that file used by the -source file.
+
+- `-source_package`: The full package import path for the source code.
+  This is used if the generated code must import from the source code.
+  If omitted, it will be inferred from Go modules and GOPATH.
 
 - `-build_flags`: (reflect mode only) Flags passed verbatim to `go build`.
 
