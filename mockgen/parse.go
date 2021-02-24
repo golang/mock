@@ -37,8 +37,9 @@ import (
 )
 
 var (
-	imports  = flag.String("imports", "", "(source mode) Comma-separated name=path pairs of explicit imports to use.")
-	auxFiles = flag.String("aux_files", "", "(source mode) Comma-separated pkg=path pairs of auxiliary Go source files.")
+	imports       = flag.String("imports", "", "(source mode) Comma-separated name=path pairs of explicit imports to use.")
+	auxFiles      = flag.String("aux_files", "", "(source mode) Comma-separated pkg=path pairs of auxiliary Go source files.")
+	sourcePackage = flag.String("source_package", "", "The full package import path for the source code. This is used if the generated code must import from the source code. If omitted, it will be inferred from Go modules and GOPATH.")
 )
 
 // TODO: simplify error reporting
@@ -50,9 +51,12 @@ func sourceMode(source string) (*model.Package, error) {
 		return nil, fmt.Errorf("failed getting source directory: %v", err)
 	}
 
-	packageImport, err := parsePackageImport(srcDir)
-	if err != nil {
-		return nil, err
+	packageImport := *sourcePackage
+	if packageImport == "" {
+		packageImport, err = parsePackageImport(srcDir)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	fs := token.NewFileSet()
