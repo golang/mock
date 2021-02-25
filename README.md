@@ -10,10 +10,21 @@ contexts too.
 
 Once you have [installed Go][golang-install], install the `mockgen` tool.
 
+**Note**: If you have not done so already be sure to add `$GOPATH/bin` to your
+`PATH`.
+
 To get the latest released version use:
+
+### Go version < 1.16
 
 ```bash
 GO111MODULE=on go get github.com/golang/mock/mockgen@v1.5.0
+```
+
+### Go 1.16+
+
+```bash
+go install github.com/golang/mock/mockgen@v1.5.0
 ```
 
 If you use `mockgen` in your CI pipeline, it may be more appropriate to fixate
