@@ -39,6 +39,43 @@ var (
 	buildFlags = flag.String("build_flags", "", "(reflect mode) Additional flags for go build.")
 )
 
+// reflectMode generates mocks via reflection on an interface.
+func reflectMode(importPath string, symbols []string) (*model.Package, error) {
+	if *execOnly != "" {
+		return run(*execOnly)
+	}
+
+	program, err := writeProgram(importPath, symbols)
+	if err != nil {
+		return nil, err
+	}
+
+	if *progOnly {
+		if _, err := os.Stdout.Write(program); err != nil {
+			return nil, err
+		}
+		os.Exit(0)
+	}
+
+	wd, _ := os.Getwd()
+
+	// Try to run the reflection program  in the current working directory.
+	if p, err := runInDir(program, wd); err == nil {
+		return p, nil
+	}
+
+	// Try to run the program in the same directory as the input package.
+	if p, err := build.Import(importPath, wd, build.FindOnly); err == nil {
+		dir := p.Dir
+		if p, err := runInDir(program, dir); err == nil {
+			return p, nil
+		}
+	}
+
+	// Try to run it in a standard temp directory.
+	return runInDir(program, "")
+}
+
 func writeProgram(importPath string, symbols []string) ([]byte, error) {
 	var program bytes.Buffer
 	data := reflectData{
@@ -131,45 +168,6 @@ func runInDir(program []byte, dir string) (*model.Package, error) {
 	}
 
 	return run(filepath.Join(tmpDir, progBinary))
-}
-
-// reflectMode generates mocks via reflection on an interface.
-func reflectMode(importPath string, symbols []string) (*model.Package, error) {
-	// TODO: sanity check arguments
-
-	if *execOnly != "" {
-		return run(*execOnly)
-	}
-
-	program, err := writeProgram(importPath, symbols)
-	if err != nil {
-		return nil, err
-	}
-
-	if *progOnly {
-		if _, err := os.Stdout.Write(program); err != nil {
-			return nil, err
-		}
-		os.Exit(0)
-	}
-
-	wd, _ := os.Getwd()
-
-	// Try to run the reflection program  in the current working directory.
-	if p, err := runInDir(program, wd); err == nil {
-		return p, nil
-	}
-
-	// Try to run the program in the same directory as the input package.
-	if p, err := build.Import(importPath, wd, build.FindOnly); err == nil {
-		dir := p.Dir
-		if p, err := runInDir(program, dir); err == nil {
-			return p, nil
-		}
-	}
-
-	// Try to run it in a standard temp directory.
-	return runInDir(program, "")
 }
 
 type reflectData struct {
