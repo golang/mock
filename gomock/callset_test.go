@@ -84,7 +84,7 @@ func TestCallSetFindMatch(t *testing.T) {
 
 		c1 := newCall(t, receiver, method, reflect.TypeOf(receiverType{}.Func))
 		cs.exhausted = map[callSetKey][]*Call{
-			callSetKey{receiver: receiver, fname: method}: []*Call{c1},
+			{receiver: receiver, fname: method}: {c1},
 		}
 
 		_, err := cs.FindMatch(receiver, method, args)

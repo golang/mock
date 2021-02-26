@@ -50,16 +50,16 @@ func newCall(t TestHelper, receiver interface{}, method string, methodType refle
 	t.Helper()
 
 	// TODO: check arity, types.
-	margs := make([]Matcher, len(args))
+	mArgs := make([]Matcher, len(args))
 	for i, arg := range args {
 		if m, ok := arg.(Matcher); ok {
-			margs[i] = m
+			mArgs[i] = m
 		} else if arg == nil {
 			// Handle nil specially so that passing a nil interface value
 			// will match the typed nils of concrete args.
-			margs[i] = Nil()
+			mArgs[i] = Nil()
 		} else {
-			margs[i] = Eq(arg)
+			mArgs[i] = Eq(arg)
 		}
 	}
 
@@ -76,7 +76,7 @@ func newCall(t TestHelper, receiver interface{}, method string, methodType refle
 		return rets
 	}}
 	return &Call{t: t, receiver: receiver, method: method, methodType: methodType,
-		args: margs, origin: origin, minCalls: 1, maxCalls: 1, actions: actions}
+		args: mArgs, origin: origin, minCalls: 1, maxCalls: 1, actions: actions}
 }
 
 // AnyTimes allows the expectation to be called 0 or more times
@@ -113,19 +113,19 @@ func (c *Call) DoAndReturn(f interface{}) *Call {
 	v := reflect.ValueOf(f)
 
 	c.addAction(func(args []interface{}) []interface{} {
-		vargs := make([]reflect.Value, len(args))
+		vArgs := make([]reflect.Value, len(args))
 		ft := v.Type()
 		for i := 0; i < len(args); i++ {
 			if args[i] != nil {
-				vargs[i] = reflect.ValueOf(args[i])
+				vArgs[i] = reflect.ValueOf(args[i])
 			} else {
 				// Use the zero value for the arg.
-				vargs[i] = reflect.Zero(ft.In(i))
+				vArgs[i] = reflect.Zero(ft.In(i))
 			}
 		}
-		vrets := v.Call(vargs)
-		rets := make([]interface{}, len(vrets))
-		for i, ret := range vrets {
+		vRets := v.Call(vArgs)
+		rets := make([]interface{}, len(vRets))
+		for i, ret := range vRets {
 			rets[i] = ret.Interface()
 		}
 		return rets
@@ -142,17 +142,17 @@ func (c *Call) Do(f interface{}) *Call {
 	v := reflect.ValueOf(f)
 
 	c.addAction(func(args []interface{}) []interface{} {
-		vargs := make([]reflect.Value, len(args))
+		vArgs := make([]reflect.Value, len(args))
 		ft := v.Type()
 		for i := 0; i < len(args); i++ {
 			if args[i] != nil {
-				vargs[i] = reflect.ValueOf(args[i])
+				vArgs[i] = reflect.ValueOf(args[i])
 			} else {
 				// Use the zero value for the arg.
-				vargs[i] = reflect.Zero(ft.In(i))
+				vArgs[i] = reflect.Zero(ft.In(i))
 			}
 		}
-		v.Call(vargs)
+		v.Call(vArgs)
 		return nil
 	})
 	return c
@@ -353,12 +353,12 @@ func (c *Call) matches(args []interface{}) error {
 			// matches all the remaining arguments or the lack of any.
 			// Convert the remaining arguments, if any, into a slice of the
 			// expected type.
-			vargsType := c.methodType.In(c.methodType.NumIn() - 1)
-			vargs := reflect.MakeSlice(vargsType, 0, len(args)-i)
+			vArgsType := c.methodType.In(c.methodType.NumIn() - 1)
+			vArgs := reflect.MakeSlice(vArgsType, 0, len(args)-i)
 			for _, arg := range args[i:] {
-				vargs = reflect.Append(vargs, reflect.ValueOf(arg))
+				vArgs = reflect.Append(vArgs, reflect.ValueOf(arg))
 			}
-			if m.Matches(vargs.Interface()) {
+			if m.Matches(vArgs.Interface()) {
 				// Got Foo(a, b, c, d, e) want Foo(matcherA, matcherB, gomock.Any())
 				// Got Foo(a, b, c, d, e) want Foo(matcherA, matcherB, someSliceMatcher)
 				// Got Foo(a, b) want Foo(matcherA, matcherB, gomock.Any())

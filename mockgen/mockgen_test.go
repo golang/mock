@@ -2,6 +2,9 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
 	"reflect"
 	"regexp"
 	"strings"
@@ -362,5 +365,87 @@ func Test_createPackageMap(t *testing.T) {
 				t.Errorf("createPackageMap() gotOk = %v, wantOK = %v", gotOk, tt.wantOK)
 			}
 		})
+	}
+}
+
+func TestParsePackageImport_FallbackGoPath(t *testing.T) {
+	goPath, err := ioutil.TempDir("", "gopath")
+	if err != nil {
+		t.Error(err)
+	}
+	defer func() {
+		if err = os.RemoveAll(goPath); err != nil {
+			t.Error(err)
+		}
+	}()
+	srcDir := filepath.Join(goPath, "src/example.com/foo")
+	err = os.MkdirAll(srcDir, 0755)
+	if err != nil {
+		t.Error(err)
+	}
+	key := "GOPATH"
+	value := goPath
+	if err := os.Setenv(key, value); err != nil {
+		t.Fatalf("unable to set environment variable %q to %q: %v", key, value, err)
+	}
+	key = "GO111MODULE"
+	value = "on"
+	if err := os.Setenv(key, value); err != nil {
+		t.Fatalf("unable to set environment variable %q to %q: %v", key, value, err)
+	}
+	pkgPath, err := parsePackageImport(srcDir)
+	expected := "example.com/foo"
+	if pkgPath != expected {
+		t.Errorf("expect %s, got %s", expected, pkgPath)
+	}
+}
+
+func TestParsePackageImport_FallbackMultiGoPath(t *testing.T) {
+	var goPathList []string
+
+	// first gopath
+	goPath, err := ioutil.TempDir("", "gopath1")
+	if err != nil {
+		t.Error(err)
+	}
+	goPathList = append(goPathList, goPath)
+	defer func() {
+		if err = os.RemoveAll(goPath); err != nil {
+			t.Error(err)
+		}
+	}()
+	srcDir := filepath.Join(goPath, "src/example.com/foo")
+	err = os.MkdirAll(srcDir, 0755)
+	if err != nil {
+		t.Error(err)
+	}
+
+	// second gopath
+	goPath, err = ioutil.TempDir("", "gopath2")
+	if err != nil {
+		t.Error(err)
+	}
+	goPathList = append(goPathList, goPath)
+	defer func() {
+		if err = os.RemoveAll(goPath); err != nil {
+			t.Error(err)
+		}
+	}()
+
+	goPaths := strings.Join(goPathList, string(os.PathListSeparator))
+	key := "GOPATH"
+	value := goPaths
+	if err := os.Setenv(key, value); err != nil {
+		t.Fatalf("unable to set environment variable %q to %q: %v", key, value, err)
+	}
+	key = "GO111MODULE"
+	value = "on"
+	if err := os.Setenv(key, value); err != nil {
+		t.Fatalf("unable to set environment variable %q to %q: %v", key, value, err)
+	}
+	pkgPath, err := parsePackageImport(srcDir)
+	expected := "example.com/foo"
+	if pkgPath != expected {
+		t.Errorf("expect %s, got %s", expected, pkgPath)
 	}
 }

@@ -153,7 +153,6 @@ func (n notMatcher) Matches(x interface{}) bool {
 }
 
 func (n notMatcher) String() string {
-	// TODO: Improve this if we add a NotString method to the Matcher interface.
 	return "not(" + n.m.String() + ")"
 }
 
