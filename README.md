@@ -120,6 +120,14 @@ It supports the following flags:
 
 - `-copyright_file`: Copyright file used to add copyright header to the resulting source code.
 
+- `-debug_parser`: Print out parser results only.
+
+- `-exec_only`: (reflect mode) If set, execute this reflection program.
+
+- `-prog_only`: (reflect mode) Only generate the reflection program; write it to stdout and exit.
+
+- `-write_package_comment`: Writes package documentation comment (godoc) if true. (default true)
+
 For an example of the use of `mockgen`, see the `sample/` directory. In simple
 cases, you will need only the `-source` flag.
 
