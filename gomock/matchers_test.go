@@ -12,43 +12,58 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate mockgen -destination internal/mock_matcher/mock_matcher.go github.com/golang/mock/gomock Matcher
-
 package gomock_test
 
+//go:generate mockgen -destination internal/mock_gomock/mock_matcher.go github.com/golang/mock/gomock Matcher
+
 import (
+	"context"
 	"errors"
+	"reflect"
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	mock_matcher "github.com/golang/mock/gomock/internal/mock_matcher"
+	"github.com/golang/mock/gomock/internal/mock_gomock"
 )
+
+type A []string
 
 func TestMatchers(t *testing.T) {
 	type e interface{}
-	type testCase struct {
+	tests := []struct {
+		name    string
 		matcher gomock.Matcher
 		yes, no []e
-	}
-	tests := []testCase{
-		{gomock.Any(), []e{3, nil, "foo"}, nil},
-		{gomock.Eq(4), []e{4}, []e{3, "blah", nil, int64(4)}},
-		{gomock.Nil(),
+	}{
+		{"test Any", gomock.Any(), []e{3, nil, "foo"}, nil},
+		{"test All", gomock.Eq(4), []e{4}, []e{3, "blah", nil, int64(4)}},
+		{"test Nil", gomock.Nil(),
 			[]e{nil, (error)(nil), (chan bool)(nil), (*int)(nil)},
 			[]e{"", 0, make(chan bool), errors.New("err"), new(int)}},
-		{gomock.Not(gomock.Eq(4)), []e{3, "blah", nil, int64(4)}, []e{4}},
+		{"test Not", gomock.Not(gomock.Eq(4)), []e{3, "blah", nil, int64(4)}, []e{4}},
+		{"test All", gomock.All(gomock.Any(), gomock.Eq(4)), []e{4}, []e{3, "blah", nil, int64(4)}},
+		{"test Len", gomock.Len(2),
+			[]e{[]int{1, 2}, "ab", map[string]int{"a": 0, "b": 1}, [2]string{"a", "b"}},
+			[]e{[]int{1}, "a", 42, 42.0, false, [1]string{"a"}},
+		},
+		{"test assignable types", gomock.Eq(A{"a", "b"}),
+			[]e{[]string{"a", "b"}, A{"a", "b"}},
+			[]e{[]string{"a"}, A{"b"}},
+		},
 	}
-	for i, test := range tests {
-		for _, x := range test.yes {
-			if !test.matcher.Matches(x) {
-				t.Errorf(`test %d: "%v %s" should be true.`, i, x, test.matcher)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			for _, x := range tt.yes {
+				if !tt.matcher.Matches(x) {
+					t.Errorf(`"%v %s": got false, want true.`, x, tt.matcher)
+				}
 			}
-		}
-		for _, x := range test.no {
-			if test.matcher.Matches(x) {
-				t.Errorf(`test %d: "%v %s" should be false.`, i, x, test.matcher)
+			for _, x := range tt.no {
+				if tt.matcher.Matches(x) {
+					t.Errorf(`"%v %s": got true, want false.`, x, tt.matcher)
+				}
 			}
-		}
+		})
 	}
 }
 
@@ -57,7 +72,7 @@ func TestNotMatcher(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockMatcher := mock_matcher.NewMockMatcher(ctrl)
+	mockMatcher := mock_gomock.NewMockMatcher(ctrl)
 	notMatcher := gomock.Not(mockMatcher)
 
 	mockMatcher.EXPECT().Matches(4).Return(true)
@@ -115,5 +130,15 @@ func TestAssignableToTypeOfMatcher(t *testing.T) {
 	}
 	if match := gomock.AssignableToTypeOf(&Dog{}).Matches(&Dog{Breed: "pug", Name: "Fido"}); !match {
 		t.Errorf(`AssignableToTypeOf(&Dog{}) should match &Dog{Breed: "pug", Name: "Fido"}`)
+	}
+
+	ctxInterface := reflect.TypeOf((*context.Context)(nil)).Elem()
+	if match := gomock.AssignableToTypeOf(ctxInterface).Matches(context.Background()); !match {
+		t.Errorf(`AssignableToTypeOf(context.Context) should not match context.Background()`)
+	}
+
+	ctxWithValue := context.WithValue(context.Background(), "key", "val")
+	if match := gomock.AssignableToTypeOf(ctxInterface).Matches(ctxWithValue); !match {
+		t.Errorf(`AssignableToTypeOf(context.Context) should not match ctxWithValue`)
 	}
 }

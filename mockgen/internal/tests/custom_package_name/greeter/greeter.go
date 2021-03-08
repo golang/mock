@@ -1,6 +1,6 @@
-//go:generate mockgen -source greeter.go -destination greeter_mock_test.go -package greeter
-
 package greeter
+
+//go:generate mockgen -source greeter.go -destination greeter_mock_test.go -package greeter
 
 import (
 	// stdlib import

@@ -20,15 +20,15 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"flag"
 	"fmt"
-	"go/build"
-	"go/format"
 	"go/token"
 	"io"
 	"io/ioutil"
 	"log"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"sort"
@@ -37,10 +37,19 @@ import (
 	"unicode"
 
 	"github.com/golang/mock/mockgen/model"
+
+	"golang.org/x/mod/modfile"
+	toolsimports "golang.org/x/tools/imports"
 )
 
 const (
 	gomockImportPath = "github.com/golang/mock/gomock"
+)
+
+var (
+	version = ""
+	commit  = "none"
+	date    = "unknown"
 )
 
 var (
@@ -53,22 +62,41 @@ var (
 	copyrightFile   = flag.String("copyright_file", "", "Copyright file used to add copyright header")
 
 	debugParser = flag.Bool("debug_parser", false, "Print out parser results only.")
+	showVersion = flag.Bool("version", false, "Print version.")
 )
 
 func main() {
 	flag.Usage = usage
 	flag.Parse()
 
+	if *showVersion {
+		printVersion()
+		return
+	}
+
 	var pkg *model.Package
 	var err error
+	var packageName string
 	if *source != "" {
-		pkg, err = parseFile(*source)
+		pkg, err = sourceMode(*source)
 	} else {
 		if flag.NArg() != 2 {
 			usage()
 			log.Fatal("Expected exactly two arguments")
 		}
-		pkg, err = reflect(flag.Arg(0), strings.Split(flag.Arg(1), ","))
+		packageName = flag.Arg(0)
+		interfaces := strings.Split(flag.Arg(1), ",")
+		if packageName == "." {
+			dir, err := os.Getwd()
+			if err != nil {
+				log.Fatalf("Get current directory failed: %v", err)
+			}
+			packageName, err = packageNameOfDir(dir)
+			if err != nil {
+				log.Fatalf("Parse package name failed: %v", err)
+			}
+		}
+		pkg, err = reflectMode(packageName, interfaces)
 	}
 	if err != nil {
 		log.Fatalf("Loading input failed: %v", err)
@@ -92,11 +120,11 @@ func main() {
 		dst = f
 	}
 
-	packageName := *packageOut
-	if packageName == "" {
+	outputPackageName := *packageOut
+	if outputPackageName == "" {
 		// pkg.Name in reflect mode is the base name of the import path,
 		// which might have characters that are illegal to have in package names.
-		packageName = "mock_" + sanitize(pkg.Name)
+		outputPackageName = "mock_" + sanitize(pkg.Name)
 	}
 
 	// outputPackagePath represents the fully qualified name of the package of
@@ -106,15 +134,14 @@ func main() {
 	// "package.X" since "package" is this package). This can happen if the mock
 	// is output into an already existing package.
 	outputPackagePath := *selfPackage
-	if len(outputPackagePath) == 0 && len(*destination) > 0 {
-		dst, _ := filepath.Abs(filepath.Dir(*destination))
-		for _, prefix := range build.Default.SrcDirs() {
-			if strings.HasPrefix(dst, prefix) {
-				if rel, err := filepath.Rel(prefix, dst); err == nil {
-					outputPackagePath = rel
-					break
-				}
-			}
+	if outputPackagePath == "" && *destination != "" {
+		dstPath, err := filepath.Abs(filepath.Dir(*destination))
+		if err != nil {
+			log.Fatalf("Unable to determine destination file path: %v", err)
+		}
+		outputPackagePath, err = parsePackageImport(dstPath)
+		if err != nil {
+			log.Fatalf("Unable to determine destination file path: %v", err)
 		}
 	}
 
@@ -122,9 +149,10 @@ func main() {
 	if *source != "" {
 		g.filename = *source
 	} else {
-		g.srcPackage = flag.Arg(0)
+		g.srcPackage = packageName
 		g.srcInterfaces = flag.Arg(1)
 	}
+	g.destination = *destination
 
 	if *mockNames != "" {
 		g.mockNames = parseMockNames(*mockNames)
@@ -137,7 +165,7 @@ func main() {
 
 		g.copyrightHeader = string(header)
 	}
-	if err := g.Generate(pkg, packageName, outputPackagePath); err != nil {
+	if err := g.Generate(pkg, outputPackageName, outputPackagePath); err != nil {
 		log.Fatalf("Failed generating mock: %v", err)
 	}
 	if _, err := dst.Write(g.Output()); err != nil {
@@ -158,7 +186,7 @@ func parseMockNames(names string) map[string]string {
 }
 
 func usage() {
-	io.WriteString(os.Stderr, usageText)
+	_, _ = io.WriteString(os.Stderr, usageText)
 	flag.PrintDefaults()
 }
 
@@ -184,6 +212,7 @@ type generator struct {
 	indent                    string
 	mockNames                 map[string]string // may be empty
 	filename                  string            // may be empty
+	destination               string            // may be empty
 	srcPackage, srcInterfaces string            // may be empty
 	copyrightHeader           string
 
@@ -234,8 +263,9 @@ func sanitize(s string) string {
 	return t
 }
 
-func (g *generator) Generate(pkg *model.Package, pkgName string, outputPackagePath string) error {
-	if pkgName != pkg.Name {
+func (g *generator) Generate(pkg *model.Package, outputPkgName string, outputPackagePath string) error {
+	if outputPkgName != pkg.Name && *selfPackage == "" {
+		// reset outputPackagePath if it's not passed in through -self_package
 		outputPackagePath = ""
 	}
 
@@ -269,7 +299,7 @@ func (g *generator) Generate(pkg *model.Package, pkgName string, outputPackagePa
 	}
 
 	// Sort keys to make import alias generation predictable
-	sortedPaths := make([]string, len(im), len(im))
+	sortedPaths := make([]string, len(im))
 	x := 0
 	for pth := range im {
 		sortedPaths[x] = pth
@@ -277,10 +307,15 @@ func (g *generator) Generate(pkg *model.Package, pkgName string, outputPackagePa
 	}
 	sort.Strings(sortedPaths)
 
+	packagesName := createPackageMap(sortedPaths)
+
 	g.packageMap = make(map[string]string, len(im))
 	localNames := make(map[string]bool, len(im))
 	for _, pth := range sortedPaths {
-		base := sanitize(path.Base(pth))
+		base, ok := packagesName[pth]
+		if !ok {
+			base = sanitize(path.Base(pth))
+		}
 
 		// Local names for an imported package can usually be the basename of the import path.
 		// A couple of situations don't permit that, such as duplicate local names
@@ -294,25 +329,30 @@ func (g *generator) Generate(pkg *model.Package, pkgName string, outputPackagePa
 			i++
 		}
 
+		// Avoid importing package if source pkg == output pkg
+		if pth == pkg.PkgPath && outputPackagePath == pkg.PkgPath {
+			continue
+		}
+
 		g.packageMap[pth] = pkgName
 		localNames[pkgName] = true
 	}
 
 	if *writePkgComment {
-		g.p("// Package %v is a generated GoMock package.", pkgName)
+		g.p("// Package %v is a generated GoMock package.", outputPkgName)
 	}
-	g.p("package %v", pkgName)
+	g.p("package %v", outputPkgName)
 	g.p("")
 	g.p("import (")
 	g.in()
-	for path, pkg := range g.packageMap {
-		if path == outputPackagePath {
+	for pkgPath, pkgName := range g.packageMap {
+		if pkgPath == outputPackagePath {
 			continue
 		}
-		g.p("%v %q", pkg, path)
+		g.p("%v %q", pkgName, pkgPath)
 	}
-	for _, path := range pkg.DotImports {
-		g.p(". %q", path)
+	for _, pkgPath := range pkg.DotImports {
+		g.p(". %q", pkgPath)
 	}
 	g.out()
 	g.p(")")
@@ -339,7 +379,7 @@ func (g *generator) GenerateMockInterface(intf *model.Interface, outputPackagePa
 	mockType := g.mockName(intf.Name)
 
 	g.p("")
-	g.p("// %v is a mock of %v interface", mockType, intf.Name)
+	g.p("// %v is a mock of %v interface.", mockType, intf.Name)
 	g.p("type %v struct {", mockType)
 	g.in()
 	g.p("ctrl     *gomock.Controller")
@@ -348,7 +388,7 @@ func (g *generator) GenerateMockInterface(intf *model.Interface, outputPackagePa
 	g.p("}")
 	g.p("")
 
-	g.p("// %vMockRecorder is the mock recorder for %v", mockType, mockType)
+	g.p("// %vMockRecorder is the mock recorder for %v.", mockType, mockType)
 	g.p("type %vMockRecorder struct {", mockType)
 	g.in()
 	g.p("mock *%v", mockType)
@@ -356,12 +396,7 @@ func (g *generator) GenerateMockInterface(intf *model.Interface, outputPackagePa
 	g.p("}")
 	g.p("")
 
-	// TODO: Re-enable this if we can import the interface reliably.
-	//g.p("// Verify that the mock satisfies the interface at compile time.")
-	//g.p("var _ %v = (*%v)(nil)", typeName, mockType)
-	//g.p("")
-
-	g.p("// New%v creates a new mock instance", mockType)
+	g.p("// New%v creates a new mock instance.", mockType)
 	g.p("func New%v(ctrl *gomock.Controller) *%v {", mockType, mockType)
 	g.in()
 	g.p("mock := &%v{ctrl: ctrl}", mockType)
@@ -372,7 +407,7 @@ func (g *generator) GenerateMockInterface(intf *model.Interface, outputPackagePa
 	g.p("")
 
 	// XXX: possible name collision here if someone has EXPECT in their interface.
-	g.p("// EXPECT returns an object that allows the caller to indicate expected use")
+	g.p("// EXPECT returns an object that allows the caller to indicate expected use.")
 	g.p("func (m *%v) EXPECT() *%vMockRecorder {", mockType, mockType)
 	g.in()
 	g.p("return m.recorder")
@@ -384,12 +419,19 @@ func (g *generator) GenerateMockInterface(intf *model.Interface, outputPackagePa
 	return nil
 }
 
+type byMethodName []*model.Method
+
+func (b byMethodName) Len() int           { return len(b) }
+func (b byMethodName) Swap(i, j int)      { b[i], b[j] = b[j], b[i] }
+func (b byMethodName) Less(i, j int) bool { return b[i].Name < b[j].Name }
+
 func (g *generator) GenerateMockMethods(mockType string, intf *model.Interface, pkgOverride string) {
+	sort.Sort(byMethodName(intf.Methods))
 	for _, m := range intf.Methods {
 		g.p("")
-		g.GenerateMockMethod(mockType, m, pkgOverride)
+		_ = g.GenerateMockMethod(mockType, m, pkgOverride)
 		g.p("")
-		g.GenerateMockRecorderMethod(mockType, m)
+		_ = g.GenerateMockRecorderMethod(mockType, m)
 	}
 }
 
@@ -428,7 +470,7 @@ func (g *generator) GenerateMockMethod(mockType string, m *model.Method, pkgOver
 	ia := newIdentifierAllocator(argNames)
 	idRecv := ia.allocateIdentifier("m")
 
-	g.p("// %v mocks base method", m.Name)
+	g.p("// %v mocks base method.", m.Name)
 	g.p("func (%v *%v) %v(%v)%v {", idRecv, mockType, m.Name, argString, retString)
 	g.in()
 	g.p("%s.ctrl.T.Helper()", idRecv)
@@ -496,7 +538,7 @@ func (g *generator) GenerateMockRecorderMethod(mockType string, m *model.Method)
 	ia := newIdentifierAllocator(argNames)
 	idRecv := ia.allocateIdentifier("mr")
 
-	g.p("// %v indicates an expected call of %v", m.Name, m.Name)
+	g.p("// %v indicates an expected call of %v.", m.Name, m.Name)
 	g.p("func (%s *%vMockRecorder) %v(%v) *gomock.Call {", idRecv, mockType, m.Name, argString)
 	g.in()
 	g.p("%s.mock.ctrl.T.Helper()", idRecv)
@@ -531,7 +573,7 @@ func (g *generator) getArgNames(m *model.Method) []string {
 	argNames := make([]string, len(m.In))
 	for i, p := range m.In {
 		name := p.Name
-		if name == "" {
+		if name == "" || name == "_" {
 			name = fmt.Sprintf("arg%d", i)
 		}
 		argNames[i] = name
@@ -580,9 +622,84 @@ func (o identifierAllocator) allocateIdentifier(want string) string {
 
 // Output returns the generator's output, formatted in the standard Go style.
 func (g *generator) Output() []byte {
-	src, err := format.Source(g.buf.Bytes())
+	src, err := toolsimports.Process(g.destination, g.buf.Bytes(), nil)
 	if err != nil {
 		log.Fatalf("Failed to format generated source code: %s\n%s", err, g.buf.String())
 	}
 	return src
+}
+
+// createPackageMap returns a map of import path to package name
+// for specified importPaths.
+func createPackageMap(importPaths []string) map[string]string {
+	var pkg struct {
+		Name       string
+		ImportPath string
+	}
+	pkgMap := make(map[string]string)
+	b := bytes.NewBuffer(nil)
+	args := []string{"list", "-json"}
+	args = append(args, importPaths...)
+	cmd := exec.Command("go", args...)
+	cmd.Stdout = b
+	cmd.Run()
+	dec := json.NewDecoder(b)
+	for dec.More() {
+		err := dec.Decode(&pkg)
+		if err != nil {
+			log.Printf("failed to decode 'go list' output: %v", err)
+			continue
+		}
+		pkgMap[pkg.ImportPath] = pkg.Name
+	}
+	return pkgMap
+}
+
+func printVersion() {
+	if version != "" {
+		fmt.Printf("v%s\nCommit: %s\nDate: %s\n", version, commit, date)
+	} else {
+		printModuleVersion()
+	}
+}
+
+// parseImportPackage get package import path via source file
+// an alternative implementation is to use:
+// cfg := &packages.Config{Mode: packages.NeedName, Tests: true, Dir: srcDir}
+// pkgs, err := packages.Load(cfg, "file="+source)
+// However, it will call "go list" and slow down the performance
+func parsePackageImport(srcDir string) (string, error) {
+	moduleMode := os.Getenv("GO111MODULE")
+	// trying to find the module
+	if moduleMode != "off" {
+		currentDir := srcDir
+		for {
+			dat, err := ioutil.ReadFile(filepath.Join(currentDir, "go.mod"))
+			if os.IsNotExist(err) {
+				if currentDir == filepath.Dir(currentDir) {
+					// at the root
+					break
+				}
+				currentDir = filepath.Dir(currentDir)
+				continue
+			} else if err != nil {
+				return "", err
+			}
+			modulePath := modfile.ModulePath(dat)
+			return filepath.ToSlash(filepath.Join(modulePath, strings.TrimPrefix(srcDir, currentDir))), nil
+		}
+	}
+	// fall back to GOPATH mode
+	goPaths := os.Getenv("GOPATH")
+	if goPaths == "" {
+		return "", fmt.Errorf("GOPATH is not set")
+	}
+	goPathList := strings.Split(goPaths, string(os.PathListSeparator))
+	for _, goPath := range goPathList {
+		sourceRoot := filepath.Join(goPath, "src") + string(os.PathSeparator)
+		if strings.HasPrefix(srcDir, sourceRoot) {
+			return filepath.ToSlash(strings.TrimPrefix(srcDir, sourceRoot)), nil
+		}
+	}
+	return "", errOutsideGoPath
 }

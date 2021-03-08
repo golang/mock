@@ -54,6 +54,17 @@ func (e *ErrorReporter) assertFail(msg string) {
 	}
 }
 
+func (e *ErrorReporter) assertLogf(expectedErrMsgs ...string) {
+	if len(e.log) < len(expectedErrMsgs) {
+		e.t.Fatalf("got %d Logf messages, want %d", len(e.log), len(expectedErrMsgs))
+	}
+	for i, expectedErrMsg := range expectedErrMsgs {
+		if !strings.Contains(e.log[i], expectedErrMsg) {
+			e.t.Errorf("Error message:\ngot: %q\nwant to contain: %q\n", e.log[i], expectedErrMsg)
+		}
+	}
+}
+
 // Use to check that code triggers a fatal test failure.
 func (e *ErrorReporter) assertFatal(fn func(), expectedErrMsgs ...string) {
 	defer func() {
@@ -105,6 +116,10 @@ func (e *ErrorReporter) recoverUnexpectedFatal() {
 		// Some other panic.
 		panic(err)
 	}
+}
+
+func (e *ErrorReporter) Log(args ...interface{}) {
+	e.log = append(e.log, fmt.Sprint(args...))
 }
 
 func (e *ErrorReporter) Logf(format string, args ...interface{}) {
@@ -298,7 +313,7 @@ func TestUnexpectedArgValue_FirstArg(t *testing.T) {
 	})
 }
 
-func TestUnexpectedArgValue_SecondtArg(t *testing.T) {
+func TestUnexpectedArgValue_SecondArg(t *testing.T) {
 	reporter, ctrl := createFixtures(t)
 	defer reporter.recoverUnexpectedFatal()
 	subject := new(Subject)
@@ -310,6 +325,63 @@ func TestUnexpectedArgValue_SecondtArg(t *testing.T) {
 		ctrl.Call(subject, "ActOnTestStructMethod", TestStruct{Number: 123, Message: "hello"}, 3)
 	}, "Unexpected call to", "doesn't match the argument at index 1",
 		"Got: 3\nWant: is equal to 15")
+
+	reporter.assertFatal(func() {
+		// The expected call wasn't made.
+		ctrl.Finish()
+	})
+}
+
+func TestUnexpectedArgValue_WantFormatter(t *testing.T) {
+	reporter, ctrl := createFixtures(t)
+	defer reporter.recoverUnexpectedFatal()
+	subject := new(Subject)
+
+	expectedArg0 := TestStruct{Number: 123, Message: "hello"}
+	ctrl.RecordCall(
+		subject,
+		"ActOnTestStructMethod",
+		expectedArg0,
+		gomock.WantFormatter(
+			gomock.StringerFunc(func() string { return "is equal to fifteen" }),
+			gomock.Eq(15),
+		),
+	)
+
+	reporter.assertFatal(func() {
+		ctrl.Call(subject, "ActOnTestStructMethod", TestStruct{Number: 123, Message: "hello"}, 3)
+	}, "Unexpected call to", "doesn't match the argument at index 1",
+		"Got: 3\nWant: is equal to fifteen")
+
+	reporter.assertFatal(func() {
+		// The expected call wasn't made.
+		ctrl.Finish()
+	})
+}
+
+func TestUnexpectedArgValue_GotFormatter(t *testing.T) {
+	reporter, ctrl := createFixtures(t)
+	defer reporter.recoverUnexpectedFatal()
+	subject := new(Subject)
+
+	expectedArg0 := TestStruct{Number: 123, Message: "hello"}
+	ctrl.RecordCall(
+		subject,
+		"ActOnTestStructMethod",
+		expectedArg0,
+		gomock.GotFormatterAdapter(
+			gomock.GotFormatterFunc(func(i interface{}) string {
+				// Leading 0s
+				return fmt.Sprintf("%02d", i)
+			}),
+			gomock.Eq(15),
+		),
+	)
+
+	reporter.assertFatal(func() {
+		ctrl.Call(subject, "ActOnTestStructMethod", TestStruct{Number: 123, Message: "hello"}, 3)
+	}, "Unexpected call to", "doesn't match the argument at index 1",
+		"Got: 03\nWant: is equal to 15")
 
 	reporter.assertFatal(func() {
 		// The expected call wasn't made.
@@ -369,7 +441,7 @@ func TestMaxTimes1(t *testing.T) {
 	ctrl.Call(subject, "FooMethod", "argument")
 	ctrl.Finish()
 
-	//It fails if there are more
+	// It fails if there are more
 	reporter, ctrl := createFixtures(t)
 	subject = new(Subject)
 	ctrl.RecordCall(subject, "FooMethod", "argument").MaxTimes(1)
@@ -406,6 +478,25 @@ func TestMinMaxTimes(t *testing.T) {
 	ctrl.RecordCall(subject, "FooMethod", "argument").MaxTimes(2).MinTimes(2)
 	ctrl.Call(subject, "FooMethod", "argument")
 	ctrl.Call(subject, "FooMethod", "argument")
+	ctrl.Finish()
+
+	// If MaxTimes is called after MinTimes is called with 1, MaxTimes takes precedence.
+	reporter, ctrl = createFixtures(t)
+	subject = new(Subject)
+	ctrl.RecordCall(subject, "FooMethod", "argument").MinTimes(1).MaxTimes(2)
+	ctrl.Call(subject, "FooMethod", "argument")
+	ctrl.Call(subject, "FooMethod", "argument")
+	reporter.assertFatal(func() {
+		ctrl.Call(subject, "FooMethod", "argument")
+	})
+
+	// If MinTimes is called after MaxTimes is called with 1, MinTimes takes precedence.
+	reporter, ctrl = createFixtures(t)
+	subject = new(Subject)
+	ctrl.RecordCall(subject, "FooMethod", "argument").MaxTimes(1).MinTimes(2)
+	for i := 0; i < 100; i++ {
+		ctrl.Call(subject, "FooMethod", "argument")
+	}
 	ctrl.Finish()
 }
 
@@ -575,59 +666,6 @@ func TestOrderedCallsCorrect(t *testing.T) {
 	reporter.assertPass("After finish")
 }
 
-func TestOrderedCallsInCorrect(t *testing.T) {
-	reporter, ctrl, subjectOne, subjectTwo := commonTestOrderedCalls(t)
-
-	ctrl.Call(subjectOne, "FooMethod", "1")
-	reporter.assertFatal(func() {
-		// FooMethod(2) should be called before BarMethod(3)
-		ctrl.Call(subjectTwo, "BarMethod", "3")
-	}, "Unexpected call to", "Subject.BarMethod([3])", "doesn't have a prerequisite call satisfied")
-}
-
-// Test that calls that are prerequisites to other calls but have maxCalls >
-// minCalls are removed from the expected call set.
-func TestOrderedCallsWithPreReqMaxUnbounded(t *testing.T) {
-	reporter, ctrl, subjectOne, subjectTwo := commonTestOrderedCalls(t)
-
-	// Initially we should be able to call FooMethod("1") as many times as we
-	// want.
-	ctrl.Call(subjectOne, "FooMethod", "1")
-	ctrl.Call(subjectOne, "FooMethod", "1")
-
-	// But calling something that has it as a prerequite should remove it from
-	// the expected call set. This allows tests to ensure that FooMethod("1") is
-	// *not* called after FooMethod("2").
-	ctrl.Call(subjectTwo, "FooMethod", "2")
-
-	// Therefore this call should fail:
-	reporter.assertFatal(func() {
-		ctrl.Call(subjectOne, "FooMethod", "1")
-	})
-}
-
-func TestCallAfterLoopPanic(t *testing.T) {
-	_, ctrl := createFixtures(t)
-
-	subject := new(Subject)
-
-	firstCall := ctrl.RecordCall(subject, "FooMethod", "1")
-	secondCall := ctrl.RecordCall(subject, "FooMethod", "2")
-	thirdCall := ctrl.RecordCall(subject, "FooMethod", "3")
-
-	gomock.InOrder(firstCall, secondCall, thirdCall)
-
-	defer func() {
-		err := recover()
-		if err == nil {
-			t.Error("Call.After creation of dependency loop did not panic.")
-		}
-	}()
-
-	// This should panic due to dependency loop.
-	firstCall.After(thirdCall)
-}
-
 func TestPanicOverridesExpectationChecks(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	reporter := NewErrorReporter(t)
@@ -681,7 +719,7 @@ func TestVariadicNoMatch(t *testing.T) {
 	ctrl.RecordCall(s, "VariadicMethod", 0)
 	rep.assertFatal(func() {
 		ctrl.Call(s, "VariadicMethod", 1)
-	}, "Expected call at", "doesn't match the argument at index 0",
+	}, "expected call at", "doesn't match the argument at index 0",
 		"Got: 1\nWant: is equal to 0")
 	ctrl.Call(s, "VariadicMethod", 0)
 	ctrl.Finish()
@@ -711,13 +749,53 @@ func TestVariadicMatchingWithSlice(t *testing.T) {
 	}
 }
 
-func TestDuplicateFinishCallFails(t *testing.T) {
+func TestVariadicArgumentsGotFormatter(t *testing.T) {
 	rep, ctrl := createFixtures(t)
+	defer rep.recoverUnexpectedFatal()
 
+	s := new(Subject)
+	ctrl.RecordCall(
+		s,
+		"VariadicMethod",
+		gomock.GotFormatterAdapter(
+			gomock.GotFormatterFunc(func(i interface{}) string {
+				return fmt.Sprintf("test{%v}", i)
+			}),
+			gomock.Eq(0),
+		),
+	)
+
+	rep.assertFatal(func() {
+		ctrl.Call(s, "VariadicMethod", 1)
+	}, "expected call to", "doesn't match the argument at index 0",
+		"Got: test{1}\nWant: is equal to 0")
+	ctrl.Call(s, "VariadicMethod", 0)
 	ctrl.Finish()
-	rep.assertPass("the first Finish call should succeed")
+}
 
-	rep.assertFatal(ctrl.Finish, "Controller.Finish was called more than once. It has to be called exactly once.")
+func TestVariadicArgumentsGotFormatterTooManyArgsFailure(t *testing.T) {
+	rep, ctrl := createFixtures(t)
+	defer rep.recoverUnexpectedFatal()
+
+	s := new(Subject)
+	ctrl.RecordCall(
+		s,
+		"VariadicMethod",
+		0,
+		gomock.GotFormatterAdapter(
+			gomock.GotFormatterFunc(func(i interface{}) string {
+				return fmt.Sprintf("test{%v}", i)
+			}),
+			gomock.Eq("1"),
+		),
+	)
+
+	rep.assertFatal(func() {
+		ctrl.Call(s, "VariadicMethod", 0, "2", "3")
+	}, "expected call to", "doesn't match the argument at index 1",
+		"Got: test{[2 3]}\nWant: is equal to 1")
+	ctrl.Call(s, "VariadicMethod", 0, "1")
+	ctrl.Finish()
 }
 
 // Test ByDefault call that is used to define a default behavior

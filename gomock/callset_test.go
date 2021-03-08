@@ -74,3 +74,26 @@ func TestCallSetRemove(t *testing.T) {
 		cs.Remove(c)
 	}
 }
+
+func TestCallSetFindMatch(t *testing.T) {
+	t.Run("call is exhausted", func(t *testing.T) {
+		cs := callSet{}
+		var receiver interface{} = "TestReceiver"
+		method := "TestMethod"
+		args := []interface{}{}
+
+		c1 := newCall(t, receiver, method, reflect.TypeOf(receiverType{}.Func))
+		cs.exhausted = map[callSetKey][]*Call{
+			{receiver: receiver, fname: method}: {c1},
+		}
+
+		_, err := cs.FindMatch(receiver, method, args)
+		if err == nil {
+			t.Fatal("expected error, but was nil")
+		}
+
+		if err.Error() == "" {
+			t.Fatal("expected error to have message, but was empty")
+		}
+	})
+}

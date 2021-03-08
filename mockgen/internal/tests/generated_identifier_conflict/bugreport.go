@@ -1,6 +1,6 @@
-//go:generate mockgen -destination bugreport_mock.go -package bugreport -source=bugreport.go
-
 package bugreport
+
+//go:generate mockgen -destination bugreport_mock.go -package bugreport -source=bugreport.go
 
 type Example interface {
 	// _m and _mr were used by the buggy code: the '_' prefix was there hoping

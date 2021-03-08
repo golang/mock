@@ -2,6 +2,10 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"reflect"
 	"regexp"
 	"strings"
 	"testing"
@@ -236,10 +240,12 @@ func TestGenerateMockInterface_Helper(t *testing.T) {
 				}
 			}
 
-			if err := g.GenerateMockInterface(&model.Interface{
-				Name:    "Somename",
-				Methods: test.Methods,
-			}, "somepackage"); err != nil {
+			intf := &model.Interface{Name: "Somename"}
+			for _, m := range test.Methods {
+				intf.AddMethod(m)
+			}
+
+			if err := g.GenerateMockInterface(intf, "somepackage"); err != nil {
 				t.Fatal(err)
 			}
 
@@ -266,4 +272,180 @@ func findMethod(t *testing.T, identifier, methodName string, lines []string) int
 
 	t.Fatalf("unable to find 'func (m %s) %s'", identifier, methodName)
 	panic("unreachable")
+}
+
+func TestGetArgNames(t *testing.T) {
+	for _, testCase := range []struct {
+		name     string
+		method   *model.Method
+		expected []string
+	}{
+		{
+			name: "NamedArg",
+			method: &model.Method{
+				In: []*model.Parameter{
+					{
+						Name: "firstArg",
+						Type: &model.NamedType{Type: "int"},
+					},
+					{
+						Name: "secondArg",
+						Type: &model.NamedType{Type: "string"},
+					},
+				},
+			},
+			expected: []string{"firstArg", "secondArg"},
+		},
+		{
+			name: "NotNamedArg",
+			method: &model.Method{
+				In: []*model.Parameter{
+					{
+						Name: "",
+						Type: &model.NamedType{Type: "int"},
+					},
+					{
+						Name: "",
+						Type: &model.NamedType{Type: "string"},
+					},
+				},
+			},
+			expected: []string{"arg0", "arg1"},
+		},
+		{
+			name: "MixedNameArg",
+			method: &model.Method{
+				In: []*model.Parameter{
+					{
+						Name: "firstArg",
+						Type: &model.NamedType{Type: "int"},
+					},
+					{
+						Name: "_",
+						Type: &model.NamedType{Type: "string"},
+					},
+				},
+			},
+			expected: []string{"firstArg", "arg1"},
+		},
+	} {
+		t.Run(testCase.name, func(t *testing.T) {
+			g := generator{}
+
+			result := g.getArgNames(testCase.method)
+			if !reflect.DeepEqual(result, testCase.expected) {
+				t.Fatalf("expected %s, got %s", result, testCase.expected)
+			}
+		})
+	}
+}
+
+func Test_createPackageMap(t *testing.T) {
+	tests := []struct {
+		name            string
+		importPath      string
+		wantPackageName string
+		wantOK          bool
+	}{
+		{"golang package", "context", "context", true},
+		{"third party", "golang.org/x/tools/present", "present", true},
+	}
+	var importPaths []string
+	for _, t := range tests {
+		importPaths = append(importPaths, t.importPath)
+	}
+	packages := createPackageMap(importPaths)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotPackageName, gotOk := packages[tt.importPath]
+			if gotPackageName != tt.wantPackageName {
+				t.Errorf("createPackageMap() gotPackageName = %v, wantPackageName = %v", gotPackageName, tt.wantPackageName)
+			}
+			if gotOk != tt.wantOK {
+				t.Errorf("createPackageMap() gotOk = %v, wantOK = %v", gotOk, tt.wantOK)
+			}
+		})
+	}
+}
+
+func TestParsePackageImport_FallbackGoPath(t *testing.T) {
+	goPath, err := ioutil.TempDir("", "gopath")
+	if err != nil {
+		t.Error(err)
+	}
+	defer func() {
+		if err = os.RemoveAll(goPath); err != nil {
+			t.Error(err)
+		}
+	}()
+	srcDir := filepath.Join(goPath, "src/example.com/foo")
+	err = os.MkdirAll(srcDir, 0755)
+	if err != nil {
+		t.Error(err)
+	}
+	key := "GOPATH"
+	value := goPath
+	if err := os.Setenv(key, value); err != nil {
+		t.Fatalf("unable to set environment variable %q to %q: %v", key, value, err)
+	}
+	key = "GO111MODULE"
+	value = "on"
+	if err := os.Setenv(key, value); err != nil {
+		t.Fatalf("unable to set environment variable %q to %q: %v", key, value, err)
+	}
+	pkgPath, err := parsePackageImport(srcDir)
+	expected := "example.com/foo"
+	if pkgPath != expected {
+		t.Errorf("expect %s, got %s", expected, pkgPath)
+	}
+}
+
+func TestParsePackageImport_FallbackMultiGoPath(t *testing.T) {
+	var goPathList []string
+
+	// first gopath
+	goPath, err := ioutil.TempDir("", "gopath1")
+	if err != nil {
+		t.Error(err)
+	}
+	goPathList = append(goPathList, goPath)
+	defer func() {
+		if err = os.RemoveAll(goPath); err != nil {
+			t.Error(err)
+		}
+	}()
+	srcDir := filepath.Join(goPath, "src/example.com/foo")
+	err = os.MkdirAll(srcDir, 0755)
+	if err != nil {
+		t.Error(err)
+	}
+
+	// second gopath
+	goPath, err = ioutil.TempDir("", "gopath2")
+	if err != nil {
+		t.Error(err)
+	}
+	goPathList = append(goPathList, goPath)
+	defer func() {
+		if err = os.RemoveAll(goPath); err != nil {
+			t.Error(err)
+		}
+	}()
+
+	goPaths := strings.Join(goPathList, string(os.PathListSeparator))
+	key := "GOPATH"
+	value := goPaths
+	if err := os.Setenv(key, value); err != nil {
+		t.Fatalf("unable to set environment variable %q to %q: %v", key, value, err)
+	}
+	key = "GO111MODULE"
+	value = "on"
+	if err := os.Setenv(key, value); err != nil {
+		t.Fatalf("unable to set environment variable %q to %q: %v", key, value, err)
+	}
+	pkgPath, err := parsePackageImport(srcDir)
+	expected := "example.com/foo"
+	if pkgPath != expected {
+		t.Errorf("expect %s, got %s", expected, pkgPath)
+	}
 }

@@ -1,5 +1,6 @@
-//go:generate mockgen -package dot_imports -destination mock.go -source input.go
 package dot_imports
+
+//go:generate mockgen -package dot_imports -destination mock.go -source input.go
 
 import (
 	"bytes"
