@@ -74,7 +74,7 @@ func TestVariadicFunction(t *testing.T) {
 			sum += value
 		}
 		if sum != 26 {
-			t.Errorf("Expected 7, got %d", sum)
+			t.Errorf("Expected 26, got %d", sum)
 		}
 	})
 	mockIndex.EXPECT().Ellip("%d", gomock.Any()).Do(func(format string, nums ...int) {
@@ -83,7 +83,7 @@ func TestVariadicFunction(t *testing.T) {
 			sum += value
 		}
 		if sum != 10 {
-			t.Errorf("Expected 7, got %d", sum)
+			t.Errorf("Expected 10, got %d", sum)
 		}
 	})
 	mockIndex.EXPECT().Ellip("%d", gomock.Any()).Do(func(format string, nums ...int) {
