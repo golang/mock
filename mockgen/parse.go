@@ -628,4 +628,4 @@ func packageNameOfDir(srcDir string) (string, error) {
 	return packageImport, nil
 }
 
-var errOutsideGoPath = errors.New("Source directory is outside GOPATH")
+var errOutsideGoPath = errors.New("source directory is outside GOPATH")
