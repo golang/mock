@@ -142,3 +142,176 @@ func TestAssignableToTypeOfMatcher(t *testing.T) {
 		t.Errorf(`AssignableToTypeOf(context.Context) should not match ctxWithValue`)
 	}
 }
+
+func TestInAnyOrder(t *testing.T) {
+	tests := []struct {
+		name      string
+		wanted    interface{}
+		given     interface{}
+		wantMatch bool
+	}{
+		{
+			name:      "match_for_equal_slices",
+			wanted:    []int{1, 2, 3},
+			given:     []int{1, 2, 3},
+			wantMatch: true,
+		},
+		{
+			name:      "match_for_slices_with_same_elements_of_different_order",
+			wanted:    []int{1, 2, 3},
+			given:     []int{1, 3, 2},
+			wantMatch: true,
+		},
+		{
+			name:      "not_match_for_slices_with_different_elements",
+			wanted:    []int{1, 2, 3},
+			given:     []int{1, 2, 4},
+			wantMatch: false,
+		},
+		{
+			name:      "not_match_for_slices_with_missing_elements",
+			wanted:    []int{1, 2, 3},
+			given:     []int{1, 2},
+			wantMatch: false,
+		},
+		{
+			name:      "not_match_for_slices_with_extra_elements",
+			wanted:    []int{1, 2, 3},
+			given:     []int{1, 2, 3, 4},
+			wantMatch: false,
+		},
+		{
+			name:      "match_for_empty_slices",
+			wanted:    []int{},
+			given:     []int{},
+			wantMatch: true,
+		},
+		{
+			name:      "not_match_for_equal_slices_of_different_types",
+			wanted:    []float64{1, 2, 3},
+			given:     []int{1, 2, 3},
+			wantMatch: false,
+		},
+		{
+			name:      "match_for_equal_arrays",
+			wanted:    [3]int{1, 2, 3},
+			given:     [3]int{1, 2, 3},
+			wantMatch: true,
+		},
+		{
+			name:      "match_for_equal_arrays_of_different_order",
+			wanted:    [3]int{1, 2, 3},
+			given:     [3]int{1, 3, 2},
+			wantMatch: true,
+		},
+		{
+			name:      "not_match_for_arrays_of_different_elements",
+			wanted:    [3]int{1, 2, 3},
+			given:     [3]int{1, 2, 4},
+			wantMatch: false,
+		},
+		{
+			name:      "not_match_for_arrays_with_extra_elements",
+			wanted:    [3]int{1, 2, 3},
+			given:     [4]int{1, 2, 3, 4},
+			wantMatch: false,
+		},
+		{
+			name:      "not_match_for_arrays_with_missing_elements",
+			wanted:    [3]int{1, 2, 3},
+			given:     [2]int{1, 2},
+			wantMatch: false,
+		},
+		{
+			name:      "match_for_equal_strings",
+			wanted:    "123",
+			given:     "123",
+			wantMatch: true,
+		},
+		{
+			name:      "match_for_equal_strings_of_different_order",
+			wanted:    "123",
+			given:     "132",
+			wantMatch: true,
+		},
+		{
+			name:      "not_match_for_strings_of_different_elements",
+			wanted:    "123",
+			given:     "124",
+			wantMatch: false,
+		},
+		{
+			name:      "not_match_for_strings_with_extra_elements",
+			wanted:    "123",
+			given:     "1234",
+			wantMatch: false,
+		},
+		{
+			name:      "not_match_for_string_with_missing_elements",
+			wanted:    "123",
+			given:     "12",
+			wantMatch: false,
+		},
+		{
+			name:      "not_match_if_x_type_is_not_iterable",
+			wanted:    123,
+			given:     []int{123},
+			wantMatch: false,
+		},
+		{
+			name:      "not_match_if_in_type_is_not_iterable",
+			wanted:    []int{123},
+			given:     123,
+			wantMatch: false,
+		},
+		{
+			name:      "not_match_if_both_are_not_iterable",
+			wanted:    123,
+			given:     123,
+			wantMatch: false,
+		},
+		{
+			name:      "match_for_equal_slices_with_unhashable_elements",
+			wanted:    [][]int{{1}, {1, 2}, {1, 2, 3}},
+			given:     [][]int{{1}, {1, 2}, {1, 2, 3}},
+			wantMatch: true,
+		},
+		{
+			name:      "match_for_equal_slices_with_unhashable_elements_of_different_order",
+			wanted:    [][]int{{1}, {1, 2, 3}, {1, 2}},
+			given:     [][]int{{1}, {1, 2}, {1, 2, 3}},
+			wantMatch: true,
+		},
+		{
+			name:      "not_match_for_different_slices_with_unhashable_elements",
+			wanted:    [][]int{{1}, {1, 2, 3}, {1, 2}},
+			given:     [][]int{{1}, {1, 2, 4}, {1, 3}},
+			wantMatch: false,
+		},
+		{
+			name:      "not_match_for_unhashable_missing_elements",
+			wanted:    [][]int{{1}, {1, 2}, {1, 2, 3}},
+			given:     [][]int{{1}, {1, 2}},
+			wantMatch: false,
+		},
+		{
+			name:      "not_match_for_unhashable_extra_elements",
+			wanted:    [][]int{{1}, {1, 2}},
+			given:     [][]int{{1}, {1, 2}, {1, 2, 3}},
+			wantMatch: false,
+		},
+		{
+			name:      "match_for_equal_slices_of_assignable_types",
+			wanted:    [][]string{{"a", "b"}},
+			given:     []A{{"a", "b"}},
+			wantMatch: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := gomock.InAnyOrder(tt.wanted).Matches(tt.given); got != tt.wantMatch {
+				t.Errorf("got = %v, wantMatch %v", got, tt.wantMatch)
+			}
+		})
+	}
+}
