@@ -141,7 +141,7 @@ func main() {
 			if err == nil {
 				outputPackagePath = pkgPath
 			} else {
-				log.Println("Unable to determine destination package path:", err)
+				log.Println("Unable to infer -self_package from destination file path:", err)
 			}
 		} else {
 			log.Println("Unable to determine destination file path:", err)
