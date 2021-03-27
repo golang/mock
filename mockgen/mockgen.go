@@ -136,12 +136,15 @@ func main() {
 	outputPackagePath := *selfPackage
 	if outputPackagePath == "" && *destination != "" {
 		dstPath, err := filepath.Abs(filepath.Dir(*destination))
-		if err != nil {
-			log.Fatalf("Unable to determine destination file path: %v", err)
-		}
-		outputPackagePath, err = parsePackageImport(dstPath)
-		if err != nil {
-			log.Fatalf("Unable to determine destination file path: %v", err)
+		if err == nil {
+			pkgPath, err := parsePackageImport(dstPath)
+			if err == nil {
+				outputPackagePath = pkgPath
+			} else {
+				log.Println("Unable to determine destination package path:", err)
+			}
+		} else {
+			log.Println("Unable to determine destination file path:", err)
 		}
 	}
 
