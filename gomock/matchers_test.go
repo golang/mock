@@ -223,33 +223,9 @@ func TestInAnyOrder(t *testing.T) {
 			wantMatch: false,
 		},
 		{
-			name:      "match_for_equal_strings",
+			name:      "not_match_for_equal_strings", // matcher shouldn't treat strings as collections
 			wanted:    "123",
 			given:     "123",
-			wantMatch: true,
-		},
-		{
-			name:      "match_for_equal_strings_of_different_order",
-			wanted:    "123",
-			given:     "132",
-			wantMatch: true,
-		},
-		{
-			name:      "not_match_for_strings_of_different_elements",
-			wanted:    "123",
-			given:     "124",
-			wantMatch: false,
-		},
-		{
-			name:      "not_match_for_strings_with_extra_elements",
-			wanted:    "123",
-			given:     "1234",
-			wantMatch: false,
-		},
-		{
-			name:      "not_match_for_string_with_missing_elements",
-			wanted:    "123",
-			given:     "12",
 			wantMatch: false,
 		},
 		{

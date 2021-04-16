@@ -221,6 +221,10 @@ func (m inAnyOrderMatcher) Matches(x interface{}) bool {
 		return false
 	}
 
+	if given.Len() != wanted.Len() {
+		return false
+	}
+
 	usedFromGiven := make([]bool, given.Len())
 	foundFromWanted := make([]bool, wanted.Len())
 	for i := 0; i < wanted.Len(); i++ {
@@ -256,7 +260,7 @@ func (m inAnyOrderMatcher) Matches(x interface{}) bool {
 func (m inAnyOrderMatcher) prepareValue(x interface{}) (reflect.Value, bool) {
 	xValue := reflect.ValueOf(x)
 	switch xValue.Kind() {
-	case reflect.Slice, reflect.Array, reflect.String:
+	case reflect.Slice, reflect.Array:
 		return xValue, true
 	default:
 		return reflect.Value{}, false
