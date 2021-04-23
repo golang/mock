@@ -126,7 +126,7 @@ var testCases []testCase = []testCase{
 	{
 		description: "argument to Do is not a function",
 		doFunc:      "meow",
-		callFunc: func(x int, y int) {},
+		callFunc:    func(x int, y int) {},
 		args:        []interface{}{0, 1},
 		expectPanic: true,
 	}, {
@@ -139,8 +139,8 @@ var testCases []testCase = []testCase{
 		expectPanic: true,
 	}, {
 		description: "number of args for Do func don't match Call func",
-		doFunc: func(x int) {},
-		callFunc: func(x int, y int) {},
+		doFunc:      func(x int) {},
+		callFunc:    func(x int, y int) {},
 		args:        []interface{}{0, 1},
 		expectPanic: true,
 	}, {
@@ -155,8 +155,8 @@ var testCases []testCase = []testCase{
 		expectPanic: true,
 	}, {
 		description: "arg type for Do func incompatible with Call func",
-		doFunc: func(x int) {},
-		callFunc: func(x string) {},
+		doFunc:      func(x int) {},
+		callFunc:    func(x string) {},
 		args:        []interface{}{"meow"},
 		expectPanic: true,
 	}, {
@@ -171,14 +171,14 @@ var testCases []testCase = []testCase{
 		expectPanic: true,
 	}, {
 		description: "Do func(int) Call func(int)",
-		doFunc: func(x int) {},
-		callFunc: func(x int) {},
-		args: []interface{}{0},
+		doFunc:      func(x int) {},
+		callFunc:    func(x int) {},
+		args:        []interface{}{0},
 	}, {
 		description: "Do func(int) Call func(interface{})",
-		doFunc: func(x int) {},
-		callFunc: func(x interface{}) {},
-		args: []interface{}{0},
+		doFunc:      func(x int) {},
+		callFunc:    func(x interface{}) {},
+		args:        []interface{}{0},
 	}, {
 		description: "Do func(int) bool Call func(int) bool",
 		doFunc: func(x int) bool {
@@ -199,8 +199,8 @@ var testCases []testCase = []testCase{
 		args: []interface{}{0},
 	}, {
 		description: "Do func(string) Call func([]byte)",
-		doFunc: func(x string) {},
-		callFunc: func(x []byte) {},
+		doFunc:      func(x string) {},
+		callFunc:    func(x []byte) {},
 		args:        []interface{}{[]byte("meow")},
 		expectPanic: true,
 	}, {
@@ -215,14 +215,14 @@ var testCases []testCase = []testCase{
 		expectPanic: true,
 	}, {
 		description: "Do func(map[int]string) Call func(map[interface{}]int)",
-		doFunc: func(x map[int]string) {},
-		callFunc: func(x map[interface{}]int) {},
+		doFunc:      func(x map[int]string) {},
+		callFunc:    func(x map[interface{}]int) {},
 		args:        []interface{}{map[interface{}]int{"meow": 0}},
 		expectPanic: true,
 	}, {
 		description: "Do func(map[int]string) Call func(map[interface{}]interface{})",
-		doFunc: func(x map[int]string) {},
-		callFunc: func(x map[interface{}]interface{}) {},
+		doFunc:      func(x map[int]string) {},
+		callFunc:    func(x map[interface{}]interface{}) {},
 		args:        []interface{}{map[interface{}]interface{}{"meow": "meow"}},
 		expectPanic: true,
 	}, {
@@ -247,37 +247,37 @@ var testCases []testCase = []testCase{
 		expectPanic: true,
 	}, {
 		description: "Do func([]string) Call func([]interface{})",
-		doFunc: func(x []string) {},
-		callFunc: func(x []interface{}) {},
+		doFunc:      func(x []string) {},
+		callFunc:    func(x []interface{}) {},
 		args:        []interface{}{[]interface{}{0}},
 		expectPanic: true,
 	}, {
 		description: "Do func([]string) Call func([]int)",
-		doFunc: func(x []string) {},
-		callFunc: func(x []int) {},
+		doFunc:      func(x []string) {},
+		callFunc:    func(x []int) {},
 		args:        []interface{}{[]int{0, 1}},
 		expectPanic: true,
 	}, {
 		description: "Do func([]int) Call func([]int)",
-		doFunc: func(x []int) {},
-		callFunc: func(x []int) {},
-		args: []interface{}{[]int{0, 1}},
+		doFunc:      func(x []int) {},
+		callFunc:    func(x []int) {},
+		args:        []interface{}{[]int{0, 1}},
 	}, {
 		description: "Do func([]int) Call func([]interface{})",
-		doFunc: func(x []int) {},
-		callFunc: func(x []interface{}) {},
+		doFunc:      func(x []int) {},
+		callFunc:    func(x []interface{}) {},
 		args:        []interface{}{[]interface{}{0}},
 		expectPanic: true,
 	}, {
 		description: "Do func([]int) Call func(...interface{})",
-		doFunc: func(x []int) {},
-		callFunc: func(x ...interface{}) {},
+		doFunc:      func(x []int) {},
+		callFunc:    func(x ...interface{}) {},
 		args:        []interface{}{0, 1},
 		expectPanic: true,
 	}, {
 		description: "Do func([]int) Call func(...int)",
-		doFunc: func(x []int) {},
-		callFunc: func(x ...int) {},
+		doFunc:      func(x []int) {},
+		callFunc:    func(x ...int) {},
 		args:        []interface{}{0, 1},
 		expectPanic: true,
 	}, {
@@ -341,21 +341,21 @@ var testCases []testCase = []testCase{
 		expectPanic: true,
 	}, {
 		description: "Do func(...int) Call func([]int)",
-		doFunc: func(x ...int) {},
-		callFunc: func(x []int) {},
+		doFunc:      func(x ...int) {},
+		callFunc:    func(x []int) {},
 		args:        []interface{}{[]int{0, 1}},
 		expectPanic: true,
 	}, {
 		description: "Do func(...int) Call func([]interface{})",
-		doFunc: func(x ...int) {},
-		callFunc: func(x []interface{}) {},
+		doFunc:      func(x ...int) {},
+		callFunc:    func(x []interface{}) {},
 		args:        []interface{}{[]interface{}{0, 1}},
 		expectPanic: true,
 	}, {
 		description: "Do func(...int) Call func(...interface{})",
-		doFunc: func(x ...int) {},
-		callFunc: func(x ...interface{}) {},
-		args: []interface{}{0, 1},
+		doFunc:      func(x ...int) {},
+		callFunc:    func(x ...interface{}) {},
+		args:        []interface{}{0, 1},
 	}, {
 		description: "Do func(...int) bool Call func(...int) bool",
 		doFunc: func(x ...int) bool {
@@ -396,24 +396,24 @@ var testCases []testCase = []testCase{
 		args: []interface{}{0, 1},
 	}, {
 		description: "Do func(...int) Call func(...int)",
-		doFunc: func(x ...int) {},
-		callFunc: func(x ...int) {},
-		args: []interface{}{0, 1},
+		doFunc:      func(x ...int) {},
+		callFunc:    func(x ...int) {},
+		args:        []interface{}{0, 1},
 	}, {
 		description: "Do func(foo); foo implements interface X Call func(interface X)",
-		doFunc: func(x foo) {},
-		callFunc: func(x fmt.Stringer) {},
-		args: []interface{}{foo{}},
+		doFunc:      func(x foo) {},
+		callFunc:    func(x fmt.Stringer) {},
+		args:        []interface{}{foo{}},
 	}, {
 		description: "Do func(b); b does not implement interface X Call func(interface X)",
-		doFunc: func(x b) {},
-		callFunc: func(x fmt.Stringer) {},
+		doFunc:      func(x b) {},
+		callFunc:    func(x fmt.Stringer) {},
 		args:        []interface{}{foo{}},
 		expectPanic: true,
 	}, {
 		description: "Do func(b) Call func(a); a and b are not aliases",
-		doFunc: func(x b) {},
-		callFunc: func(x a) {},
+		doFunc:      func(x b) {},
+		callFunc:    func(x a) {},
 		args:        []interface{}{a{}},
 		expectPanic: true,
 	}, {
