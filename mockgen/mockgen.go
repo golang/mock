@@ -236,13 +236,6 @@ func (g *generator) out() {
 	}
 }
 
-func removeDot(s string) string {
-	if len(s) > 0 && s[len(s)-1] == '.' {
-		return s[0 : len(s)-1]
-	}
-	return s
-}
-
 // sanitize cleans up a string to make a suitable package name.
 func sanitize(s string) string {
 	t := ""

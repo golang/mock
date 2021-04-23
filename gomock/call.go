@@ -380,7 +380,7 @@ func (c *Call) matches(args []interface{}) error {
 	// Check that all prerequisite calls have been satisfied.
 	for _, preReqCall := range c.preReqs {
 		if !preReqCall.satisfied() {
-			return fmt.Errorf("Expected call at %s doesn't have a prerequisite call satisfied:\n%v\nshould be called before:\n%v",
+			return fmt.Errorf("expected call at %s doesn't have a prerequisite call satisfied:\n%v\nshould be called before:\n%v",
 				c.origin, preReqCall, c)
 		}
 	}
