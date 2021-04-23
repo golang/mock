@@ -168,9 +168,8 @@ func TestDoAndReturnSignature(t *testing.T) {
 		mockIndex := mock_user.NewMockIndex(ctrl)
 
 		mockIndex.EXPECT().Slice(gomock.Any(), gomock.Any()).DoAndReturn(
-			func(_ []int, _ []byte) {
-				return
-			})
+			func(_ []int, _ []byte) {},
+		)
 
 		defer func() {
 			if r := recover(); r == nil {
