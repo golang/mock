@@ -142,7 +142,7 @@ var testCases []testCase = []testCase{
 		doFunc:      func(x int) {},
 		callFunc:    func(x int, y int) {},
 		args:        []interface{}{0, 1},
-		expectPanic: true,
+		expectPanic: false,
 	}, {
 		description: "number of args for Do func don't match Call func",
 		doFunc: func(x int) bool {
@@ -152,7 +152,7 @@ var testCases []testCase = []testCase{
 			return true
 		},
 		args:        []interface{}{0, 1},
-		expectPanic: true,
+		expectPanic: false,
 	}, {
 		description: "arg type for Do func incompatible with Call func",
 		doFunc:      func(x int) {},
@@ -477,6 +477,104 @@ func TestCall_Do(t *testing.T) {
 			}
 
 			action(tc.args)
+		})
+	}
+}
+
+func TestCall_Do_NumArgValidation(t *testing.T) {
+	tests := []struct {
+		name       string
+		methodType reflect.Type
+		doFn       interface{}
+		args       []interface{}
+		wantErr    bool
+	}{
+		{
+			name:       "too few",
+			methodType: reflect.TypeOf(func(one, two string) {}),
+			doFn:       func(one string) {},
+			args:       []interface{}{"too", "few"},
+			wantErr:    true,
+		},
+		{
+			name:       "too many",
+			methodType: reflect.TypeOf(func(one, two string) {}),
+			doFn:       func(one, two, three string) {},
+			args:       []interface{}{"too", "few"},
+			wantErr:    true,
+		},
+		{
+			name:       "just right",
+			methodType: reflect.TypeOf(func(one, two string) {}),
+			doFn:       func(one string, two string) {},
+			args:       []interface{}{"just", "right"},
+			wantErr:    false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tr := &mockTestReporter{}
+			call := &Call{
+				t:          tr,
+				methodType: tt.methodType,
+			}
+			call.Do(tt.doFn)
+			call.actions[0](tt.args)
+			if tt.wantErr && tr.fatalCalls != 1 {
+				t.Fatalf("expected call to fail")
+			}
+			if !tt.wantErr && tr.fatalCalls != 0 {
+				t.Fatalf("expected call to pass")
+			}
+		})
+	}
+}
+
+func TestCall_DoAndReturn_NumArgValidation(t *testing.T) {
+	tests := []struct {
+		name       string
+		methodType reflect.Type
+		doFn       interface{}
+		args       []interface{}
+		wantErr    bool
+	}{
+		{
+			name:       "too few",
+			methodType: reflect.TypeOf(func(one, two string) string { return "" }),
+			doFn:       func(one string) {},
+			args:       []interface{}{"too", "few"},
+			wantErr:    true,
+		},
+		{
+			name:       "too many",
+			methodType: reflect.TypeOf(func(one, two string) string { return "" }),
+			doFn:       func(one, two, three string) string { return "" },
+			args:       []interface{}{"too", "few"},
+			wantErr:    true,
+		},
+		{
+			name:       "just right",
+			methodType: reflect.TypeOf(func(one, two string) string { return "" }),
+			doFn:       func(one string, two string) string { return "" },
+			args:       []interface{}{"just", "right"},
+			wantErr:    false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tr := &mockTestReporter{}
+			call := &Call{
+				t:          tr,
+				methodType: tt.methodType,
+			}
+			call.DoAndReturn(tt.doFn)
+			call.actions[0](tt.args)
+			if tt.wantErr && tr.fatalCalls != 1 {
+				t.Fatalf("expected call to fail")
+			}
+			if !tt.wantErr && tr.fatalCalls != 0 {
+				t.Fatalf("expected call to pass")
+			}
 		})
 	}
 }
