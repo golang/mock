@@ -288,13 +288,13 @@ func TestUnexpectedArgValue_FirstArg(t *testing.T) {
 		// the method argument (of TestStruct type) has 1 unexpected value (for the Message field)
 		ctrl.Call(subject, "ActOnTestStructMethod", TestStruct{Number: 123, Message: "no message"}, 15)
 	}, "Unexpected call to", "doesn't match the argument at index 0",
-		"Got: {123 no message}\nWant: is equal to {123 hello}")
+		"Got: {123 no message} (gomock_test.TestStruct)\nWant: is equal to {123 hello} (gomock_test.TestStruct)")
 
 	reporter.assertFatal(func() {
 		// the method argument (of TestStruct type) has 2 unexpected values (for both fields)
 		ctrl.Call(subject, "ActOnTestStructMethod", TestStruct{Number: 11, Message: "no message"}, 15)
 	}, "Unexpected call to", "doesn't match the argument at index 0",
-		"Got: {11 no message}\nWant: is equal to {123 hello}")
+		"Got: {11 no message} (gomock_test.TestStruct)\nWant: is equal to {123 hello} (gomock_test.TestStruct)")
 
 	reporter.assertFatal(func() {
 		// The expected call wasn't made.
@@ -313,7 +313,7 @@ func TestUnexpectedArgValue_SecondArg(t *testing.T) {
 	reporter.assertFatal(func() {
 		ctrl.Call(subject, "ActOnTestStructMethod", TestStruct{Number: 123, Message: "hello"}, 3)
 	}, "Unexpected call to", "doesn't match the argument at index 1",
-		"Got: 3\nWant: is equal to 15")
+		"Got: 3 (int)\nWant: is equal to 15 (int)")
 
 	reporter.assertFatal(func() {
 		// The expected call wasn't made.
@@ -340,7 +340,7 @@ func TestUnexpectedArgValue_WantFormatter(t *testing.T) {
 	reporter.assertFatal(func() {
 		ctrl.Call(subject, "ActOnTestStructMethod", TestStruct{Number: 123, Message: "hello"}, 3)
 	}, "Unexpected call to", "doesn't match the argument at index 1",
-		"Got: 3\nWant: is equal to fifteen")
+		"Got: 3 (int)\nWant: is equal to fifteen")
 
 	reporter.assertFatal(func() {
 		// The expected call wasn't made.
@@ -711,7 +711,7 @@ func TestVariadicNoMatch(t *testing.T) {
 	rep.assertFatal(func() {
 		ctrl.Call(s, "VariadicMethod", 1)
 	}, "expected call at", "doesn't match the argument at index 0",
-		"Got: 1\nWant: is equal to 0")
+		"Got: 1 (int)\nWant: is equal to 0 (int)")
 	ctrl.Call(s, "VariadicMethod", 0)
 	ctrl.Finish()
 }
