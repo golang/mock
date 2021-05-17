@@ -136,12 +136,15 @@ func main() {
 	outputPackagePath := *selfPackage
 	if outputPackagePath == "" && *destination != "" {
 		dstPath, err := filepath.Abs(filepath.Dir(*destination))
-		if err != nil {
-			log.Fatalf("Unable to determine destination file path: %v", err)
-		}
-		outputPackagePath, err = parsePackageImport(dstPath)
-		if err != nil {
-			log.Fatalf("Unable to determine destination file path: %v", err)
+		if err == nil {
+			pkgPath, err := parsePackageImport(dstPath)
+			if err == nil {
+				outputPackagePath = pkgPath
+			} else {
+				log.Println("Unable to infer -self_package from destination file path:", err)
+			}
+		} else {
+			log.Println("Unable to determine destination file path:", err)
 		}
 	}
 
@@ -231,13 +234,6 @@ func (g *generator) out() {
 	if len(g.indent) > 0 {
 		g.indent = g.indent[0 : len(g.indent)-1]
 	}
-}
-
-func removeDot(s string) string {
-	if len(s) > 0 && s[len(s)-1] == '.' {
-		return s[0 : len(s)-1]
-	}
-	return s
 }
 
 // sanitize cleans up a string to make a suitable package name.

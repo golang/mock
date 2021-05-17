@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"context"
+
 	"github.com/golang/mock/gomock"
 
 	mock "github.com/golang/mock/sample/concurrent/mock"
@@ -23,10 +24,11 @@ func call(ctx context.Context, m Math) (int, error) {
 	}
 }
 
-// testConcurrentFails is expected to fail (and is disabled). It
+// TestConcurrentFails is expected to fail (and is disabled). It
 // demonstrates how to use gomock.WithContext to interrupt the test
 // from a different goroutine.
-func testConcurrentFails(t *testing.T) {
+func TestConcurrentFails(t *testing.T) {
+	t.Skip("Test is expected to fail, remove skip to trying running yourself.")
 	ctrl, ctx := gomock.WithContext(context.Background(), t)
 	defer ctrl.Finish()
 	m := mock.NewMockMath(ctrl)

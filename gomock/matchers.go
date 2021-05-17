@@ -120,7 +120,7 @@ func (e eqMatcher) Matches(x interface{}) bool {
 }
 
 func (e eqMatcher) String() string {
-	return fmt.Sprintf("is equal to %v", e.x)
+	return fmt.Sprintf("is equal to %v (%T)", e.x, e.x)
 }
 
 type nilMatcher struct{}

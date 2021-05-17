@@ -90,6 +90,8 @@ type Dog struct {
 	Breed, Name string
 }
 
+type ctxKey struct{}
+
 // A thorough test of assignableToTypeOfMatcher
 func TestAssignableToTypeOfMatcher(t *testing.T) {
 	ctrl := gomock.NewController(t)
@@ -137,7 +139,7 @@ func TestAssignableToTypeOfMatcher(t *testing.T) {
 		t.Errorf(`AssignableToTypeOf(context.Context) should not match context.Background()`)
 	}
 
-	ctxWithValue := context.WithValue(context.Background(), "key", "val")
+	ctxWithValue := context.WithValue(context.Background(), ctxKey{}, "val")
 	if match := gomock.AssignableToTypeOf(ctxInterface).Matches(ctxWithValue); !match {
 		t.Errorf(`AssignableToTypeOf(context.Context) should not match ctxWithValue`)
 	}

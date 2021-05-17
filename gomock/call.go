@@ -113,8 +113,14 @@ func (c *Call) DoAndReturn(f interface{}) *Call {
 	v := reflect.ValueOf(f)
 
 	c.addAction(func(args []interface{}) []interface{} {
+		c.t.Helper()
 		vArgs := make([]reflect.Value, len(args))
 		ft := v.Type()
+		if c.methodType.NumIn() != ft.NumIn() {
+			c.t.Fatalf("wrong number of arguments in DoAndReturn func for %T.%v: got %d, want %d [%s]",
+				c.receiver, c.method, ft.NumIn(), c.methodType.NumIn(), c.origin)
+			return nil
+		}
 		for i := 0; i < len(args); i++ {
 			if args[i] != nil {
 				vArgs[i] = reflect.ValueOf(args[i])
@@ -142,6 +148,12 @@ func (c *Call) Do(f interface{}) *Call {
 	v := reflect.ValueOf(f)
 
 	c.addAction(func(args []interface{}) []interface{} {
+		c.t.Helper()
+		if c.methodType.NumIn() != v.Type().NumIn() {
+			c.t.Fatalf("wrong number of arguments in Do func for %T.%v: got %d, want %d [%s]",
+				c.receiver, c.method, v.Type().NumIn(), c.methodType.NumIn(), c.origin)
+			return nil
+		}
 		vArgs := make([]reflect.Value, len(args))
 		ft := v.Type()
 		for i := 0; i < len(args); i++ {
@@ -380,7 +392,7 @@ func (c *Call) matches(args []interface{}) error {
 	// Check that all prerequisite calls have been satisfied.
 	for _, preReqCall := range c.preReqs {
 		if !preReqCall.satisfied() {
-			return fmt.Errorf("Expected call at %s doesn't have a prerequisite call satisfied:\n%v\nshould be called before:\n%v",
+			return fmt.Errorf("expected call at %s doesn't have a prerequisite call satisfied:\n%v\nshould be called before:\n%v",
 				c.origin, preReqCall, c)
 		}
 	}
@@ -425,7 +437,7 @@ func (c *Call) addAction(action func([]interface{}) []interface{}) {
 }
 
 func formatGottenArg(m Matcher, arg interface{}) string {
-	got := fmt.Sprintf("%v", arg)
+	got := fmt.Sprintf("%v (%T)", arg, arg)
 	if gs, ok := m.(GotFormatter); ok {
 		got = gs.Got(arg)
 	}
