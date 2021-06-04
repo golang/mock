@@ -30,17 +30,6 @@ go install github.com/golang/mock/mockgen@v1.5.0
 If you use `mockgen` in your CI pipeline, it may be more appropriate to fixate
 on a specific mockgen version.
 
-## Documentation
-
-After installing, you can use `go doc` to get documentation:
-
-```bash
-go doc github.com/golang/mock/gomock
-```
-
-Alternatively, there is an online reference for the package hosted on GoPkgDoc
-[here][gomock-reference].
-
 ## Running mockgen
 
 `mockgen` has two modes of operation: source and reflect.
@@ -265,3 +254,18 @@ If the received value is `3`, then it will be printed as `03`.
 [ci-runs]:             https://github.com/golang/mock/actions
 [reference-badge]:     https://pkg.go.dev/badge/github.com/golang/mock.svg
 [reference]:           https://pkg.go.dev/github.com/golang/mock
+
+## Debugging Errors
+
+### cannot find module providing package github.com/golang/mock/mockgen/model: working directory is not part of a module
+
+If you come across this error while using reflect mode there are three
+workarounds you can choose from:
+
+1. Use source mode.
+2. Add `--build_flags=--mod=mod` to your mockgen command.
+3. Include an empty import `import _ "github.com/golang/mock/mockgen/model"`.
+
+This error is do to changes in default behavior of the go command in more recent
+versions. More details can be found in
+[#494](https://github.com/golang/mock/issues/494).
