@@ -281,20 +281,20 @@ func TestUnexpectedArgValue_FirstArg(t *testing.T) {
 	defer reporter.recoverUnexpectedFatal()
 	subject := new(Subject)
 
-	expectedArg0 := TestStruct{Number: 123, Message: "hello"}
+	expectedArg0 := TestStruct{Number: 123, Message: "hello %s"}
 	ctrl.RecordCall(subject, "ActOnTestStructMethod", expectedArg0, 15)
 
 	reporter.assertFatal(func() {
 		// the method argument (of TestStruct type) has 1 unexpected value (for the Message field)
 		ctrl.Call(subject, "ActOnTestStructMethod", TestStruct{Number: 123, Message: "no message"}, 15)
 	}, "Unexpected call to", "doesn't match the argument at index 0",
-		"Got: {123 no message} (gomock_test.TestStruct)\nWant: is equal to {123 hello} (gomock_test.TestStruct)")
+		"Got: {123 no message} (gomock_test.TestStruct)\nWant: is equal to {123 hello %s} (gomock_test.TestStruct)")
 
 	reporter.assertFatal(func() {
 		// the method argument (of TestStruct type) has 2 unexpected values (for both fields)
 		ctrl.Call(subject, "ActOnTestStructMethod", TestStruct{Number: 11, Message: "no message"}, 15)
 	}, "Unexpected call to", "doesn't match the argument at index 0",
-		"Got: {11 no message} (gomock_test.TestStruct)\nWant: is equal to {123 hello} (gomock_test.TestStruct)")
+		"Got: {11 no message} (gomock_test.TestStruct)\nWant: is equal to {123 hello %s} (gomock_test.TestStruct)")
 
 	reporter.assertFatal(func() {
 		// The expected call wasn't made.
