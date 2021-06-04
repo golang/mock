@@ -7,14 +7,13 @@ import (
 	"github.com/golang/mock/gomock"
 	user "github.com/golang/mock/sample"
 	"github.com/golang/mock/sample/imp1"
-	mock_user "github.com/golang/mock/sample/mock_user"
 )
 
 func TestRemember(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockIndex := mock_user.NewMockIndex(ctrl)
+	mockIndex := NewMockIndex(ctrl)
 	mockIndex.EXPECT().Put("a", 1)            // literals work
 	mockIndex.EXPECT().Put("b", gomock.Eq(2)) // matchers work too
 
@@ -67,7 +66,7 @@ func TestVariadicFunction(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockIndex := mock_user.NewMockIndex(ctrl)
+	mockIndex := NewMockIndex(ctrl)
 	mockIndex.EXPECT().Ellip("%d", 5, 6, 7, 8).Do(func(format string, nums ...int) {
 		sum := 0
 		for _, value := range nums {
@@ -125,7 +124,7 @@ func TestGrabPointer(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockIndex := mock_user.NewMockIndex(ctrl)
+	mockIndex := NewMockIndex(ctrl)
 	mockIndex.EXPECT().Ptr(gomock.Any()).SetArg(0, 7) // set first argument to 7
 
 	i := user.GrabPointer(mockIndex)
@@ -138,7 +137,7 @@ func TestEmbeddedInterface(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockEmbed := mock_user.NewMockEmbed(ctrl)
+	mockEmbed := NewMockEmbed(ctrl)
 	mockEmbed.EXPECT().RegularMethod()
 	mockEmbed.EXPECT().EmbeddedMethod()
 	mockEmbed.EXPECT().ForeignEmbeddedMethod()
@@ -155,7 +154,7 @@ func TestExpectTrueNil(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockIndex := mock_user.NewMockIndex(ctrl)
+	mockIndex := NewMockIndex(ctrl)
 	mockIndex.EXPECT().Ptr(nil) // this nil is a nil interface{}
 	mockIndex.Ptr(nil)          // this nil is a nil *int
 }
@@ -165,7 +164,7 @@ func TestDoAndReturnSignature(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 
-		mockIndex := mock_user.NewMockIndex(ctrl)
+		mockIndex := NewMockIndex(ctrl)
 
 		mockIndex.EXPECT().Slice(gomock.Any(), gomock.Any()).DoAndReturn(
 			func(_ []int, _ []byte) {},
@@ -184,7 +183,7 @@ func TestDoAndReturnSignature(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 
-		mockIndex := mock_user.NewMockIndex(ctrl)
+		mockIndex := NewMockIndex(ctrl)
 
 		mockIndex.EXPECT().Slice(gomock.Any(), gomock.Any()).DoAndReturn(
 			func(_ []int, _ []byte) bool {
