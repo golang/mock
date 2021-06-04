@@ -271,6 +271,6 @@ dependencies there are three workarounds you can choose from:
 2. Include an empty import `import _ "github.com/golang/mock/mockgen/model"`.
 3. Add `--build_flags=--mod=mod` to your mockgen command.
 
-This error is do to changes in default behavior of the go command in more recent
-versions. More details can be found in
+This error is due to changes in default behavior of the `go` command in more
+recent versions. More details can be found in
 [#494](https://github.com/golang/mock/issues/494).
