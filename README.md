@@ -257,14 +257,19 @@ If the received value is `3`, then it will be printed as `03`.
 
 ## Debugging Errors
 
-### cannot find module providing package github.com/golang/mock/mockgen/model: working directory is not part of a module
+### reflect vendoring error
 
-If you come across this error while using reflect mode there are three
-workarounds you can choose from:
+```text
+cannot find package "."
+... github.com/golang/mock/mockgen/model
+```
+
+If you come across this error while using reflect mode and vendoring
+dependencies there are three workarounds you can choose from:
 
 1. Use source mode.
-2. Add `--build_flags=--mod=mod` to your mockgen command.
-3. Include an empty import `import _ "github.com/golang/mock/mockgen/model"`.
+2. Include an empty import `import _ "github.com/golang/mock/mockgen/model"`.
+3. Add `--build_flags=--mod=mod` to your mockgen command.
 
 This error is do to changes in default behavior of the go command in more recent
 versions. More details can be found in
