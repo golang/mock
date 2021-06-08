@@ -47,6 +47,20 @@ func (mr *MockIMockRecorder) Bar() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Bar", reflect.TypeOf((*MockI)(nil).Bar))
 }
 
+// Baz mocks base method.
+func (m *MockI) Baz() [127]int {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Baz")
+	ret0, _ := ret[0].([127]int)
+	return ret0
+}
+
+// Baz indicates an expected call of Baz.
+func (mr *MockIMockRecorder) Baz() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Baz", reflect.TypeOf((*MockI)(nil).Baz))
+}
+
 // Foo mocks base method.
 func (m *MockI) Foo() [2]int {
 	m.ctrl.T.Helper()
