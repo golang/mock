@@ -19,7 +19,6 @@ package main
 import (
 	"bytes"
 	"encoding/gob"
-	"flag"
 	"fmt"
 	"go/build"
 	"io"
@@ -35,24 +34,26 @@ import (
 	"github.com/golang/mock/mockgen/model"
 )
 
-var (
-	progOnly   = flag.Bool("prog_only", false, "(reflect mode) Only generate the reflection program; write it to stdout and exit.")
-	execOnly   = flag.String("exec_only", "", "(reflect mode) If set, execute this reflection program.")
-	buildFlags = flag.String("build_flags", "", "(reflect mode) Additional flags for go build.")
-)
+type reflectConfig struct {
+	importPath string
+	symbols    []string
+	execOnly   string
+	buildFlags []string
+	progOnly   bool
+}
 
 // reflectMode generates mocks via reflection on an interface.
-func reflectMode(importPath string, symbols []string) (*model.Package, error) {
-	if *execOnly != "" {
-		return run(*execOnly)
+func reflectMode(c reflectConfig) (*model.Package, error) {
+	if c.execOnly != "" {
+		return run(c.execOnly)
 	}
 
-	program, err := writeProgram(importPath, symbols)
+	program, err := writeProgram(c.importPath, c.symbols)
 	if err != nil {
 		return nil, err
 	}
 
-	if *progOnly {
+	if c.progOnly {
 		if _, err := os.Stdout.Write(program); err != nil {
 			return nil, err
 		}
@@ -62,20 +63,20 @@ func reflectMode(importPath string, symbols []string) (*model.Package, error) {
 	wd, _ := os.Getwd()
 
 	// Try to run the reflection program  in the current working directory.
-	if p, err := runInDir(program, wd); err == nil {
+	if p, err := runInDir(program, wd, c.buildFlags); err == nil {
 		return p, nil
 	}
 
 	// Try to run the program in the same directory as the input package.
-	if p, err := build.Import(importPath, wd, build.FindOnly); err == nil {
+	if p, err := build.Import(c.importPath, wd, build.FindOnly); err == nil {
 		dir := p.Dir
-		if p, err := runInDir(program, dir); err == nil {
+		if p, err := runInDir(program, dir, c.buildFlags); err == nil {
 			return p, nil
 		}
 	}
 
 	// Try to run it in a standard temp directory.
-	return runInDir(program, "")
+	return runInDir(program, "", c.buildFlags)
 }
 
 func writeProgram(importPath string, symbols []string) ([]byte, error) {
@@ -131,7 +132,7 @@ func run(program string) (*model.Package, error) {
 
 // runInDir writes the given program into the given dir, runs it there, and
 // parses the output as a model.Package.
-func runInDir(program []byte, dir string) (*model.Package, error) {
+func runInDir(program []byte, dir string, buildFlags []string) (*model.Package, error) {
 	// We use TempDir instead of TempFile so we can control the filename.
 	tmpDir, err := ioutil.TempDir(dir, "gomock_reflect_")
 	if err != nil {
@@ -155,9 +156,7 @@ func runInDir(program []byte, dir string) (*model.Package, error) {
 
 	cmdArgs := []string{}
 	cmdArgs = append(cmdArgs, "build")
-	if *buildFlags != "" {
-		cmdArgs = append(cmdArgs, strings.Split(*buildFlags, " ")...)
-	}
+	cmdArgs = append(cmdArgs, buildFlags...)
 	cmdArgs = append(cmdArgs, "-o", progBinary, progSource)
 
 	// Build the program.

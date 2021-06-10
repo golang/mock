@@ -18,7 +18,6 @@ package main
 
 import (
 	"errors"
-	"flag"
 	"fmt"
 	"go/ast"
 	"go/build"
@@ -34,14 +33,15 @@ import (
 	"github.com/golang/mock/mockgen/model"
 )
 
-var (
-	imports  = flag.String("imports", "", "(source mode) Comma-separated name=path pairs of explicit imports to use.")
-	auxFiles = flag.String("aux_files", "", "(source mode) Comma-separated pkg=path pairs of auxiliary Go source files.")
-)
+type sourceConfig struct {
+	source   string
+	imports  []string
+	auxFiles []string
+}
 
 // sourceMode generates mocks via source file.
-func sourceMode(source string) (*model.Package, error) {
-	srcDir, err := filepath.Abs(filepath.Dir(source))
+func sourceMode(c sourceConfig) (*model.Package, error) {
+	srcDir, err := filepath.Abs(filepath.Dir(c.source))
 	if err != nil {
 		return nil, fmt.Errorf("failed getting source directory: %v", err)
 	}
@@ -52,9 +52,9 @@ func sourceMode(source string) (*model.Package, error) {
 	}
 
 	fs := token.NewFileSet()
-	file, err := parser.ParseFile(fs, source, nil, 0)
+	file, err := parser.ParseFile(fs, c.source, nil, 0)
 	if err != nil {
-		return nil, fmt.Errorf("failed parsing source file %v: %v", source, err)
+		return nil, fmt.Errorf("failed parsing source file %v: %v", c.source, err)
 	}
 
 	p := &fileParser{
@@ -67,20 +67,18 @@ func sourceMode(source string) (*model.Package, error) {
 
 	// Handle -imports.
 	dotImports := make(map[string]bool)
-	if *imports != "" {
-		for _, kv := range strings.Split(*imports, ",") {
-			eq := strings.Index(kv, "=")
-			k, v := kv[:eq], kv[eq+1:]
-			if k == "." {
-				dotImports[v] = true
-			} else {
-				p.imports[k] = importedPkg{path: v}
-			}
+	for _, kv := range c.imports {
+		eq := strings.Index(kv, "=")
+		k, v := kv[:eq], kv[eq+1:]
+		if k == "." {
+			dotImports[v] = true
+		} else {
+			p.imports[k] = importedPkg{path: v}
 		}
 	}
 
 	// Handle -aux_files.
-	if err := p.parseAuxFiles(*auxFiles); err != nil {
+	if err := p.parseAuxFiles(c.auxFiles); err != nil {
 		return nil, err
 	}
 	p.addAuxInterfacesFromFile(packageImport, file) // this file
@@ -143,12 +141,8 @@ func (p *fileParser) errorf(pos token.Pos, format string, args ...interface{}) e
 	return fmt.Errorf(format, args...)
 }
 
-func (p *fileParser) parseAuxFiles(auxFiles string) error {
-	auxFiles = strings.TrimSpace(auxFiles)
-	if auxFiles == "" {
-		return nil
-	}
-	for _, kv := range strings.Split(auxFiles, ",") {
+func (p *fileParser) parseAuxFiles(auxFiles []string) error {
+	for _, kv := range auxFiles {
 		parts := strings.SplitN(kv, "=", 2)
 		if len(parts) != 2 {
 			return fmt.Errorf("bad aux file spec: %v", kv)
