@@ -416,7 +416,10 @@ func (p *fileParser) parseType(pkg string, typ ast.Expr) (model.Type, error) {
 			case (*ast.SelectorExpr):
 				// when the length is a const defined in an external package
 				usedPkg, err := importer.Default().Import(fmt.Sprintf("%s", val.X))
-				ev, err := types.Eval(token.NewFileSet(), usedPkg, token.NoPos, val.Sel.String())
+				if err != nil {
+					return nil, p.errorf(v.Len.Pos(), "unknown package in array length: %v", err)
+				}
+				ev, err := types.Eval(token.NewFileSet(), usedPkg, token.NoPos, val.Sel.Name)
 				if err != nil {
 					return nil, p.errorf(v.Len.Pos(), "unknown constant in array length: %v", err)
 				}
