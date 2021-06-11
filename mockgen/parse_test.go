@@ -116,14 +116,19 @@ func Benchmark_parseFile(b *testing.B) {
 
 func TestParseArrayWithConstLength(t *testing.T) {
 	fs := token.NewFileSet()
+	srcDir := "internal/tests/const_array_length/input.go"
 
-	file, err := parser.ParseFile(fs, "internal/tests/const_array_length/input.go", nil, 0)
+	file, err := parser.ParseFile(fs, srcDir, nil, 0)
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
 
 	p := fileParser{
-		fileSet: fs,
+		fileSet:            fs,
+		imports:            make(map[string]importedPackage),
+		importedInterfaces: make(map[string]map[string]*ast.InterfaceType),
+		auxInterfaces:      make(map[string]map[string]*ast.InterfaceType),
+		srcDir:             srcDir,
 	}
 
 	pkg, err := p.parseFile("", file)
@@ -131,9 +136,11 @@ func TestParseArrayWithConstLength(t *testing.T) {
 		t.Fatalf("Unexpected error: %v", err)
 	}
 
-	expect := "[2]int"
-	got := pkg.Interfaces[0].Methods[0].Out[0].Type.String(nil, "")
-	if got != expect {
-		t.Fatalf("got %v; expected %v", got, expect)
+	expects := []string{"[2]int", "[2]int", "[127]int"}
+	for i, e := range expects {
+		got := pkg.Interfaces[0].Methods[i].Out[0].Type.String(nil, "")
+		if got != e {
+			t.Fatalf("got %v; expected %v", got, e)
+		}
 	}
 }

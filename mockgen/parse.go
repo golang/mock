@@ -22,8 +22,10 @@ import (
 	"fmt"
 	"go/ast"
 	"go/build"
+	"go/importer"
 	"go/parser"
 	"go/token"
+	"go/types"
 	"io/ioutil"
 	"log"
 	"path"
@@ -409,8 +411,19 @@ func (p *fileParser) parseType(pkg string, typ ast.Expr) (model.Type, error) {
 			case (*ast.BasicLit):
 				value = val.Value
 			case (*ast.Ident):
-				// when the length is a const
+				// when the length is a const defined locally
 				value = val.Obj.Decl.(*ast.ValueSpec).Values[0].(*ast.BasicLit).Value
+			case (*ast.SelectorExpr):
+				// when the length is a const defined in an external package
+				usedPkg, err := importer.Default().Import(fmt.Sprintf("%s", val.X))
+				if err != nil {
+					return nil, p.errorf(v.Len.Pos(), "unknown package in array length: %v", err)
+				}
+				ev, err := types.Eval(token.NewFileSet(), usedPkg, token.NoPos, val.Sel.Name)
+				if err != nil {
+					return nil, p.errorf(v.Len.Pos(), "unknown constant in array length: %v", err)
+				}
+				value = ev.Value.String()
 			}
 
 			x, err := strconv.Atoi(value)
