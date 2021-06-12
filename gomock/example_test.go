@@ -20,7 +20,6 @@ func ExampleCall_DoAndReturn_latency() {
 	mockIndex := NewMockFoo(ctrl)
 
 	mockIndex.EXPECT().Bar(gomock.Any()).DoAndReturn(
-		// signature of anonymous function must have the same number of input and output arguments as the mocked method.
 		func(arg string) string {
 			time.Sleep(1 * time.Millisecond)
 			return "I'm sleepy"
@@ -39,7 +38,6 @@ func ExampleCall_DoAndReturn_captureArguments() {
 	var s string
 
 	mockIndex.EXPECT().Bar(gomock.AssignableToTypeOf(s)).DoAndReturn(
-		// signature of anonymous function must have the same number of input and output arguments as the mocked method.
 		func(arg string) interface{} {
 			s = arg
 			return "I'm sleepy"

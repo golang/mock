@@ -108,6 +108,7 @@ func (c *Call) MaxTimes(n int) *Call {
 // DoAndReturn declares the action to run when the call is matched.
 // The return values from this function are returned by the mocked function.
 // It takes an interface{} argument to support n-arity functions.
+// The anonymous function must have the same number of input and output arguments as the mocked method.
 func (c *Call) DoAndReturn(f interface{}) *Call {
 	// TODO: Check arity and types here, rather than dying badly elsewhere.
 	v := reflect.ValueOf(f)
@@ -143,6 +144,7 @@ func (c *Call) DoAndReturn(f interface{}) *Call {
 // return values are ignored to retain backward compatibility. To use the
 // return values call DoAndReturn.
 // It takes an interface{} argument to support n-arity functions.
+// The anonymous function must have the same number of input arguments as the mocked method.
 func (c *Call) Do(f interface{}) *Call {
 	// TODO: Check arity and types here, rather than dying badly elsewhere.
 	v := reflect.ValueOf(f)
