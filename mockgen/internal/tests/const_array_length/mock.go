@@ -61,6 +61,20 @@ func (mr *MockIMockRecorder) Baz() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Baz", reflect.TypeOf((*MockI)(nil).Baz))
 }
 
+// Corge mocks base method.
+func (m *MockI) Corge() [7]int {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Corge")
+	ret0, _ := ret[0].([7]int)
+	return ret0
+}
+
+// Corge indicates an expected call of Corge.
+func (mr *MockIMockRecorder) Corge() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Corge", reflect.TypeOf((*MockI)(nil).Corge))
+}
+
 // Foo mocks base method.
 func (m *MockI) Foo() [2]int {
 	m.ctrl.T.Helper()
@@ -73,4 +87,32 @@ func (m *MockI) Foo() [2]int {
 func (mr *MockIMockRecorder) Foo() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Foo", reflect.TypeOf((*MockI)(nil).Foo))
+}
+
+// Quux mocks base method.
+func (m *MockI) Quux() [3]int {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Quux")
+	ret0, _ := ret[0].([3]int)
+	return ret0
+}
+
+// Quux indicates an expected call of Quux.
+func (mr *MockIMockRecorder) Quux() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Quux", reflect.TypeOf((*MockI)(nil).Quux))
+}
+
+// Qux mocks base method.
+func (m *MockI) Qux() [3]int {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Qux")
+	ret0, _ := ret[0].([3]int)
+	return ret0
+}
+
+// Qux indicates an expected call of Qux.
+func (mr *MockIMockRecorder) Qux() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Qux", reflect.TypeOf((*MockI)(nil).Qux))
 }
