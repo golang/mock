@@ -30,17 +30,6 @@ go install github.com/golang/mock/mockgen@v1.6.0
 If you use `mockgen` in your CI pipeline, it may be more appropriate to fixate
 on a specific mockgen version.
 
-## Documentation
-
-After installing, you can use `go doc` to get documentation:
-
-```bash
-go doc github.com/golang/mock/gomock
-```
-
-Alternatively, there is an online reference for the package hosted on GoPkgDoc
-[here][gomock-reference].
-
 ## Running mockgen
 
 `mockgen` has two modes of operation: source and reflect.
@@ -119,6 +108,14 @@ It supports the following flags:
   tell mockgen which import to exclude.
 
 - `-copyright_file`: Copyright file used to add copyright header to the resulting source code.
+
+- `-debug_parser`: Print out parser results only.
+
+- `-exec_only`: (reflect mode) If set, execute this reflection program.
+
+- `-prog_only`: (reflect mode) Only generate the reflection program; write it to stdout and exit.
+
+- `-write_package_comment`: Writes package documentation comment (godoc) if true. (default true)
 
 For an example of the use of `mockgen`, see the `sample/` directory. In simple
 cases, you will need only the `-source` flag.
@@ -257,3 +254,23 @@ If the received value is `3`, then it will be printed as `03`.
 [ci-runs]:             https://github.com/golang/mock/actions
 [reference-badge]:     https://pkg.go.dev/badge/github.com/golang/mock.svg
 [reference]:           https://pkg.go.dev/github.com/golang/mock
+
+## Debugging Errors
+
+### reflect vendoring error
+
+```text
+cannot find package "."
+... github.com/golang/mock/mockgen/model
+```
+
+If you come across this error while using reflect mode and vendoring
+dependencies there are three workarounds you can choose from:
+
+1. Use source mode.
+2. Include an empty import `import _ "github.com/golang/mock/mockgen/model"`.
+3. Add `--build_flags=--mod=mod` to your mockgen command.
+
+This error is due to changes in default behavior of the `go` command in more
+recent versions. More details can be found in
+[#494](https://github.com/golang/mock/issues/494).

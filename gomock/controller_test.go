@@ -54,17 +54,6 @@ func (e *ErrorReporter) assertFail(msg string) {
 	}
 }
 
-func (e *ErrorReporter) assertLogf(expectedErrMsgs ...string) {
-	if len(e.log) < len(expectedErrMsgs) {
-		e.t.Fatalf("got %d Logf messages, want %d", len(e.log), len(expectedErrMsgs))
-	}
-	for i, expectedErrMsg := range expectedErrMsgs {
-		if !strings.Contains(e.log[i], expectedErrMsg) {
-			e.t.Errorf("Error message:\ngot: %q\nwant to contain: %q\n", e.log[i], expectedErrMsg)
-		}
-	}
-}
-
 // Use to check that code triggers a fatal test failure.
 func (e *ErrorReporter) assertFatal(fn func(), expectedErrMsgs ...string) {
 	defer func() {
@@ -292,20 +281,20 @@ func TestUnexpectedArgValue_FirstArg(t *testing.T) {
 	defer reporter.recoverUnexpectedFatal()
 	subject := new(Subject)
 
-	expectedArg0 := TestStruct{Number: 123, Message: "hello"}
+	expectedArg0 := TestStruct{Number: 123, Message: "hello %s"}
 	ctrl.RecordCall(subject, "ActOnTestStructMethod", expectedArg0, 15)
 
 	reporter.assertFatal(func() {
 		// the method argument (of TestStruct type) has 1 unexpected value (for the Message field)
 		ctrl.Call(subject, "ActOnTestStructMethod", TestStruct{Number: 123, Message: "no message"}, 15)
 	}, "Unexpected call to", "doesn't match the argument at index 0",
-		"Got: {123 no message}\nWant: is equal to {123 hello}")
+		"Got: {123 no message} (gomock_test.TestStruct)\nWant: is equal to {123 hello %s} (gomock_test.TestStruct)")
 
 	reporter.assertFatal(func() {
 		// the method argument (of TestStruct type) has 2 unexpected values (for both fields)
 		ctrl.Call(subject, "ActOnTestStructMethod", TestStruct{Number: 11, Message: "no message"}, 15)
 	}, "Unexpected call to", "doesn't match the argument at index 0",
-		"Got: {11 no message}\nWant: is equal to {123 hello}")
+		"Got: {11 no message} (gomock_test.TestStruct)\nWant: is equal to {123 hello %s} (gomock_test.TestStruct)")
 
 	reporter.assertFatal(func() {
 		// The expected call wasn't made.
@@ -324,7 +313,7 @@ func TestUnexpectedArgValue_SecondArg(t *testing.T) {
 	reporter.assertFatal(func() {
 		ctrl.Call(subject, "ActOnTestStructMethod", TestStruct{Number: 123, Message: "hello"}, 3)
 	}, "Unexpected call to", "doesn't match the argument at index 1",
-		"Got: 3\nWant: is equal to 15")
+		"Got: 3 (int)\nWant: is equal to 15 (int)")
 
 	reporter.assertFatal(func() {
 		// The expected call wasn't made.
@@ -351,7 +340,7 @@ func TestUnexpectedArgValue_WantFormatter(t *testing.T) {
 	reporter.assertFatal(func() {
 		ctrl.Call(subject, "ActOnTestStructMethod", TestStruct{Number: 123, Message: "hello"}, 3)
 	}, "Unexpected call to", "doesn't match the argument at index 1",
-		"Got: 3\nWant: is equal to fifteen")
+		"Got: 3 (int)\nWant: is equal to fifteen")
 
 	reporter.assertFatal(func() {
 		// The expected call wasn't made.
@@ -411,14 +400,14 @@ func TestMinTimes1(t *testing.T) {
 	})
 
 	// It succeeds if there is one call
-	reporter, ctrl = createFixtures(t)
+	_, ctrl = createFixtures(t)
 	subject = new(Subject)
 	ctrl.RecordCall(subject, "FooMethod", "argument").MinTimes(1)
 	ctrl.Call(subject, "FooMethod", "argument")
 	ctrl.Finish()
 
 	// It succeeds if there are many calls
-	reporter, ctrl = createFixtures(t)
+	_, ctrl = createFixtures(t)
 	subject = new(Subject)
 	ctrl.RecordCall(subject, "FooMethod", "argument").MinTimes(1)
 	for i := 0; i < 100; i++ {
@@ -473,7 +462,7 @@ func TestMinMaxTimes(t *testing.T) {
 	})
 
 	// It succeeds if there is just the right number of calls
-	reporter, ctrl = createFixtures(t)
+	_, ctrl = createFixtures(t)
 	subject = new(Subject)
 	ctrl.RecordCall(subject, "FooMethod", "argument").MaxTimes(2).MinTimes(2)
 	ctrl.Call(subject, "FooMethod", "argument")
@@ -491,7 +480,7 @@ func TestMinMaxTimes(t *testing.T) {
 	})
 
 	// If MinTimes is called after MaxTimes is called with 1, MinTimes takes precedence.
-	reporter, ctrl = createFixtures(t)
+	_, ctrl = createFixtures(t)
 	subject = new(Subject)
 	ctrl.RecordCall(subject, "FooMethod", "argument").MaxTimes(1).MinTimes(2)
 	for i := 0; i < 100; i++ {
@@ -506,7 +495,8 @@ func TestDo(t *testing.T) {
 
 	doCalled := false
 	var argument string
-	ctrl.RecordCall(subject, "FooMethod", "argument").Do(
+	wantArg := "argument"
+	ctrl.RecordCall(subject, "FooMethod", wantArg).Do(
 		func(arg string) {
 			doCalled = true
 			argument = arg
@@ -515,12 +505,12 @@ func TestDo(t *testing.T) {
 		t.Error("Do() callback called too early.")
 	}
 
-	ctrl.Call(subject, "FooMethod", "argument")
+	ctrl.Call(subject, "FooMethod", wantArg)
 
 	if !doCalled {
 		t.Error("Do() callback not called.")
 	}
-	if "argument" != argument {
+	if wantArg != argument {
 		t.Error("Do callback received wrong argument.")
 	}
 
@@ -533,7 +523,8 @@ func TestDoAndReturn(t *testing.T) {
 
 	doCalled := false
 	var argument string
-	ctrl.RecordCall(subject, "FooMethod", "argument").DoAndReturn(
+	wantArg := "argument"
+	ctrl.RecordCall(subject, "FooMethod", wantArg).DoAndReturn(
 		func(arg string) int {
 			doCalled = true
 			argument = arg
@@ -543,12 +534,12 @@ func TestDoAndReturn(t *testing.T) {
 		t.Error("Do() callback called too early.")
 	}
 
-	rets := ctrl.Call(subject, "FooMethod", "argument")
+	rets := ctrl.Call(subject, "FooMethod", wantArg)
 
 	if !doCalled {
 		t.Error("Do() callback not called.")
 	}
-	if "argument" != argument {
+	if wantArg != argument {
 		t.Error("Do callback received wrong argument.")
 	}
 	if len(rets) != 1 {
@@ -720,7 +711,7 @@ func TestVariadicNoMatch(t *testing.T) {
 	rep.assertFatal(func() {
 		ctrl.Call(s, "VariadicMethod", 1)
 	}, "expected call at", "doesn't match the argument at index 0",
-		"Got: 1\nWant: is equal to 0")
+		"Got: 1 (int)\nWant: is equal to 0 (int)")
 	ctrl.Call(s, "VariadicMethod", 0)
 	ctrl.Finish()
 }

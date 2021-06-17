@@ -90,6 +90,8 @@ type Dog struct {
 	Breed, Name string
 }
 
+type ctxKey struct{}
+
 // A thorough test of assignableToTypeOfMatcher
 func TestAssignableToTypeOfMatcher(t *testing.T) {
 	ctrl := gomock.NewController(t)
@@ -137,8 +139,157 @@ func TestAssignableToTypeOfMatcher(t *testing.T) {
 		t.Errorf(`AssignableToTypeOf(context.Context) should not match context.Background()`)
 	}
 
-	ctxWithValue := context.WithValue(context.Background(), "key", "val")
+	ctxWithValue := context.WithValue(context.Background(), ctxKey{}, "val")
 	if match := gomock.AssignableToTypeOf(ctxInterface).Matches(ctxWithValue); !match {
 		t.Errorf(`AssignableToTypeOf(context.Context) should not match ctxWithValue`)
+	}
+}
+
+func TestInAnyOrder(t *testing.T) {
+	tests := []struct {
+		name      string
+		wanted    interface{}
+		given     interface{}
+		wantMatch bool
+	}{
+		{
+			name:      "match for equal slices",
+			wanted:    []int{1, 2, 3},
+			given:     []int{1, 2, 3},
+			wantMatch: true,
+		},
+		{
+			name:      "match for slices with same elements of different order",
+			wanted:    []int{1, 2, 3},
+			given:     []int{1, 3, 2},
+			wantMatch: true,
+		},
+		{
+			name:      "not match for slices with different elements",
+			wanted:    []int{1, 2, 3},
+			given:     []int{1, 2, 4},
+			wantMatch: false,
+		},
+		{
+			name:      "not match for slices with missing elements",
+			wanted:    []int{1, 2, 3},
+			given:     []int{1, 2},
+			wantMatch: false,
+		},
+		{
+			name:      "not match for slices with extra elements",
+			wanted:    []int{1, 2, 3},
+			given:     []int{1, 2, 3, 4},
+			wantMatch: false,
+		},
+		{
+			name:      "match for empty slices",
+			wanted:    []int{},
+			given:     []int{},
+			wantMatch: true,
+		},
+		{
+			name:      "not match for equal slices of different types",
+			wanted:    []float64{1, 2, 3},
+			given:     []int{1, 2, 3},
+			wantMatch: false,
+		},
+		{
+			name:      "match for equal arrays",
+			wanted:    [3]int{1, 2, 3},
+			given:     [3]int{1, 2, 3},
+			wantMatch: true,
+		},
+		{
+			name:      "match for equal arrays of different order",
+			wanted:    [3]int{1, 2, 3},
+			given:     [3]int{1, 3, 2},
+			wantMatch: true,
+		},
+		{
+			name:      "not match for arrays of different elements",
+			wanted:    [3]int{1, 2, 3},
+			given:     [3]int{1, 2, 4},
+			wantMatch: false,
+		},
+		{
+			name:      "not match for arrays with extra elements",
+			wanted:    [3]int{1, 2, 3},
+			given:     [4]int{1, 2, 3, 4},
+			wantMatch: false,
+		},
+		{
+			name:      "not match for arrays with missing elements",
+			wanted:    [3]int{1, 2, 3},
+			given:     [2]int{1, 2},
+			wantMatch: false,
+		},
+		{
+			name:      "not match for equal strings", // matcher shouldn't treat strings as collections
+			wanted:    "123",
+			given:     "123",
+			wantMatch: false,
+		},
+		{
+			name:      "not match if x type is not iterable",
+			wanted:    123,
+			given:     []int{123},
+			wantMatch: false,
+		},
+		{
+			name:      "not match if in type is not iterable",
+			wanted:    []int{123},
+			given:     123,
+			wantMatch: false,
+		},
+		{
+			name:      "not match if both are not iterable",
+			wanted:    123,
+			given:     123,
+			wantMatch: false,
+		},
+		{
+			name:      "match for equal slices with unhashable elements",
+			wanted:    [][]int{{1}, {1, 2}, {1, 2, 3}},
+			given:     [][]int{{1}, {1, 2}, {1, 2, 3}},
+			wantMatch: true,
+		},
+		{
+			name:      "match for equal slices with unhashable elements of different order",
+			wanted:    [][]int{{1}, {1, 2, 3}, {1, 2}},
+			given:     [][]int{{1}, {1, 2}, {1, 2, 3}},
+			wantMatch: true,
+		},
+		{
+			name:      "not match for different slices with unhashable elements",
+			wanted:    [][]int{{1}, {1, 2, 3}, {1, 2}},
+			given:     [][]int{{1}, {1, 2, 4}, {1, 3}},
+			wantMatch: false,
+		},
+		{
+			name:      "not match for unhashable missing elements",
+			wanted:    [][]int{{1}, {1, 2}, {1, 2, 3}},
+			given:     [][]int{{1}, {1, 2}},
+			wantMatch: false,
+		},
+		{
+			name:      "not match for unhashable extra elements",
+			wanted:    [][]int{{1}, {1, 2}},
+			given:     [][]int{{1}, {1, 2}, {1, 2, 3}},
+			wantMatch: false,
+		},
+		{
+			name:      "match for equal slices of assignable types",
+			wanted:    [][]string{{"a", "b"}},
+			given:     []A{{"a", "b"}},
+			wantMatch: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := gomock.InAnyOrder(tt.wanted).Matches(tt.given); got != tt.wantMatch {
+				t.Errorf("got = %v, wantMatch %v", got, tt.wantMatch)
+			}
+		})
 	}
 }
