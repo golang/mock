@@ -170,7 +170,7 @@ func runInDir(program []byte, dir string) (*model.Package, error) {
 		sErr := buf.String()
 		if strings.Contains(sErr, `cannot find package "."`) &&
 			strings.Contains(sErr, "github.com/golang/mock/mockgen/model") {
-			fmt.Fprint(os.Stderr, "Please reference the steps in the README to fix this error:\n\thttps://github.com/golang/mock#reflect-vendoring-error.")
+			fmt.Fprint(os.Stderr, "Please reference the steps in the README to fix this error:\n\thttps://github.com/golang/mock#reflect-vendoring-error.\n")
 			return nil, err
 		}
 		return nil, err
