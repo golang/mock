@@ -70,13 +70,23 @@ func (cs callSet) FindMatch(receiver interface{}, method string, args []interfac
 	// Search through the expected calls.
 	expected := cs.expected[key]
 	var callsErrors bytes.Buffer
+	var defaultCall *Call
 	for _, call := range expected {
 		err := call.matches(args)
 		if err != nil {
 			_, _ = fmt.Fprintf(&callsErrors, "\n%v", err)
 		} else {
+			if call.isDefault {
+				defaultCall = call
+				continue
+			}
 			return call, nil
 		}
+	}
+
+	// Nothing found check if we at least found some default
+	if defaultCall != nil {
+		return defaultCall, nil
 	}
 
 	// If we haven't found a match then search through the exhausted calls so we
