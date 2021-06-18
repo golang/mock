@@ -52,20 +52,24 @@ var (
 	date    = "unknown"
 )
 
-var (
-	source          = flag.String("source", "", "(source mode) Input Go source file; enables source mode.")
-	destination     = flag.String("destination", "", "Output file; defaults to stdout.")
-	mockNames       = flag.String("mock_names", "", "Comma-separated interfaceName=mockName pairs of explicit mock names to use. Mock names default to 'Mock'+ interfaceName suffix.")
-	packageOut      = flag.String("package", "", "Package of the generated code; defaults to the package of the input with a 'mock_' prefix.")
-	selfPackage     = flag.String("self_package", "", "The full package import path for the generated code. The purpose of this flag is to prevent import cycles in the generated code by trying to include its own package. This can happen if the mock's package is set to one of its inputs (usually the main one) and the output is stdio so mockgen cannot detect the final output package. Setting this flag will then tell mockgen which import to exclude.")
-	writePkgComment = flag.Bool("write_package_comment", true, "Writes package documentation comment (godoc) if true.")
-	copyrightFile   = flag.String("copyright_file", "", "Copyright file used to add copyright header")
-
-	debugParser = flag.Bool("debug_parser", false, "Print out parser results only.")
-	showVersion = flag.Bool("version", false, "Print version.")
-)
-
 func main() {
+	destination := flag.String("destination", "", "Output file; defaults to stdout.")
+	mockNames := flag.String("mock_names", "", "Comma-separated interfaceName=mockName pairs of explicit mock names to use. Mock names default to 'Mock'+ interfaceName suffix.")
+	packageOut := flag.String("package", "", "Package of the generated code; defaults to the package of the input with a 'mock_' prefix.")
+	selfPackage := flag.String("self_package", "", "The full package import path for the generated code. The purpose of this flag is to prevent import cycles in the generated code by trying to include its own package. This can happen if the mock's package is set to one of its inputs (usually the main one) and the output is stdio so mockgen cannot detect the final output package. Setting this flag will then tell mockgen which import to exclude.")
+	writePkgComment := flag.Bool("write_package_comment", true, "Writes package documentation comment (godoc) if true.")
+	copyrightFile := flag.String("copyright_file", "", "Copyright file used to add copyright header.")
+
+	source := flag.String("source", "", "(source mode) Input Go source file; enables source mode.")
+	imports := flag.String("imports", "", "(source mode) Comma-separated name=path pairs of explicit imports to use.")
+	auxFiles := flag.String("aux_files", "", "(source mode) Comma-separated pkg=path pairs of auxiliary Go source files.")
+
+	progOnly := flag.Bool("prog_only", false, "(reflect mode) Only generate the reflection program; write it to stdout and exit.")
+	execOnly := flag.String("exec_only", "", "(reflect mode) If set, execute this reflection program.")
+	buildFlags := flag.String("build_flags", "", "(reflect mode) Additional flags for go build.")
+
+	debugParser := flag.Bool("debug_parser", false, "Print out parser results only.")
+	showVersion := flag.Bool("version", false, "Print version.")
 	flag.Usage = usage
 	flag.Parse()
 
@@ -78,7 +82,12 @@ func main() {
 	var err error
 	var packageName string
 	if *source != "" {
-		pkg, err = sourceMode(*source)
+		conf := sourceConfig{
+			source:   *source,
+			imports:  strings.Split(strings.TrimSpace(*imports), ","),
+			auxFiles: strings.Split(strings.TrimSpace(*auxFiles), ","),
+		}
+		pkg, err = sourceMode(conf)
 	} else {
 		if flag.NArg() != 2 {
 			usage()
@@ -96,7 +105,14 @@ func main() {
 				log.Fatalf("Parse package name failed: %v", err)
 			}
 		}
-		pkg, err = reflectMode(packageName, interfaces)
+		conf := reflectConfig{
+			importPath: packageName,
+			symbols:    interfaces,
+			execOnly:   *execOnly,
+			buildFlags: strings.Split(strings.TrimSpace(*buildFlags), " "),
+			progOnly:   *progOnly,
+		}
+		pkg, err = reflectMode(conf)
 	}
 	if err != nil {
 		log.Fatalf("Loading input failed: %v", err)
@@ -148,14 +164,17 @@ func main() {
 		}
 	}
 
-	g := new(generator)
+	g := &generator{
+		selfPackage:     *selfPackage,
+		writePkgComment: *writePkgComment,
+		destination:     *destination,
+	}
 	if *source != "" {
 		g.filename = *source
 	} else {
 		g.srcPackage = packageName
 		g.srcInterfaces = flag.Arg(1)
 	}
-	g.destination = *destination
 
 	if *mockNames != "" {
 		g.mockNames = parseMockNames(*mockNames)
@@ -165,7 +184,6 @@ func main() {
 		if err != nil {
 			log.Fatalf("Failed reading copyright file: %v", err)
 		}
-
 		g.copyrightHeader = string(header)
 	}
 	if err := g.Generate(pkg, outputPackageName, outputPackagePath); err != nil {
@@ -218,6 +236,8 @@ type generator struct {
 	destination               string            // may be empty
 	srcPackage, srcInterfaces string            // may be empty
 	copyrightHeader           string
+	selfPackage               string
+	writePkgComment           bool
 
 	packageMap map[string]string // map from import path to package name
 }
@@ -260,7 +280,7 @@ func sanitize(s string) string {
 }
 
 func (g *generator) Generate(pkg *model.Package, outputPkgName string, outputPackagePath string) error {
-	if outputPkgName != pkg.Name && *selfPackage == "" {
+	if outputPkgName != pkg.Name && g.selfPackage == "" {
 		// reset outputPackagePath if it's not passed in through -self_package
 		outputPackagePath = ""
 	}
@@ -334,7 +354,7 @@ func (g *generator) Generate(pkg *model.Package, outputPkgName string, outputPac
 		localNames[pkgName] = true
 	}
 
-	if *writePkgComment {
+	if g.writePkgComment {
 		g.p("// Package %v is a generated GoMock package.", outputPkgName)
 	}
 	g.p("package %v", outputPkgName)
