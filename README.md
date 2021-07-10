@@ -18,13 +18,13 @@ To get the latest released version use:
 ### Go version < 1.16
 
 ```bash
-GO111MODULE=on go get github.com/golang/mock/mockgen@v1.5.0
+GO111MODULE=on go get github.com/golang/mock/mockgen@v1.6.0
 ```
 
 ### Go 1.16+
 
 ```bash
-go install github.com/golang/mock/mockgen@v1.5.0
+go install github.com/golang/mock/mockgen@v1.6.0
 ```
 
 If you use `mockgen` in your CI pipeline, it may be more appropriate to fixate
