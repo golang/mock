@@ -42,6 +42,13 @@ func (testObj b) Foo() string {
 	return testObj.foo
 }
 
+type c struct {
+}
+
+func (testObj *c) Dummy(arg interface{}) interface{} {
+	return arg
+}
+
 type mockTestReporter struct {
 	errorCalls int
 	fatalCalls int
@@ -56,6 +63,28 @@ func (o *mockTestReporter) Fatalf(format string, args ...interface{}) {
 }
 
 func (o *mockTestReporter) Helper() {}
+
+type simpleMatcher struct {
+	Want interface{}
+	Got  interface{}
+}
+
+func (m *simpleMatcher) Matches(actual interface{}) bool {
+	m.Got = actual
+
+	return m.Want == m.Got
+}
+
+func (m *simpleMatcher) String() string {
+	return "Matches simply by =="
+}
+
+type simpleArgMatcher struct {
+}
+
+func (m *simpleArgMatcher) Wrap(arg interface{}) Matcher {
+	return &simpleMatcher{Want: arg}
+}
 
 func TestCall_After(t *testing.T) {
 	t.Run("SelfPrereqCallsFatalf", func(t *testing.T) {
@@ -600,5 +629,30 @@ func TestCall_DoAndReturn(t *testing.T) {
 
 			action(tc.args)
 		})
+	}
+}
+
+func TestCall_ArgMatcher(t *testing.T) {
+	receiver := &c{}
+	call := newCall(t, receiver, "Dummy", reflect.TypeOf((*c)(nil).Dummy), &simpleArgMatcher{}, "foo")
+
+	if len(call.args) != 1 {
+		t.Error("expected number of arguments to be 1")
+	}
+
+	for _, arg := range call.args {
+		if _, ok := arg.(*simpleMatcher); !ok {
+			t.Error("expected arguments to be wrapper by simpleMatcher")
+		}
+	}
+
+	err := call.matches([]interface{}{"foo"})
+	if err != nil {
+		t.Error("expected foo to match foo")
+	}
+
+	err = call.matches([]interface{}{"bar"})
+	if err == nil {
+		t.Error("expected foo not to match bar")
 	}
 }

@@ -33,16 +33,16 @@ func (m *MockFoo) EXPECT() *MockFooMockRecorder {
 	return m.recorder
 }
 
-// Bar mocks base method.
+// Dummy mocks base method.
 func (m *MockFoo) Bar(arg0 string) string {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Bar", arg0)
+	ret := m.ctrl.Call(m, "Dummy", arg0)
 	ret0, _ := ret[0].(string)
 	return ret0
 }
 
-// Bar indicates an expected call of Bar.
+// Dummy indicates an expected call of Dummy.
 func (mr *MockFooMockRecorder) Bar(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Bar", reflect.TypeOf((*MockFoo)(nil).Bar), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Dummy", reflect.TypeOf((*MockFoo)(nil).Bar), arg0)
 }

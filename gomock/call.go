@@ -44,9 +44,15 @@ type Call struct {
 	actions []func([]interface{}) []interface{}
 }
 
+// ArgMatcher is used to create matcher for pure arguments.
+// It's especially useful if you want to apply default matcher to all your tests.
+type ArgMatcher interface {
+	Wrap(arg interface{}) Matcher
+}
+
 // newCall creates a *Call. It requires the method type in order to support
 // unexported methods.
-func newCall(t TestHelper, receiver interface{}, method string, methodType reflect.Type, args ...interface{}) *Call {
+func newCall(t TestHelper, receiver interface{}, method string, methodType reflect.Type, argMatcher ArgMatcher, args ...interface{}) *Call {
 	t.Helper()
 
 	// TODO: check arity, types.
@@ -54,6 +60,8 @@ func newCall(t TestHelper, receiver interface{}, method string, methodType refle
 	for i, arg := range args {
 		if m, ok := arg.(Matcher); ok {
 			mArgs[i] = m
+		} else if argMatcher != nil {
+			mArgs[i] = argMatcher.Wrap(arg)
 		} else if arg == nil {
 			// Handle nil specially so that passing a nil interface value
 			// will match the typed nils of concrete args.

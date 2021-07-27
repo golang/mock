@@ -30,7 +30,7 @@ func TestCallSetAdd(t *testing.T) {
 
 	numCalls := 10
 	for i := 0; i < numCalls; i++ {
-		cs.Add(newCall(t, receiver, method, reflect.TypeOf(receiverType{}.Func)))
+		cs.Add(newCall(t, receiver, method, reflect.TypeOf(receiverType{}.Func), nil))
 	}
 
 	call, err := cs.FindMatch(receiver, method, []interface{}{})
@@ -82,7 +82,7 @@ func TestCallSetFindMatch(t *testing.T) {
 		method := "TestMethod"
 		args := []interface{}{}
 
-		c1 := newCall(t, receiver, method, reflect.TypeOf(receiverType{}.Func))
+		c1 := newCall(t, receiver, method, reflect.TypeOf(receiverType{}.Func), nil)
 		cs.exhausted = map[callSetKey][]*Call{
 			{receiver: receiver, fname: method}: {c1},
 		}

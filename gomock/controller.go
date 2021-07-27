@@ -117,6 +117,7 @@ type Controller struct {
 	mu            sync.Mutex
 	expectedCalls *callSet
 	finished      bool
+	ArgMatcher    ArgMatcher
 }
 
 // NewController returns a new Controller. It is the preferred way to create a
@@ -203,7 +204,7 @@ func (ctrl *Controller) RecordCall(receiver interface{}, method string, args ...
 func (ctrl *Controller) RecordCallWithMethodType(receiver interface{}, method string, methodType reflect.Type, args ...interface{}) *Call {
 	ctrl.T.Helper()
 
-	call := newCall(ctrl.T, receiver, method, methodType, args...)
+	call := newCall(ctrl.T, receiver, method, methodType, ctrl.ArgMatcher, args...)
 
 	ctrl.mu.Lock()
 	defer ctrl.mu.Unlock()
