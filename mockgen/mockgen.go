@@ -286,8 +286,10 @@ func (g *generator) Generate(pkg *model.Package, outputPkgName string, outputPac
 	invocatedCmd := strings.Join(os.Args, " ")
 	g.p("//    %v", invocatedCmd)
 
-	if bi, exists := debug.ReadBuildInfo(); exists {
-		g.p("//")
+	g.p("//")
+	if version != "" {
+		g.p("// Mockgen version: %v", version)
+	} else if bi, exists := debug.ReadBuildInfo(); exists {
 		g.p("// Mockgen version: %v", bi.Main.Version)
 	}
 	g.p("")
