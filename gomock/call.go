@@ -225,15 +225,17 @@ func (c *Call) SetArg(n int, value interface{}) *Call {
 	c.t.Helper()
 
 	mt := c.methodType
-	// TODO: This will break on variadic methods.
-	// We will need to check those at invocation time.
-	if n < 0 || n >= mt.NumIn() {
+	if (n < 0 || n >= mt.NumIn()) && !mt.IsVariadic() {
 		c.t.Fatalf("SetArg(%d, ...) called for a method with %d args [%s]",
 			n, mt.NumIn(), c.origin)
 	}
 	// Permit setting argument through an interface.
 	// In the interface case, we don't (nay, can't) check the type here.
-	at := mt.In(n)
+	nn := n
+	if mt.IsVariadic() {
+		nn = 0
+	}
+	at := mt.In(nn)
 	switch at.Kind() {
 	case reflect.Ptr:
 		dt := at.Elem()
@@ -250,16 +252,24 @@ func (c *Call) SetArg(n int, value interface{}) *Call {
 			n, at, c.origin)
 	}
 
-	c.addAction(func(args []interface{}) []interface{} {
-		v := reflect.ValueOf(value)
-		switch reflect.TypeOf(args[n]).Kind() {
-		case reflect.Slice:
-			setSlice(args[n], v)
-		default:
+	if mt.IsVariadic() {
+		c.addAction(func(args []interface{}) []interface{} {
+			v := reflect.ValueOf(value)
 			reflect.ValueOf(args[n]).Elem().Set(v)
-		}
-		return nil
-	})
+			return nil
+		})
+	} else {
+		c.addAction(func(args []interface{}) []interface{} {
+			v := reflect.ValueOf(value)
+			switch reflect.TypeOf(args[n]).Kind() {
+			case reflect.Slice:
+				setSlice(args[n], v)
+			default:
+				reflect.ValueOf(args[n]).Elem().Set(v)
+			}
+			return nil
+		})
+	}
 	return c
 }
 
