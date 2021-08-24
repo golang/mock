@@ -293,3 +293,44 @@ func TestInAnyOrder(t *testing.T) {
 		})
 	}
 }
+
+func TestInMatcher_Matches(t *testing.T) {
+	tests := []struct {
+		name      string
+		wanted    interface{}
+		given     interface{}
+		wantMatch bool
+	}{
+		{
+			"match successfully",
+			[]int{1, 2},
+			2,
+			true,
+		},
+		{
+			"given not found",
+			[]int{1, 2},
+			3,
+			false,
+		},
+		{
+			"type not match, wanted should be slice",
+			1,
+			1,
+			false,
+		},
+		{
+			"empty slice",
+			[]int{},
+			1,
+			false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := gomock.In(tt.wanted).Matches(tt.given); got != tt.wantMatch {
+				t.Errorf("got = %v, wantMatch %v", got, tt.wantMatch)
+			}
+		})
+	}
+}

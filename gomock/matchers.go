@@ -271,6 +271,37 @@ func (m inAnyOrderMatcher) String() string {
 	return fmt.Sprintf("has the same elements as %v", m.x)
 }
 
+type inMatcher struct {
+	x interface{}
+}
+
+func (m inMatcher) Matches(x interface{}) bool {
+	matchers := m.prepareValue(m.x)
+	for _, matcher := range matchers {
+		if matcher.Matches(x) {
+			return true
+		}
+	}
+	return false
+}
+
+func (m inMatcher) prepareValue(x interface{}) []Matcher {
+	xValue := reflect.ValueOf(x)
+	kind := xValue.Kind()
+	if kind != reflect.Slice && kind != reflect.Array {
+		return nil
+	}
+	matchers := make([]Matcher, 0, xValue.Len())
+	for i := 0; i < xValue.Len(); i++ {
+		matchers = append(matchers, Eq(xValue.Index(i).Interface()))
+	}
+	return matchers
+}
+
+func (m inMatcher) String() string {
+	return fmt.Sprintf("match one of %v", m.x)
+}
+
 // Constructors
 
 // All returns a composite Matcher that returns true if and only all of the
@@ -338,4 +369,15 @@ func AssignableToTypeOf(x interface{}) Matcher {
 //   InAnyOrder([]int{1, 2, 3}).Matches([]int{1, 2}) // returns false
 func InAnyOrder(x interface{}) Matcher {
 	return inAnyOrderMatcher{x}
+}
+
+// In is a Matcher that returns true if the received value Eq one of the elements
+//
+// Example usage:
+//   m := In([]int{1,2})
+//   m.Matches(1) // returns true
+//   m.Matches(2) // returns true
+//   m.Matches(3) // returns false
+func In(x interface{}) Matcher {
+	return inMatcher{x}
 }
