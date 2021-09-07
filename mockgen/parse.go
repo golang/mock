@@ -232,7 +232,7 @@ func (p *fileParser) parsePackage(path string) (*fileParser, error) {
 	}
 
 	for _, pkg := range pkgs {
-		file := ast.MergePackageFiles(pkg, ast.FilterFuncDuplicates|ast.FilterUnassociatedComments|ast.FilterImportDuplicates)
+		file := ast.MergePackageFiles(pkg, ast.FilterFuncDuplicates|ast.FilterUnassociatedComments)
 		if _, ok := newP.importedInterfaces[path]; !ok {
 			newP.importedInterfaces[path] = make(map[string]*ast.InterfaceType)
 		}
@@ -561,10 +561,7 @@ func importsOfFile(file *ast.File) (normalImports map[string]importedPackage, do
 						duplicates: append([]string{importPath}, p.duplicates...),
 					}
 				case importedPkg:
-					normalImports[pkgName] = duplicateImport{
-						name:       pkgName,
-						duplicates: []string{p.path, importPath},
-					}
+					continue
 				}
 			} else {
 				normalImports[pkgName] = importedPkg{path: importPath}
