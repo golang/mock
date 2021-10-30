@@ -158,7 +158,8 @@ func (s *Subject) ActOnTestStructMethod(arg TestStruct, arg1 int) int {
 	return 0
 }
 
-func (s *Subject) SetArgMethod(sliceArg []byte, ptrArg *int) {}
+func (s *Subject) SetArgMethod(sliceArg []byte, ptrArg *int, mapArg map[interface{}]interface{}) {}
+func (s *Subject) SetArgMethodInterface(sliceArg, ptrArg, mapArg interface{})                    {}
 
 func assertEqual(t *testing.T, expected interface{}, actual interface{}) {
 	if !reflect.DeepEqual(expected, actual) {
@@ -560,11 +561,18 @@ func TestSetArgSlice(t *testing.T) {
 
 	var in = []byte{4, 5, 6}
 	var set = []byte{1, 2, 3}
-	ctrl.RecordCall(subject, "SetArgMethod", in, nil).SetArg(0, set)
-	ctrl.Call(subject, "SetArgMethod", in, nil)
+	ctrl.RecordCall(subject, "SetArgMethod", in, nil, nil).SetArg(0, set)
+	ctrl.Call(subject, "SetArgMethod", in, nil, nil)
 
 	if !reflect.DeepEqual(in, set) {
 		t.Error("Expected SetArg() to modify input slice argument")
+	}
+
+	ctrl.RecordCall(subject, "SetArgMethodInterface", in, nil, nil).SetArg(0, set)
+	ctrl.Call(subject, "SetArgMethodInterface", in, nil, nil)
+
+	if !reflect.DeepEqual(in, set) {
+		t.Error("Expected SetArg() to modify input slice argument as interface{}")
 	}
 
 	ctrl.Finish()
@@ -574,13 +582,20 @@ func TestSetArgMap(t *testing.T) {
 	_, ctrl := createFixtures(t)
 	subject := new(Subject)
 
-	var in = map[interface{}]interface{}{"int": 1, "string": "random string", 1: "1"}
+	var in = map[interface{}]interface{}{"int": 1, "string": "random string", 1: "1", 0: 0}
 	var set = map[interface{}]interface{}{"int": 2, 1: "2", 2: 100}
-	ctrl.RecordCall(subject, "SetArgMethod", in, nil).SetArg(0, set)
-	ctrl.Call(subject, "SetArgMethod", in, nil)
+	ctrl.RecordCall(subject, "SetArgMethod", nil, nil, in).SetArg(2, set)
+	ctrl.Call(subject, "SetArgMethod", nil, nil, in)
 
 	if !reflect.DeepEqual(in, set) {
 		t.Error("Expected SetArg() to modify input map argument")
+	}
+
+	ctrl.RecordCall(subject, "SetArgMethodInterface", nil, nil, in).SetArg(2, set)
+	ctrl.Call(subject, "SetArgMethodInterface", nil, nil, in)
+
+	if !reflect.DeepEqual(in, set) {
+		t.Error("Expected SetArg() to modify input map argument as interface{}")
 	}
 
 	ctrl.Finish()
@@ -592,13 +607,19 @@ func TestSetArgPtr(t *testing.T) {
 
 	var in int = 43
 	const set = 42
-	ctrl.RecordCall(subject, "SetArgMethod", nil, &in).SetArg(1, set)
-	ctrl.Call(subject, "SetArgMethod", nil, &in)
+	ctrl.RecordCall(subject, "SetArgMethod", nil, &in, nil).SetArg(1, set)
+	ctrl.Call(subject, "SetArgMethod", nil, &in, nil)
 
 	if in != set {
 		t.Error("Expected SetArg() to modify value pointed to by argument")
 	}
 
+	ctrl.RecordCall(subject, "SetArgMethod", nil, &in, nil).SetArg(1, set)
+	ctrl.Call(subject, "SetArgMethod", nil, &in, nil)
+
+	if in != set {
+		t.Error("Expected SetArg() to modify value pointed to by argument as interface{}")
+	}
 	ctrl.Finish()
 }
 
