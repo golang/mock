@@ -308,7 +308,7 @@ func (g *generator) Generate(pkg *model.Package, outputPkgName string, outputPac
 	g.packageMap = make(map[string]string, len(im))
 	localNames := make(map[string]bool, len(im))
 	// Avoid package name conflicts with imported package names.
-	localNames[pkg.Name] = true
+	localNames[outputPkgName] = true
 	for _, pth := range sortedPaths {
 		base, ok := packagesName[pth]
 		if !ok {
