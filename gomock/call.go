@@ -115,13 +115,13 @@ func (c *Call) DoAndReturn(f interface{}) *Call {
 
 	c.addAction(func(args []interface{}) []interface{} {
 		c.t.Helper()
-		vArgs := make([]reflect.Value, len(args))
 		ft := v.Type()
-		if c.methodType.NumIn() != ft.NumIn() {
+		if c.methodType.NumIn() != ft.NumIn() && !ft.IsVariadic() {
 			c.t.Fatalf("wrong number of arguments in DoAndReturn func for %T.%v: got %d, want %d [%s]",
 				c.receiver, c.method, ft.NumIn(), c.methodType.NumIn(), c.origin)
 			return nil
 		}
+		vArgs := make([]reflect.Value, len(args))
 		for i := 0; i < len(args); i++ {
 			if args[i] != nil {
 				vArgs[i] = reflect.ValueOf(args[i])
@@ -151,13 +151,13 @@ func (c *Call) Do(f interface{}) *Call {
 
 	c.addAction(func(args []interface{}) []interface{} {
 		c.t.Helper()
-		if c.methodType.NumIn() != v.Type().NumIn() {
+		ft := v.Type()
+		if c.methodType.NumIn() != ft.NumIn() && !ft.IsVariadic() {
 			c.t.Fatalf("wrong number of arguments in Do func for %T.%v: got %d, want %d [%s]",
-				c.receiver, c.method, v.Type().NumIn(), c.methodType.NumIn(), c.origin)
+				c.receiver, c.method, ft.NumIn(), c.methodType.NumIn(), c.origin)
 			return nil
 		}
 		vArgs := make([]reflect.Value, len(args))
-		ft := v.Type()
 		for i := 0; i < len(args); i++ {
 			if args[i] != nil {
 				vArgs[i] = reflect.ValueOf(args[i])
