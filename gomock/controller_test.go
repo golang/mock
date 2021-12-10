@@ -614,8 +614,8 @@ func TestSetArgPtr(t *testing.T) {
 		t.Error("Expected SetArg() to modify value pointed to by argument")
 	}
 
-	ctrl.RecordCall(subject, "SetArgMethod", nil, &in, nil).SetArg(1, set)
-	ctrl.Call(subject, "SetArgMethod", nil, &in, nil)
+	ctrl.RecordCall(subject, "SetArgMethodInterface", nil, &in, nil).SetArg(1, set)
+	ctrl.Call(subject, "SetArgMethodInterface", nil, &in, nil)
 
 	if in != set {
 		t.Error("Expected SetArg() to modify value pointed to by argument as interface{}")
