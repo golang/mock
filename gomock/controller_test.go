@@ -570,6 +570,22 @@ func TestSetArgSlice(t *testing.T) {
 	ctrl.Finish()
 }
 
+func TestSetArgMap(t *testing.T) {
+	_, ctrl := createFixtures(t)
+	subject := new(Subject)
+
+	var in = map[interface{}]interface{}{"int": 1, "string": "random string", 1: "1"}
+	var set = map[interface{}]interface{}{"int": 2, 1: "2", 2: 100}
+	ctrl.RecordCall(subject, "SetArgMethod", in, nil).SetArg(0, set)
+	ctrl.Call(subject, "SetArgMethod", in, nil)
+
+	if !reflect.DeepEqual(in, set) {
+		t.Error("Expected SetArg() to modify input map argument")
+	}
+
+	ctrl.Finish()
+}
+
 func TestSetArgPtr(t *testing.T) {
 	_, ctrl := createFixtures(t)
 	subject := new(Subject)

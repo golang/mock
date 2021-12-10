@@ -1,3 +1,4 @@
+//go:build panictest
 // +build panictest
 
 // Copyright 2020 Google LLC
