@@ -283,7 +283,19 @@ func (p *fileParser) parseInterface(name, pkg string, it *ast.InterfaceType) (*m
 				if v.String() == model.ErrorInterface.Name {
 					embeddedIface = &model.ErrorInterface
 				} else {
-					return nil, p.errorf(v.Pos(), "unknown embedded interface %s", v.String())
+					ip, err := p.parsePackage(pkg)
+					if err != nil {
+						return nil, p.errorf(v.Pos(), "could not parse package %s: %v", pkg, err)
+					}
+
+					if embeddedIfaceType = ip.importedInterfaces[pkg][v.String()]; embeddedIfaceType == nil {
+						return nil, p.errorf(v.Pos(), "unknown embedded interface %s.%s", pkg, v.String())
+					}
+
+					embeddedIface, err = ip.parseInterface(v.String(), pkg, embeddedIfaceType)
+					if err != nil {
+						return nil, err
+					}
 				}
 			}
 			// Copy the methods.
