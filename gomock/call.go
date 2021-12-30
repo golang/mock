@@ -245,6 +245,8 @@ func (c *Call) SetArg(n int, value interface{}) *Call {
 		// nothing to do
 	case reflect.Slice:
 		// nothing to do
+	case reflect.Map:
+		// nothing to do
 	default:
 		c.t.Fatalf("SetArg(%d, ...) referring to argument of non-pointer non-interface non-slice non-map type %v [%s]",
 			n, at, c.origin)
