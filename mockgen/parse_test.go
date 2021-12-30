@@ -136,7 +136,7 @@ func TestParseArrayWithConstLength(t *testing.T) {
 		t.Fatalf("Unexpected error: %v", err)
 	}
 
-	expects := []string{"[2]int", "[2]int", "[127]int"}
+	expects := []string{"[2]int", "[2]int", "[127]int", "[3]int", "[3]int", "[7]int"}
 	for i, e := range expects {
 		got := pkg.Interfaces[0].Methods[i].Out[0].Type.String(nil, "")
 		if got != e {

@@ -418,31 +418,14 @@ func (p *fileParser) parseType(pkg string, typ ast.Expr) (model.Type, error) {
 	case *ast.ArrayType:
 		ln := -1
 		if v.Len != nil {
-			var value string
-			switch val := v.Len.(type) {
-			case (*ast.BasicLit):
-				value = val.Value
-			case (*ast.Ident):
-				// when the length is a const defined locally
-				value = val.Obj.Decl.(*ast.ValueSpec).Values[0].(*ast.BasicLit).Value
-			case (*ast.SelectorExpr):
-				// when the length is a const defined in an external package
-				usedPkg, err := importer.Default().Import(fmt.Sprintf("%s", val.X))
-				if err != nil {
-					return nil, p.errorf(v.Len.Pos(), "unknown package in array length: %v", err)
-				}
-				ev, err := types.Eval(token.NewFileSet(), usedPkg, token.NoPos, val.Sel.Name)
-				if err != nil {
-					return nil, p.errorf(v.Len.Pos(), "unknown constant in array length: %v", err)
-				}
-				value = ev.Value.String()
+			value, err := p.parseArrayLength(v.Len)
+			if err != nil {
+				return nil, err
 			}
-
-			x, err := strconv.Atoi(value)
+			ln, err = strconv.Atoi(value)
 			if err != nil {
 				return nil, p.errorf(v.Len.Pos(), "bad array size: %v", err)
 			}
-			ln = x
 		}
 		t, err := p.parseType(pkg, v.Elt)
 		if err != nil {
@@ -523,6 +506,46 @@ func (p *fileParser) parseType(pkg string, typ ast.Expr) (model.Type, error) {
 	}
 
 	return nil, fmt.Errorf("don't know how to parse type %T", typ)
+}
+
+func (p *fileParser) parseArrayLength(expr ast.Expr) (string, error) {
+	switch val := expr.(type) {
+	case (*ast.BasicLit):
+		return val.Value, nil
+	case (*ast.Ident):
+		// when the length is a const defined locally
+		return val.Obj.Decl.(*ast.ValueSpec).Values[0].(*ast.BasicLit).Value, nil
+	case (*ast.SelectorExpr):
+		// when the length is a const defined in an external package
+		usedPkg, err := importer.Default().Import(fmt.Sprintf("%s", val.X))
+		if err != nil {
+			return "", p.errorf(expr.Pos(), "unknown package in array length: %v", err)
+		}
+		ev, err := types.Eval(token.NewFileSet(), usedPkg, token.NoPos, val.Sel.Name)
+		if err != nil {
+			return "", p.errorf(expr.Pos(), "unknown constant in array length: %v", err)
+		}
+		return ev.Value.String(), nil
+	case (*ast.ParenExpr):
+		return p.parseArrayLength(val.X)
+	case (*ast.BinaryExpr):
+		x, err := p.parseArrayLength(val.X)
+		if err != nil {
+			return "", err
+		}
+		y, err := p.parseArrayLength(val.Y)
+		if err != nil {
+			return "", err
+		}
+		biExpr := fmt.Sprintf("%s%v%s", x, val.Op, y)
+		tv, err := types.Eval(token.NewFileSet(), nil, token.NoPos, biExpr)
+		if err != nil {
+			return "", p.errorf(expr.Pos(), "invalid expression in array length: %v", err)
+		}
+		return tv.Value.String(), nil
+	default:
+		return "", p.errorf(expr.Pos(), "invalid expression in array length: %v", val)
+	}
 }
 
 // importsOfFile returns a map of package name to import path
