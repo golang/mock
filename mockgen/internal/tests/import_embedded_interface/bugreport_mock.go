@@ -35,6 +35,20 @@ func (m *MockSource) EXPECT() *MockSourceMockRecorder {
 	return m.recorder
 }
 
+// Bar mocks base method.
+func (m *MockSource) Bar() Baz {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Bar")
+	ret0, _ := ret[0].(Baz)
+	return ret0
+}
+
+// Bar indicates an expected call of Bar.
+func (mr *MockSourceMockRecorder) Bar() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Bar", reflect.TypeOf((*MockSource)(nil).Bar))
+}
+
 // Error mocks base method.
 func (m *MockSource) Error() string {
 	m.ctrl.T.Helper()

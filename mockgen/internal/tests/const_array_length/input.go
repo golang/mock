@@ -10,4 +10,7 @@ type I interface {
 	Foo() [C]int
 	Bar() [2]int
 	Baz() [math.MaxInt8]int
+	Qux() [1 + 2]int
+	Quux() [(1 + 2)]int
+	Corge() [math.MaxInt8 - 120]int
 }

@@ -219,8 +219,8 @@ func (c *Call) Times(n int) *Call {
 }
 
 // SetArg declares an action that will set the nth argument's value,
-// indirected through a pointer. Or, in the case of a slice, SetArg
-// will copy value's elements into the nth argument.
+// indirected through a pointer. Or, in the case of a slice and map, SetArg
+// will copy value's elements/key-value pairs into the nth argument.
 func (c *Call) SetArg(n int, value interface{}) *Call {
 	c.t.Helper()
 
@@ -245,8 +245,10 @@ func (c *Call) SetArg(n int, value interface{}) *Call {
 		// nothing to do
 	case reflect.Slice:
 		// nothing to do
+	case reflect.Map:
+		// nothing to do
 	default:
-		c.t.Fatalf("SetArg(%d, ...) referring to argument of non-pointer non-interface non-slice type %v [%s]",
+		c.t.Fatalf("SetArg(%d, ...) referring to argument of non-pointer non-interface non-slice non-map type %v [%s]",
 			n, at, c.origin)
 	}
 
@@ -255,6 +257,8 @@ func (c *Call) SetArg(n int, value interface{}) *Call {
 		switch reflect.TypeOf(args[n]).Kind() {
 		case reflect.Slice:
 			setSlice(args[n], v)
+		case reflect.Map:
+			setMap(args[n], v)
 		default:
 			reflect.ValueOf(args[n]).Elem().Set(v)
 		}
@@ -431,6 +435,16 @@ func setSlice(arg interface{}, v reflect.Value) {
 	va := reflect.ValueOf(arg)
 	for i := 0; i < v.Len(); i++ {
 		va.Index(i).Set(v.Index(i))
+	}
+}
+
+func setMap(arg interface{}, v reflect.Value) {
+	va := reflect.ValueOf(arg)
+	for _, e := range va.MapKeys() {
+		va.SetMapIndex(e, reflect.Value{})
+	}
+	for _, e := range v.MapKeys() {
+		va.SetMapIndex(e, v.MapIndex(e))
 	}
 }
 
