@@ -108,7 +108,7 @@ func (c *Call) MaxTimes(n int) *Call {
 // DoAndReturn declares the action to run when the call is matched.
 // The return values from this function are returned by the mocked function.
 // It takes an interface{} argument to support n-arity functions.
-// The anonymous function must have the same number of input and output arguments as the mocked method.
+// The anonymous function must match the function signature mocked method.
 func (c *Call) DoAndReturn(f interface{}) *Call {
 	// TODO: Check arity and types here, rather than dying badly elsewhere.
 	v := reflect.ValueOf(f)
@@ -116,9 +116,14 @@ func (c *Call) DoAndReturn(f interface{}) *Call {
 	c.addAction(func(args []interface{}) []interface{} {
 		c.t.Helper()
 		ft := v.Type()
-		if c.methodType.NumIn() != ft.NumIn() && !ft.IsVariadic() {
-			c.t.Fatalf("wrong number of arguments in DoAndReturn func for %T.%v: got %d, want %d [%s]",
-				c.receiver, c.method, ft.NumIn(), c.methodType.NumIn(), c.origin)
+		if c.methodType.NumIn() != ft.NumIn() {
+			if ft.IsVariadic() {
+				c.t.Fatalf("wrong number of arguments in DoAndReturn func for %T.%v The function signature must match the mocked method, a variadic function cannot be used.",
+					c.receiver, c.method)
+			} else {
+				c.t.Fatalf("wrong number of arguments in DoAndReturn func for %T.%v: got %d, want %d [%s]",
+					c.receiver, c.method, ft.NumIn(), c.methodType.NumIn(), c.origin)
+			}
 			return nil
 		}
 		vArgs := make([]reflect.Value, len(args))
@@ -144,7 +149,7 @@ func (c *Call) DoAndReturn(f interface{}) *Call {
 // return values are ignored to retain backward compatibility. To use the
 // return values call DoAndReturn.
 // It takes an interface{} argument to support n-arity functions.
-// The anonymous function must have the same number of input arguments as the mocked method.
+// The anonymous function must match the function signature mocked method.
 func (c *Call) Do(f interface{}) *Call {
 	// TODO: Check arity and types here, rather than dying badly elsewhere.
 	v := reflect.ValueOf(f)
@@ -152,9 +157,14 @@ func (c *Call) Do(f interface{}) *Call {
 	c.addAction(func(args []interface{}) []interface{} {
 		c.t.Helper()
 		ft := v.Type()
-		if c.methodType.NumIn() != ft.NumIn() && !ft.IsVariadic() {
-			c.t.Fatalf("wrong number of arguments in Do func for %T.%v: got %d, want %d [%s]",
-				c.receiver, c.method, ft.NumIn(), c.methodType.NumIn(), c.origin)
+		if c.methodType.NumIn() != ft.NumIn() {
+			if ft.IsVariadic() {
+				c.t.Fatalf("wrong number of arguments in DoAndReturn func for %T.%v The function signature must match the mocked method, a variadic function cannot be used.",
+					c.receiver, c.method)
+			} else {
+				c.t.Fatalf("wrong number of arguments in DoAndReturn func for %T.%v: got %d, want %d [%s]",
+					c.receiver, c.method, ft.NumIn(), c.methodType.NumIn(), c.origin)
+			}
 			return nil
 		}
 		vArgs := make([]reflect.Value, len(args))

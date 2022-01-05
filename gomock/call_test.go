@@ -515,7 +515,7 @@ func TestCall_Do_NumArgValidation(t *testing.T) {
 			methodType: reflect.TypeOf(func(one, two string) {}),
 			doFn:       func(args ...interface{}) {},
 			args:       []interface{}{"just", "right"},
-			wantErr:    false,
+			wantErr:    true,
 		},
 	}
 	for _, tt := range tests {
@@ -571,7 +571,7 @@ func TestCall_DoAndReturn_NumArgValidation(t *testing.T) {
 			methodType: reflect.TypeOf(func(one, two string) {}),
 			doFn:       func(args ...interface{}) string { return "" },
 			args:       []interface{}{"just", "right"},
-			wantErr:    false,
+			wantErr:    true,
 		},
 	}
 	for _, tt := range tests {
