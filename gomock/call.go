@@ -159,10 +159,10 @@ func (c *Call) Do(f interface{}) *Call {
 		ft := v.Type()
 		if c.methodType.NumIn() != ft.NumIn() {
 			if ft.IsVariadic() {
-				c.t.Fatalf("wrong number of arguments in DoAndReturn func for %T.%v The function signature must match the mocked method, a variadic function cannot be used.",
+				c.t.Fatalf("wrong number of arguments in Do func for %T.%v The function signature must match the mocked method, a variadic function cannot be used.",
 					c.receiver, c.method)
 			} else {
-				c.t.Fatalf("wrong number of arguments in DoAndReturn func for %T.%v: got %d, want %d [%s]",
+				c.t.Fatalf("wrong number of arguments in Do func for %T.%v: got %d, want %d [%s]",
 					c.receiver, c.method, ft.NumIn(), c.methodType.NumIn(), c.origin)
 			}
 			return nil
