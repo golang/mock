@@ -28,7 +28,8 @@ go install github.com/golang/mock/mockgen@v1.6.0
 ```
 
 If you use `mockgen` in your CI pipeline, it may be more appropriate to fixate
-on a specific mockgen version.
+on a specific mockgen version. You should try to keep the library in sync with
+the version of mockgen used to generate your mocks.
 
 ## Running mockgen
 
