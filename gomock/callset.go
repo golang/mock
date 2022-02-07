@@ -111,3 +111,16 @@ func (cs callSet) Failures() []*Call {
 	}
 	return failures
 }
+
+// AllExpectedCallsSatisfied returns true in case all expected calls in this callSet are satisfied.
+func (cs callSet) AllExpectedCallsSatisfied() bool {
+	for _, calls := range cs.expected {
+		for _, call := range calls {
+			if !call.satisfied() {
+				return false
+			}
+		}
+	}
+
+	return true
+}
