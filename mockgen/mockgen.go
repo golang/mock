@@ -21,6 +21,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"go/token"
@@ -107,19 +108,6 @@ func main() {
 		return
 	}
 
-	dst := os.Stdout
-	if len(*destination) > 0 {
-		if err := os.MkdirAll(filepath.Dir(*destination), os.ModePerm); err != nil {
-			log.Fatalf("Unable to create directory: %v", err)
-		}
-		f, err := os.Create(*destination)
-		if err != nil {
-			log.Fatalf("Failed opening destination file: %v", err)
-		}
-		defer f.Close()
-		dst = f
-	}
-
 	outputPackageName := *packageOut
 	if outputPackageName == "" {
 		// pkg.Name in reflect mode is the base name of the import path,
@@ -171,7 +159,44 @@ func main() {
 	if err := g.Generate(pkg, outputPackageName, outputPackagePath); err != nil {
 		log.Fatalf("Failed generating mock: %v", err)
 	}
-	if _, err := dst.Write(g.Output()); err != nil {
+
+	output := g.Output()
+
+	dst := os.Stdout
+	if len(*destination) > 0 {
+		_, err := os.Stat(*destination)
+		switch {
+		case err == nil:
+			exists, err := os.Open(*destination)
+			if err != nil {
+				log.Fatalf("Faild opening exists destination file: %v", err)
+			}
+			defer exists.Close()
+
+			existsData, err := io.ReadAll(exists)
+			if err != nil {
+				log.Fatalf("Faild read exists destination file: %v", err)
+			}
+			if bytes.Compare(existsData, output) == 0 {
+				log.Printf("File does not have changes: %v", *destination)
+				return
+			}
+		case !errors.Is(err, os.ErrNotExist):
+			log.Fatalf("Faild getting FileInfo: %v", err)
+		}
+
+		if err := os.MkdirAll(filepath.Dir(*destination), os.ModePerm); err != nil {
+			log.Fatalf("Unable to create directory: %v", err)
+		}
+		f, err := os.Create(*destination)
+		if err != nil {
+			log.Fatalf("Failed opening destination file: %v", err)
+		}
+		defer f.Close()
+		dst = f
+	}
+
+	if _, err := dst.Write(output); err != nil {
 		log.Fatalf("Failed writing to destination: %v", err)
 	}
 }
