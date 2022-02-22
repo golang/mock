@@ -17,3 +17,6 @@ mockgen/mockgen
 # Editors
 .vscode
 .idea
+
+# vendor directory used for IDEs
+/vendor
