@@ -33,7 +33,20 @@ the version of mockgen used to generate your mocks.
 
 ## Running mockgen
 
-`mockgen` has two modes of operation: source and reflect.
+`mockgen` has three modes of operation: archive, source and reflect.
+
+### Archive mode
+
+Archive mode generates mock interfaces from a package archive
+file (.a). It is enabled by using the -archive flag, the import
+path is also needed as a non-flag argument. No other flags are
+required.
+
+Example:
+
+```bash
+mockgen -archive=pkg.a importpath
+```
 
 ### Source mode
 
@@ -70,6 +83,8 @@ mockgen . Conn,Driver
 The `mockgen` command is used to generate source code for a mock
 class given a Go source file containing interfaces to be mocked.
 It supports the following flags:
+
+- `-archive`: A package archive file containing interfaces to be mocked.
 
 - `-source`: A file containing interfaces to be mocked.
 
