@@ -1,4 +1,4 @@
-// Copyright 2019 Google LLC
+// Copyright 2022 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,16 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build !go1.12
-// +build !go1.12
+//go:build !go1.18
+// +build !go1.18
 
 package main
 
-import (
-	"log"
-)
+import "go/ast"
 
-func printModuleVersion() {
-	log.Printf("No version information is available for Mockgen compiled with " +
-		"version 1.11")
+func getTypeSpecTypeParams(ts *ast.TypeSpec) []*ast.Field {
+	return nil
 }

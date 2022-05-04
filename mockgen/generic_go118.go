@@ -1,4 +1,4 @@
-// Copyright 2020 Google LLC
+// Copyright 2022 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,18 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build !go1.14
-// +build !go1.14
+//go:build go1.18
+// +build go1.18
 
-package gomock_test
+package main
 
-import "testing"
+import "go/ast"
 
-func TestDuplicateFinishCallFails(t *testing.T) {
-	rep, ctrl := createFixtures(t)
-
-	ctrl.Finish()
-	rep.assertPass("the first Finish call should succeed")
-
-	rep.assertFatal(ctrl.Finish, "Controller.Finish was called more than once. It has to be called exactly once.")
+func getTypeSpecTypeParams(ts *ast.TypeSpec) []*ast.Field {
+	if ts == nil || ts.TypeParams == nil {
+		return nil
+	}
+	return ts.TypeParams.List
 }

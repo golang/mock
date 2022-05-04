@@ -53,8 +53,9 @@ func (pkg *Package) Imports() map[string]bool {
 
 // Interface is a Go interface.
 type Interface struct {
-	Name    string
-	Methods []*Method
+	Name       string
+	Methods    []*Method
+	TypeParams []*Parameter
 }
 
 // Print writes the interface name and its methods.
