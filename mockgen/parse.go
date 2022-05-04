@@ -276,11 +276,17 @@ func (p *fileParser) parsePackage(path string) (*fileParser, error) {
 
 func (p *fileParser) parseInterface(name, pkg string, it *namedInterface) (*model.Interface, error) {
 	iface := &model.Interface{Name: name}
-	tp, err := p.parseFieldList(pkg, it.typeParams)
+	tps := make(map[string]bool)
+
+	tp, err := p.parseFieldList(pkg, it.typeParams, tps)
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse interface type parameters: %v", name)
 	}
 	iface.TypeParams = tp
+	for _, v := range tp {
+		tps[v.Name] = true
+	}
+
 	for _, field := range it.it.Methods.List {
 		switch v := field.Type.(type) {
 		case *ast.FuncType:
@@ -291,7 +297,7 @@ func (p *fileParser) parseInterface(name, pkg string, it *namedInterface) (*mode
 				Name: field.Names[0].String(),
 			}
 			var err error
-			m.In, m.Variadic, m.Out, err = p.parseFunc(pkg, v)
+			m.In, m.Variadic, m.Out, err = p.parseFunc(pkg, v, tps)
 			if err != nil {
 				return nil, err
 			}
@@ -384,26 +390,26 @@ func (p *fileParser) parseInterface(name, pkg string, it *namedInterface) (*mode
 	return iface, nil
 }
 
-func (p *fileParser) parseFunc(pkg string, f *ast.FuncType) (inParam []*model.Parameter, variadic *model.Parameter, outParam []*model.Parameter, err error) {
+func (p *fileParser) parseFunc(pkg string, f *ast.FuncType, tps map[string]bool) (inParam []*model.Parameter, variadic *model.Parameter, outParam []*model.Parameter, err error) {
 	if f.Params != nil {
 		regParams := f.Params.List
 		if isVariadic(f) {
 			n := len(regParams)
 			varParams := regParams[n-1:]
 			regParams = regParams[:n-1]
-			vp, err := p.parseFieldList(pkg, varParams)
+			vp, err := p.parseFieldList(pkg, varParams, tps)
 			if err != nil {
 				return nil, nil, nil, p.errorf(varParams[0].Pos(), "failed parsing variadic argument: %v", err)
 			}
 			variadic = vp[0]
 		}
-		inParam, err = p.parseFieldList(pkg, regParams)
+		inParam, err = p.parseFieldList(pkg, regParams, tps)
 		if err != nil {
 			return nil, nil, nil, p.errorf(f.Pos(), "failed parsing arguments: %v", err)
 		}
 	}
 	if f.Results != nil {
-		outParam, err = p.parseFieldList(pkg, f.Results.List)
+		outParam, err = p.parseFieldList(pkg, f.Results.List, tps)
 		if err != nil {
 			return nil, nil, nil, p.errorf(f.Pos(), "failed parsing returns: %v", err)
 		}
@@ -411,7 +417,7 @@ func (p *fileParser) parseFunc(pkg string, f *ast.FuncType) (inParam []*model.Pa
 	return
 }
 
-func (p *fileParser) parseFieldList(pkg string, fields []*ast.Field) ([]*model.Parameter, error) {
+func (p *fileParser) parseFieldList(pkg string, fields []*ast.Field, tps map[string]bool) ([]*model.Parameter, error) {
 	nf := 0
 	for _, f := range fields {
 		nn := len(f.Names)
@@ -426,7 +432,7 @@ func (p *fileParser) parseFieldList(pkg string, fields []*ast.Field) ([]*model.P
 	ps := make([]*model.Parameter, nf)
 	i := 0 // destination index
 	for _, f := range fields {
-		t, err := p.parseType(pkg, f.Type)
+		t, err := p.parseType(pkg, f.Type, tps)
 		if err != nil {
 			return nil, err
 		}
@@ -445,7 +451,7 @@ func (p *fileParser) parseFieldList(pkg string, fields []*ast.Field) ([]*model.P
 	return ps, nil
 }
 
-func (p *fileParser) parseType(pkg string, typ ast.Expr) (model.Type, error) {
+func (p *fileParser) parseType(pkg string, typ ast.Expr, tps map[string]bool) (model.Type, error) {
 	switch v := typ.(type) {
 	case *ast.ArrayType:
 		ln := -1
@@ -459,13 +465,13 @@ func (p *fileParser) parseType(pkg string, typ ast.Expr) (model.Type, error) {
 				return nil, p.errorf(v.Len.Pos(), "bad array size: %v", err)
 			}
 		}
-		t, err := p.parseType(pkg, v.Elt)
+		t, err := p.parseType(pkg, v.Elt, tps)
 		if err != nil {
 			return nil, err
 		}
 		return &model.ArrayType{Len: ln, Type: t}, nil
 	case *ast.ChanType:
-		t, err := p.parseType(pkg, v.Value)
+		t, err := p.parseType(pkg, v.Value, tps)
 		if err != nil {
 			return nil, err
 		}
@@ -479,15 +485,15 @@ func (p *fileParser) parseType(pkg string, typ ast.Expr) (model.Type, error) {
 		return &model.ChanType{Dir: dir, Type: t}, nil
 	case *ast.Ellipsis:
 		// assume we're parsing a variadic argument
-		return p.parseType(pkg, v.Elt)
+		return p.parseType(pkg, v.Elt, tps)
 	case *ast.FuncType:
-		in, variadic, out, err := p.parseFunc(pkg, v)
+		in, variadic, out, err := p.parseFunc(pkg, v, tps)
 		if err != nil {
 			return nil, err
 		}
 		return &model.FuncType{In: in, Out: out, Variadic: variadic}, nil
 	case *ast.Ident:
-		if v.IsExported() {
+		if v.IsExported() && !tps[v.Name] {
 			// `pkg` may be an aliased imported pkg
 			// if so, patch the import w/ the fully qualified import
 			maybeImportedPkg, ok := p.imports[pkg]
@@ -506,11 +512,11 @@ func (p *fileParser) parseType(pkg string, typ ast.Expr) (model.Type, error) {
 		}
 		return model.PredeclaredType("interface{}"), nil
 	case *ast.MapType:
-		key, err := p.parseType(pkg, v.Key)
+		key, err := p.parseType(pkg, v.Key, tps)
 		if err != nil {
 			return nil, err
 		}
-		value, err := p.parseType(pkg, v.Value)
+		value, err := p.parseType(pkg, v.Value, tps)
 		if err != nil {
 			return nil, err
 		}
@@ -523,7 +529,7 @@ func (p *fileParser) parseType(pkg string, typ ast.Expr) (model.Type, error) {
 		}
 		return &model.NamedType{Package: pkg.Path(), Type: v.Sel.String()}, nil
 	case *ast.StarExpr:
-		t, err := p.parseType(pkg, v.X)
+		t, err := p.parseType(pkg, v.X, tps)
 		if err != nil {
 			return nil, err
 		}
@@ -534,7 +540,13 @@ func (p *fileParser) parseType(pkg string, typ ast.Expr) (model.Type, error) {
 		}
 		return model.PredeclaredType("struct{}"), nil
 	case *ast.ParenExpr:
-		return p.parseType(pkg, v.X)
+		return p.parseType(pkg, v.X, tps)
+	default:
+		mt, ok := parseGenericType(typ)
+		if !ok {
+			break
+		}
+		return mt, nil
 	}
 
 	return nil, fmt.Errorf("don't know how to parse type %T", typ)

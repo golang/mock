@@ -10,11 +10,24 @@
 
 package main
 
-import "go/ast"
+import (
+	"go/ast"
+
+	"github.com/golang/mock/mockgen/model"
+)
 
 func getTypeSpecTypeParams(ts *ast.TypeSpec) []*ast.Field {
 	if ts == nil || ts.TypeParams == nil {
 		return nil
 	}
 	return ts.TypeParams.List
+}
+
+func parseGenericType(typ ast.Expr) (model.Type, bool) {
+	switch v := typ.(type) {
+	case *ast.IndexExpr:
+		_ = v
+	case *ast.IndexListExpr:
+	}
+	return nil, false
 }

@@ -22,3 +22,7 @@ import "go/ast"
 func getTypeSpecTypeParams(ts *ast.TypeSpec) []*ast.Field {
 	return nil
 }
+
+func parseGenericType(typ ast.Expr) (model.Type, bool) {
+	return nil, false
+}
