@@ -17,12 +17,20 @@
 
 package main
 
-import "go/ast"
+import (
+	"go/ast"
+
+	"github.com/golang/mock/mockgen/model"
+)
 
 func getTypeSpecTypeParams(ts *ast.TypeSpec) []*ast.Field {
 	return nil
 }
 
-func parseGenericType(typ ast.Expr) (model.Type, bool) {
-	return nil, false
+func (p *fileParser) parseGenericType(pkg string, typ ast.Expr, tps map[string]bool) (model.Type, error) {
+	return nil, nil
+}
+
+func getIdentTypeParams(decl interface{}) string {
+	return ""
 }

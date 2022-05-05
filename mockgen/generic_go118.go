@@ -12,6 +12,7 @@ package main
 
 import (
 	"go/ast"
+	"strings"
 
 	"github.com/golang/mock/mockgen/model"
 )
@@ -23,11 +24,31 @@ func getTypeSpecTypeParams(ts *ast.TypeSpec) []*ast.Field {
 	return ts.TypeParams.List
 }
 
-func parseGenericType(typ ast.Expr) (model.Type, bool) {
+func (p *fileParser) parseGenericType(pkg string, typ ast.Expr, tps map[string]bool) (model.Type, error) {
 	switch v := typ.(type) {
 	case *ast.IndexExpr:
-		_ = v
+		return p.parseType(pkg, v.X, tps)
 	case *ast.IndexListExpr:
 	}
-	return nil, false
+	return nil, nil
+}
+
+func getIdentTypeParams(decl interface{}) string {
+	if decl == nil {
+		return ""
+	}
+	ts, ok := decl.(*ast.TypeSpec)
+	if !ok {
+		return ""
+	}
+	if ts.TypeParams == nil || len(ts.TypeParams.List) == 0 {
+		return ""
+	}
+	var sb strings.Builder
+	sb.WriteString("[")
+	for _, v := range ts.TypeParams.List {
+		sb.WriteString(v.Names[0].Name)
+	}
+	sb.WriteString("]")
+	return sb.String()
 }

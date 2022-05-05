@@ -8,10 +8,15 @@ type Bar[T any, R any] interface {
 	Two(T) string
 	Three(T) R
 	//Four(T) Foo[T, R]
-	//Five(T) Baz[T]
+	Five(T) Baz[T]
 	//Six(T) *Baz[T]
+	//Seven(T) other.One[T]
+	//Eight(T) other.Two[T, R]
+	//Nine(Iface[T])
 }
 
 type Foo[T any, R any] struct{}
 
 type Baz[T any] struct{}
+
+type Iface[T any] interface{}

@@ -501,7 +501,7 @@ func (p *fileParser) parseType(pkg string, typ ast.Expr, tps map[string]bool) (m
 				pkg = maybeImportedPkg.Path()
 			}
 			// assume type in this package
-			return &model.NamedType{Package: pkg, Type: v.Name}, nil
+			return &model.NamedType{Package: pkg, Type: v.Name, TypeParams: getIdentTypeParams(v.Obj.Decl)}, nil
 		}
 
 		// assume predeclared type
@@ -542,8 +542,11 @@ func (p *fileParser) parseType(pkg string, typ ast.Expr, tps map[string]bool) (m
 	case *ast.ParenExpr:
 		return p.parseType(pkg, v.X, tps)
 	default:
-		mt, ok := parseGenericType(typ)
-		if !ok {
+		mt, err := p.parseGenericType(pkg, typ, tps)
+		if err != nil {
+			return nil, err
+		}
+		if mt == nil {
 			break
 		}
 		return mt, nil

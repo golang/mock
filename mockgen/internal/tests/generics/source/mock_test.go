@@ -8,6 +8,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
+	generics "github.com/golang/mock/mockgen/internal/tests/generics"
 )
 
 // MockBar is a mock of Bar interface.
@@ -31,6 +32,20 @@ func NewMockBar[T any, R any](ctrl *gomock.Controller) *MockBar[T, R] {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockBar[T, R]) EXPECT() *MockBarMockRecorder[T, R] {
 	return m.recorder
+}
+
+// Five mocks base method.
+func (m *MockBar[T, R]) Five(arg0 T) generics.Baz[T] {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Five", arg0)
+	ret0, _ := ret[0].(generics.Baz[T])
+	return ret0
+}
+
+// Five indicates an expected call of Five.
+func (mr *MockBarMockRecorder[T, R]) Five(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Five", reflect.TypeOf((*MockBar[T, R])(nil).Five), arg0)
 }
 
 // One mocks base method.
@@ -73,4 +88,27 @@ func (m *MockBar[T, R]) Two(arg0 T) string {
 func (mr *MockBarMockRecorder[T, R]) Two(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Two", reflect.TypeOf((*MockBar[T, R])(nil).Two), arg0)
+}
+
+// MockIface is a mock of Iface interface.
+type MockIface[T any] struct {
+	ctrl     *gomock.Controller
+	recorder *MockIfaceMockRecorder[T]
+}
+
+// MockIfaceMockRecorder is the mock recorder for MockIface.
+type MockIfaceMockRecorder[T any] struct {
+	mock *MockIface[T]
+}
+
+// NewMockIface creates a new mock instance.
+func NewMockIface[T any](ctrl *gomock.Controller) *MockIface[T] {
+	mock := &MockIface[T]{ctrl: ctrl}
+	mock.recorder = &MockIfaceMockRecorder[T]{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockIface[T]) EXPECT() *MockIfaceMockRecorder[T] {
+	return m.recorder
 }

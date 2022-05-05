@@ -260,20 +260,21 @@ func (mt *MapType) addImports(im map[string]bool) {
 
 // NamedType is an exported type in a package.
 type NamedType struct {
-	Package string // may be empty
-	Type    string
+	Package    string // may be empty
+	Type       string
+	TypeParams string
 }
 
 func (nt *NamedType) String(pm map[string]string, pkgOverride string) string {
 	if pkgOverride == nt.Package {
-		return nt.Type
+		return nt.Type + nt.TypeParams
 	}
 	prefix := pm[nt.Package]
 	if prefix != "" {
-		return prefix + "." + nt.Type
+		return prefix + "." + nt.Type + nt.TypeParams
 	}
 
-	return nt.Type
+	return nt.Type + nt.TypeParams
 }
 
 func (nt *NamedType) addImports(im map[string]bool) {
