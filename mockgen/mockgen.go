@@ -342,7 +342,6 @@ func (g *generator) Generate(pkg *model.Package, outputPkgName string, outputPac
 	g.p("import (")
 	g.in()
 	for pkgPath, pkgName := range g.packageMap {
-		// TODO: before this add constraints import, maybe...
 		if pkgPath == outputPackagePath {
 			continue
 		}
