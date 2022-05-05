@@ -9,6 +9,7 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	generics "github.com/golang/mock/mockgen/internal/tests/generics"
+	other "github.com/golang/mock/mockgen/internal/tests/generics/other"
 )
 
 // MockBar is a mock of Bar interface.
@@ -32,6 +33,20 @@ func NewMockBar[T any, R any](ctrl *gomock.Controller) *MockBar[T, R] {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockBar[T, R]) EXPECT() *MockBarMockRecorder[T, R] {
 	return m.recorder
+}
+
+// Eight mocks base method.
+func (m *MockBar[T, R]) Eight(arg0 T) other.Two[T, R] {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Eight", arg0)
+	ret0, _ := ret[0].(other.Two[T, R])
+	return ret0
+}
+
+// Eight indicates an expected call of Eight.
+func (mr *MockBarMockRecorder[T, R]) Eight(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Eight", reflect.TypeOf((*MockBar[T, R])(nil).Eight), arg0)
 }
 
 // Five mocks base method.
@@ -62,6 +77,18 @@ func (mr *MockBarMockRecorder[T, R]) Four(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Four", reflect.TypeOf((*MockBar[T, R])(nil).Four), arg0)
 }
 
+// Nine mocks base method.
+func (m *MockBar[T, R]) Nine(arg0 generics.Iface[T]) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Nine", arg0)
+}
+
+// Nine indicates an expected call of Nine.
+func (mr *MockBarMockRecorder[T, R]) Nine(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Nine", reflect.TypeOf((*MockBar[T, R])(nil).Nine), arg0)
+}
+
 // One mocks base method.
 func (m *MockBar[T, R]) One(arg0 string) string {
 	m.ctrl.T.Helper()
@@ -74,6 +101,46 @@ func (m *MockBar[T, R]) One(arg0 string) string {
 func (mr *MockBarMockRecorder[T, R]) One(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "One", reflect.TypeOf((*MockBar[T, R])(nil).One), arg0)
+}
+
+// Seven mocks base method.
+func (m *MockBar[T, R]) Seven(arg0 T) other.One[T] {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Seven", arg0)
+	ret0, _ := ret[0].(other.One[T])
+	return ret0
+}
+
+// Seven indicates an expected call of Seven.
+func (mr *MockBarMockRecorder[T, R]) Seven(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Seven", reflect.TypeOf((*MockBar[T, R])(nil).Seven), arg0)
+}
+
+// Six mocks base method.
+func (m *MockBar[T, R]) Six(arg0 T) *generics.Baz[T] {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Six", arg0)
+	ret0, _ := ret[0].(*generics.Baz[T])
+	return ret0
+}
+
+// Six indicates an expected call of Six.
+func (mr *MockBarMockRecorder[T, R]) Six(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Six", reflect.TypeOf((*MockBar[T, R])(nil).Six), arg0)
+}
+
+// Ten mocks base method.
+func (m *MockBar[T, R]) Ten(arg0 *T) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Ten", arg0)
+}
+
+// Ten indicates an expected call of Ten.
+func (mr *MockBarMockRecorder[T, R]) Ten(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Ten", reflect.TypeOf((*MockBar[T, R])(nil).Ten), arg0)
 }
 
 // Three mocks base method.

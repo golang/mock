@@ -527,6 +527,7 @@ func (p *fileParser) parseType(pkg string, typ ast.Expr, tps map[string]bool) (m
 		if !ok {
 			return nil, p.errorf(v.Pos(), "unknown package %q", pkgName)
 		}
+		// TODO: fix me
 		return &model.NamedType{Package: pkg.Path(), Type: v.Sel.String()}, nil
 	case *ast.StarExpr:
 		t, err := p.parseType(pkg, v.X, tps)
