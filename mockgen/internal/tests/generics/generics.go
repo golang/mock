@@ -7,7 +7,7 @@ type Bar[T any, R any] interface {
 	One(string) string
 	Two(T) string
 	Three(T) R
-	//Four(T) Foo[T, R]
+	Four(T) Foo[T, R]
 	Five(T) Baz[T]
 	//Six(T) *Baz[T]
 	//Seven(T) other.One[T]

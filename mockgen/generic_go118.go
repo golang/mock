@@ -29,6 +29,7 @@ func (p *fileParser) parseGenericType(pkg string, typ ast.Expr, tps map[string]b
 	case *ast.IndexExpr:
 		return p.parseType(pkg, v.X, tps)
 	case *ast.IndexListExpr:
+		return p.parseType(pkg, v.X, tps)
 	}
 	return nil, nil
 }
@@ -46,7 +47,10 @@ func getIdentTypeParams(decl interface{}) string {
 	}
 	var sb strings.Builder
 	sb.WriteString("[")
-	for _, v := range ts.TypeParams.List {
+	for i, v := range ts.TypeParams.List {
+		if i != 0 {
+			sb.WriteString(", ")
+		}
 		sb.WriteString(v.Names[0].Name)
 	}
 	sb.WriteString("]")
