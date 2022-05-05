@@ -501,7 +501,7 @@ func (p *fileParser) parseType(pkg string, typ ast.Expr, tps map[string]bool) (m
 				pkg = maybeImportedPkg.Path()
 			}
 			// assume type in this package
-			return &model.NamedType{Package: pkg, Type: v.Name, TypeParams: getIdentTypeParams(v.Obj.Decl)}, nil
+			return &model.NamedType{Package: pkg, Type: v.Name}, nil
 		}
 
 		// assume predeclared type

@@ -47,6 +47,9 @@ func (pkg *Package) Imports() map[string]bool {
 	im := make(map[string]bool)
 	for _, intf := range pkg.Interfaces {
 		intf.addImports(im)
+		for _, tp := range intf.TypeParams {
+			tp.Type.addImports(im)
+		}
 	}
 	return im
 }
