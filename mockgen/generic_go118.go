@@ -35,7 +35,11 @@ func (p *fileParser) parseGenericType(pkg string, typ ast.Expr, tps map[string]b
 		if !ok {
 			return m, nil
 		}
-		nm.TypeParams = formatTypeArgs(v.Index.(*ast.Ident).Name)
+		t, err := p.parseType(pkg, v.Index, tps)
+		if err != nil {
+			return nil, err
+		}
+		nm.TypeParams = model.TypeParametersType{TypeParameters: []model.Type{t}}
 		return m, nil
 	case *ast.IndexListExpr:
 		m, err := p.parseType(pkg, v.X, tps)
@@ -46,11 +50,15 @@ func (p *fileParser) parseGenericType(pkg string, typ ast.Expr, tps map[string]b
 		if !ok {
 			return m, nil
 		}
-		var ts []string
+		var ts []model.Type
 		for _, expr := range v.Indices {
-			ts = append(ts, expr.(*ast.Ident).Name)
+			t, err := p.parseType(pkg, expr, tps)
+			if err != nil {
+				return nil, err
+			}
+			ts = append(ts, t)
 		}
-		nm.TypeParams = formatTypeArgs(ts...)
+		nm.TypeParams = model.TypeParametersType{TypeParameters: ts}
 		return m, nil
 	}
 	return nil, nil
@@ -74,22 +82,6 @@ func getIdentTypeParams(decl interface{}) string {
 			sb.WriteString(", ")
 		}
 		sb.WriteString(v.Names[0].Name)
-	}
-	sb.WriteString("]")
-	return sb.String()
-}
-
-func formatTypeArgs(args ...string) string {
-	if len(args) == 0 {
-		return ""
-	}
-	var sb strings.Builder
-	sb.WriteString("[")
-	for i, v := range args {
-		if i != 0 {
-			sb.WriteString(", ")
-		}
-		sb.WriteString(v)
 	}
 	sb.WriteString("]")
 	return sb.String()
