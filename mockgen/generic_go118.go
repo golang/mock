@@ -39,7 +39,7 @@ func (p *fileParser) parseGenericType(pkg string, typ ast.Expr, tps map[string]b
 		if err != nil {
 			return nil, err
 		}
-		nm.TypeParams = model.TypeParametersType{TypeParameters: []model.Type{t}}
+		nm.TypeParams = &model.TypeParametersType{TypeParameters: []model.Type{t}}
 		return m, nil
 	case *ast.IndexListExpr:
 		m, err := p.parseType(pkg, v.X, tps)
@@ -58,7 +58,7 @@ func (p *fileParser) parseGenericType(pkg string, typ ast.Expr, tps map[string]b
 			}
 			ts = append(ts, t)
 		}
-		nm.TypeParams = model.TypeParametersType{TypeParameters: ts}
+		nm.TypeParams = &model.TypeParametersType{TypeParameters: ts}
 		return m, nil
 	}
 	return nil, nil

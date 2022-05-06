@@ -265,7 +265,7 @@ func (mt *MapType) addImports(im map[string]bool) {
 type NamedType struct {
 	Package    string // may be empty
 	Type       string
-	TypeParams TypeParametersType
+	TypeParams *TypeParametersType
 }
 
 func (nt *NamedType) String(pm map[string]string, pkgOverride string) string {
@@ -284,6 +284,7 @@ func (nt *NamedType) addImports(im map[string]bool) {
 	if nt.Package != "" {
 		im[nt.Package] = true
 	}
+	nt.TypeParams.addImports(im)
 }
 
 // PointerType is a pointer to another type.
@@ -308,7 +309,7 @@ type TypeParametersType struct {
 }
 
 func (tp *TypeParametersType) String(pm map[string]string, pkgOverride string) string {
-	if len(tp.TypeParameters) == 0 {
+	if tp == nil || len(tp.TypeParameters) == 0 {
 		return ""
 	}
 	var sb strings.Builder
@@ -324,6 +325,9 @@ func (tp *TypeParametersType) String(pm map[string]string, pkgOverride string) s
 }
 
 func (tp *TypeParametersType) addImports(im map[string]bool) {
+	if tp == nil {
+		return
+	}
 	for _, v := range tp.TypeParameters {
 		v.addImports(im)
 	}
