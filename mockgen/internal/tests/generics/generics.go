@@ -18,6 +18,8 @@ type Bar[T any, R any] interface {
 	Eight(T) other.Two[T, R]
 	Nine(Iface[T])
 	Ten(*T)
+	Eleven() (*other.One[T], error)
+	Twelve() (*other.Two[T, R], error)
 }
 
 type Foo[T any, R any] struct{}

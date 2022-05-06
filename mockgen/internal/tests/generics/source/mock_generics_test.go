@@ -49,6 +49,21 @@ func (mr *MockBarMockRecorder[T, R]) Eight(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Eight", reflect.TypeOf((*MockBar[T, R])(nil).Eight), arg0)
 }
 
+// Eleven mocks base method.
+func (m *MockBar[T, R]) Eleven() (*other.One[T], error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Eleven")
+	ret0, _ := ret[0].(*other.One[T])
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Eleven indicates an expected call of Eleven.
+func (mr *MockBarMockRecorder[T, R]) Eleven() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Eleven", reflect.TypeOf((*MockBar[T, R])(nil).Eleven))
+}
+
 // Five mocks base method.
 func (m *MockBar[T, R]) Five(arg0 T) generics.Baz[T] {
 	m.ctrl.T.Helper()
@@ -155,6 +170,21 @@ func (m *MockBar[T, R]) Three(arg0 T) R {
 func (mr *MockBarMockRecorder[T, R]) Three(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Three", reflect.TypeOf((*MockBar[T, R])(nil).Three), arg0)
+}
+
+// Twelve mocks base method.
+func (m *MockBar[T, R]) Twelve() (*other.Two[T, R], error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Twelve")
+	ret0, _ := ret[0].(*other.Two[T, R])
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Twelve indicates an expected call of Twelve.
+func (mr *MockBarMockRecorder[T, R]) Twelve() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Twelve", reflect.TypeOf((*MockBar[T, R])(nil).Twelve))
 }
 
 // Two mocks base method.
