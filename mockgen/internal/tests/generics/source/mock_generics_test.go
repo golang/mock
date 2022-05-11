@@ -149,6 +149,20 @@ func (mr *MockBarMockRecorder[T, R]) Nine(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Nine", reflect.TypeOf((*MockBar[T, R])(nil).Nine), arg0)
 }
 
+// Nineteen mocks base method.
+func (m *MockBar[T, R]) Nineteen() generics.AliasType {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Nineteen")
+	ret0, _ := ret[0].(generics.AliasType)
+	return ret0
+}
+
+// Nineteen indicates an expected call of Nineteen.
+func (mr *MockBarMockRecorder[T, R]) Nineteen() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Nineteen", reflect.TypeOf((*MockBar[T, R])(nil).Nineteen))
+}
+
 // One mocks base method.
 func (m *MockBar[T, R]) One(arg0 string) string {
 	m.ctrl.T.Helper()
