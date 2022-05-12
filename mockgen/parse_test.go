@@ -1,7 +1,6 @@
 package main
 
 import (
-	"go/ast"
 	"go/parser"
 	"go/token"
 	"testing"
@@ -17,7 +16,7 @@ func TestFileParser_ParseFile(t *testing.T) {
 	p := fileParser{
 		fileSet:            fs,
 		imports:            make(map[string]importedPackage),
-		importedInterfaces: make(map[string]map[string]*ast.InterfaceType),
+		importedInterfaces: newInterfaceCache(),
 	}
 
 	pkg, err := p.parseFile("", file)
@@ -48,7 +47,7 @@ func TestFileParser_ParsePackage(t *testing.T) {
 	p := fileParser{
 		fileSet:            fs,
 		imports:            make(map[string]importedPackage),
-		importedInterfaces: make(map[string]map[string]*ast.InterfaceType),
+		importedInterfaces: newInterfaceCache(),
 	}
 
 	newP, err := p.parsePackage("github.com/golang/mock/mockgen/internal/tests/custom_package_name/greeter")
@@ -126,8 +125,8 @@ func TestParseArrayWithConstLength(t *testing.T) {
 	p := fileParser{
 		fileSet:            fs,
 		imports:            make(map[string]importedPackage),
-		importedInterfaces: make(map[string]map[string]*ast.InterfaceType),
-		auxInterfaces:      make(map[string]map[string]*ast.InterfaceType),
+		importedInterfaces: newInterfaceCache(),
+		auxInterfaces:      newInterfaceCache(),
 		srcDir:             srcDir,
 	}
 
