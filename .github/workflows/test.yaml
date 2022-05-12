@@ -38,7 +38,7 @@ jobs:
         ./ci/check_panic_handling.sh
 
     - name: Run Go tests all
-      if: startsWith(${{ matrix.go-version }}, '1.18')
+      if: ${{ startsWith(matrix.go-version, '1.18') }}
       run: |
         for i in $(find $PWD -name go.mod); do
           pushd $(dirname $i)
@@ -47,6 +47,6 @@ jobs:
         done 
 
     - name: Run Go tests some
-      if: startsWith(${{ matrix.go-version }}, '1.18') == false
+      if: ${{ startsWith(matrix.go-version, '1.18') == false }}
       run: |
           go test ./...
