@@ -13,7 +13,7 @@ Once you have [installed Go][golang-install], install the `mockgen` tool.
 **Note**: If you have not done so already be sure to add `$GOPATH/bin` to your
 `PATH`, for example on Linux add to your `~/.bashrc`:
 `export PATH="/home/$USER/go/bin:$PATH"`
-Full path - with tilde will not work.
+Full path - with tilde will not work for some cases, for example when run from `go generate`.
 
 To get the latest released version use:
 
