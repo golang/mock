@@ -11,7 +11,9 @@ contexts too.
 Once you have [installed Go][golang-install], install the `mockgen` tool.
 
 **Note**: If you have not done so already be sure to add `$GOPATH/bin` to your
-`PATH`.
+`PATH`, for example on Linux add to your `~/.bashrc`:
+`export PATH="/home/$USER/go/bin:$PATH"`
+Full path - with tilde will not work.
 
 To get the latest released version use:
 
