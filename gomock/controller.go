@@ -20,6 +20,8 @@ import (
 	"reflect"
 	"runtime"
 	"sync"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 // A TestReporter is something that can be used to report test failures.  It
@@ -79,6 +81,18 @@ type Controller struct {
 	mu            sync.Mutex
 	expectedCalls *callSet
 	finished      bool
+	cmpOpts       cmp.Options
+}
+
+// ControllerOption is a function that configures a Controller.
+type ControllerOption func(*Controller)
+
+// WithCmpOpts is a ControllerOption that configures the options to pass to
+// cmp.Diff.
+func WithCmpOpts(opts ...cmp.Option) ControllerOption {
+	return func(c *Controller) {
+		c.cmpOpts = opts
+	}
 }
 
 // NewController returns a new Controller. It is the preferred way to create a
@@ -86,7 +100,7 @@ type Controller struct {
 //
 // New in go1.14+, if you are passing a *testing.T into this function you no
 // longer need to call ctrl.Finish() in your test methods.
-func NewController(t TestReporter) *Controller {
+func NewController(t TestReporter, opts ...ControllerOption) *Controller {
 	h, ok := t.(TestHelper)
 	if !ok {
 		h = &nopTestHelper{t}
@@ -100,6 +114,10 @@ func NewController(t TestReporter) *Controller {
 			ctrl.T.Helper()
 			ctrl.finish(true, nil)
 		})
+	}
+
+	for _, opt := range opts {
+		opt(ctrl)
 	}
 
 	return ctrl
@@ -165,7 +183,7 @@ func (ctrl *Controller) RecordCall(receiver interface{}, method string, args ...
 func (ctrl *Controller) RecordCallWithMethodType(receiver interface{}, method string, methodType reflect.Type, args ...interface{}) *Call {
 	ctrl.T.Helper()
 
-	call := newCall(ctrl.T, receiver, method, methodType, args...)
+	call := newCall(ctrl.T, receiver, method, methodType, ctrl.cmpOpts, args...)
 
 	ctrl.mu.Lock()
 	defer ctrl.mu.Unlock()
