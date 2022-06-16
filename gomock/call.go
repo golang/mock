@@ -38,6 +38,8 @@ type Call struct {
 
 	numCalls int // actual number made
 
+	optional bool // if not called don't throw error
+
 	// actions are called when this Call is called. Each action gets the args and
 	// can set the return values by returning a non-nil slice. Actions run in the
 	// order they are created.
@@ -102,6 +104,12 @@ func (c *Call) MaxTimes(n int) *Call {
 	if c.minCalls == 1 {
 		c.minCalls = 0
 	}
+	return c
+}
+
+// Optional allows the expectation to not be called.
+func (c *Call) Optional() *Call {
+	c.optional = true
 	return c
 }
 

@@ -104,7 +104,7 @@ func (cs callSet) Failures() []*Call {
 	failures := make([]*Call, 0, len(cs.expected))
 	for _, calls := range cs.expected {
 		for _, call := range calls {
-			if !call.satisfied() {
+			if !call.satisfied() && !call.optional {
 				failures = append(failures, call)
 			}
 		}
