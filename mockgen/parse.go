@@ -340,12 +340,25 @@ func (p *fileParser) parseInterface(name, pkg string, it *namedInterface) (*mode
 			for _, m := range embeddedIface.Methods {
 				iface.AddMethod(m)
 			}
-		case *ast.SelectorExpr:
+		case *ast.SelectorExpr, *ast.IndexExpr:
+
+			var (
+				ident *ast.Ident
+				selIdent *ast.Ident
+			)
+
+			if se, ok := v.(*ast.SelectorExpr); ok {
+				ident, selIdent = se.X.(*ast.Ident), se.Sel
+			} else {
+				ie := v.(*ast.IndexExpr)
+				se := ie.X.(*ast.SelectorExpr)
+				ident, selIdent = se.X.(*ast.Ident), se.Sel
+			}
 			// Embedded interface in another package.
-			filePkg, sel := v.X.(*ast.Ident).String(), v.Sel.String()
+			filePkg, sel := ident.String(), selIdent.String()
 			embeddedPkg, ok := p.imports[filePkg]
 			if !ok {
-				return nil, p.errorf(v.X.Pos(), "unknown package %s", filePkg)
+				return nil, p.errorf(ident.Pos(), "unknown package %s", filePkg)
 			}
 
 			var embeddedIface *model.Interface
@@ -383,6 +396,16 @@ func (p *fileParser) parseInterface(name, pkg string, it *namedInterface) (*mode
 			for _, m := range embeddedIface.Methods {
 				iface.AddMethod(m)
 			}
+		// case *ast.IndexExpr:
+		// 	// Embedded generic interface in another package
+		// 	idxExpr := v.X
+		// 	ident := idxExpr.(*ast.Ident)
+		// 	filePkg, sel := ident.String(), ident.Name
+		// 	fmt.Printf("filePkg=%s, sel=%s", filePkg, sel)
+		// 	_, ok := p.imports[filePkg]
+		// 	if !ok {
+		// 		return nil, p.errorf(v.X.Pos(), "unknown package %s", filePkg)
+		// 	}
 		default:
 			return nil, fmt.Errorf("don't know how to mock method of type %T", field.Type)
 		}
