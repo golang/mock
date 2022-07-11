@@ -340,26 +340,46 @@ func (p *fileParser) parseInterface(name, pkg string, it *namedInterface) (*mode
 			for _, m := range embeddedIface.Methods {
 				iface.AddMethod(m)
 			}
-		case *ast.SelectorExpr, *ast.IndexExpr:
-
+		case *ast.SelectorExpr, *ast.IndexExpr, *ast.IndexListExpr:
+			// Embedded interface in another package.
+			// *ast.SelectorExpr for embedded legacy iface
+			// *ast.IndexExpr for embedded generic iface with single index e.g. DoSomething[T]
+			// *ast.IndexListExpr for embedded generic iface with multiple indexes e.g. DoSomething[T, K]
 			var (
-				ident *ast.Ident
-				selIdent *ast.Ident
+				ident      *ast.Ident
+				selIdent   *ast.Ident
+				path       string
+				typeParams []model.Type //unsure
 			)
 
 			if se, ok := v.(*ast.SelectorExpr); ok {
 				ident, selIdent = se.X.(*ast.Ident), se.Sel
-			} else {
-				ie := v.(*ast.IndexExpr)
+			} else if ie, ok := v.(*ast.IndexExpr); ok {
 				se := ie.X.(*ast.SelectorExpr)
 				ident, selIdent = se.X.(*ast.Ident), se.Sel
+				typParam, err := p.parseType(pkg, ie.Index, tps)
+				if err != nil {
+					return nil, err
+				}
+				typeParams = append(typeParams, typParam)
+			} else {
+				ile := v.(*ast.IndexListExpr)
+				se := ile.X.(*ast.SelectorExpr)
+				ident, selIdent = se.X.(*ast.Ident), se.Sel
+				for i := range ile.Indices {
+					typParam, err := p.parseType(pkg, ile.Indices[i], tps)
+					if err != nil {
+						return nil, err
+					}
+					typeParams = append(typeParams, typParam)
+				}
 			}
-			// Embedded interface in another package.
 			filePkg, sel := ident.String(), selIdent.String()
 			embeddedPkg, ok := p.imports[filePkg]
 			if !ok {
 				return nil, p.errorf(ident.Pos(), "unknown package %s", filePkg)
 			}
+			path = embeddedPkg.Path()
 
 			var embeddedIface *model.Interface
 			var err error
@@ -370,7 +390,6 @@ func (p *fileParser) parseInterface(name, pkg string, it *namedInterface) (*mode
 					return nil, err
 				}
 			} else {
-				path := embeddedPkg.Path()
 				parser := embeddedPkg.Parser()
 				if parser == nil {
 					ip, err := p.parsePackage(path)
@@ -393,19 +412,50 @@ func (p *fileParser) parseInterface(name, pkg string, it *namedInterface) (*mode
 			}
 			// Copy the methods.
 			// TODO: apply shadowing rules.
+			isGeneric := len(typeParams) > 0
 			for _, m := range embeddedIface.Methods {
-				iface.AddMethod(m)
+				if !isGeneric {
+					// trivial part - no generic params to consider
+					iface.AddMethod(m)
+					continue
+				}
+				// non-trivial part - we have to match up the as-used type params with the as-defined
+				//    defined as DoSomething[T any, K any]
+				//    used as    DoSomething[somPkg.SomeType, int64]
+				// meaning methods may be like in definition:
+				//    Do(T) (K, error)
+				// but need to be like this in implementation:
+				//    Do(somePkg.SomeType) (int64, error)
+				gm := m.Clone() // clone so we can change without changing source def
+
+				// overwrite all typed params for incoming/outgoing params
+				// to get the implementor-specified typing over the definition-specified typing
+
+				for _, pim := range gm.In {
+					if nt, ok := pim.Type.(*model.NamedType); ok && nt.TypeParams != nil {
+						for i, tp := range nt.TypeParams.TypeParameters {
+							if srcParamIdx := embeddedIface.TypeParamIndexByName(tp.String(nil, "")); srcParamIdx > -1 && srcParamIdx < len(typeParams) {
+								dstParamTyp := typeParams[srcParamIdx]
+								nt.TypeParams.TypeParameters[i] = dstParamTyp
+							}
+						}
+					}
+				}
+				for _, out := range gm.Out {
+					if nt, ok := out.Type.(*model.NamedType); ok && nt.TypeParams != nil {
+						for i, tp := range nt.TypeParams.TypeParameters {
+							if srcParamIdx := embeddedIface.TypeParamIndexByName(tp.String(nil, "")); srcParamIdx > -1 && srcParamIdx < len(typeParams) {
+								dstParamTyp := typeParams[srcParamIdx]
+								nt.TypeParams.TypeParameters[i] = dstParamTyp
+							}
+						}
+					}
+				}
+
+				//TODO, anything else we need to do here to support generics?
+				iface.AddMethod(gm)
+
 			}
-		// case *ast.IndexExpr:
-		// 	// Embedded generic interface in another package
-		// 	idxExpr := v.X
-		// 	ident := idxExpr.(*ast.Ident)
-		// 	filePkg, sel := ident.String(), ident.Name
-		// 	fmt.Printf("filePkg=%s, sel=%s", filePkg, sel)
-		// 	_, ok := p.imports[filePkg]
-		// 	if !ok {
-		// 		return nil, p.errorf(v.X.Pos(), "unknown package %s", filePkg)
-		// 	}
 		default:
 			return nil, fmt.Errorf("don't know how to mock method of type %T", field.Type)
 		}
