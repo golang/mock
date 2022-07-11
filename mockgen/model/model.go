@@ -61,7 +61,7 @@ type Interface struct {
 	TypeParams []*Parameter
 }
 
-// TypeParamIndexByName returns the index of the type parameter matching on name. If none matching, returns -1, nil.
+// TypeParamIndexByName returns the index of the type parameter matching on name. If none matching, returns -1.
 //
 // This is especially useful for generics where interface is something like this:
 //    Doer[T any, K any]{
@@ -71,9 +71,11 @@ type Interface struct {
 //    }
 //
 // But it is used like this:
+//                      [     T        ,        K               ]
 //    type MyDoer = Doer[types.SomeType, otherPkg.SomeOtherThing]
 // or as an embedded interface:
 //    type MyDoer interface {
+//            [      T       ,       K                ]
 //        Doer[types.SomeType, otherPkg.SomeOtherThing]
 //    }
 //
@@ -122,6 +124,12 @@ type Method struct {
 	Variadic *Parameter // may be nil
 }
 
+// Clone makes a deep clone of a Method.
+//
+// This is useful specifically for generics so that generic parameters
+// from source interface methods (e.g. Iface[T any, R any])
+// can be swapped out with actualized types from a referencing entity
+// (e.g. type OtherIface = Iface[external.Foo, Baz]).
 func (m *Method) Clone() *Method {
 	mm := &Method{
 		Name:     m.Name,

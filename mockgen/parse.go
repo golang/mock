@@ -392,10 +392,9 @@ func (p *fileParser) parseInterface(name, pkg string, it *namedInterface) (*mode
 				ident      *ast.Ident
 				selIdent   *ast.Ident // selector identity only used in external import
 				path       string
-				typeParams []model.Type //unsure
+				typeParams []model.Type // normalize to slice whether IndexExpr or IndexListExpr to make it consistent to work with
 			)
 			if ie, ok := v.(*ast.IndexExpr); ok {
-				// singular type param
 				if se, ok := ie.X.(*ast.SelectorExpr); ok {
 					ident, selIdent = se.X.(*ast.Ident), se.Sel
 				} else {
@@ -407,7 +406,6 @@ func (p *fileParser) parseInterface(name, pkg string, it *namedInterface) (*mode
 				}
 				typeParams = append(typeParams, typParam)
 			} else {
-				// multiple type params
 				ile := v.(*ast.IndexListExpr)
 				if se, ok := ile.X.(*ast.SelectorExpr); ok {
 					ident, selIdent = se.X.(*ast.Ident), se.Sel
@@ -429,7 +427,7 @@ func (p *fileParser) parseInterface(name, pkg string, it *namedInterface) (*mode
 			)
 
 			if selIdent == nil {
-				// trivial part: defined in this pkg
+				// trivial part: defined in source pkg
 				embeddedIfaceType := p.auxInterfaces.Get(pkg, ident.Name)
 				if embeddedIfaceType == nil {
 					embeddedIfaceType = p.importedInterfaces.Get(pkg, ident.Name)
@@ -512,7 +510,6 @@ func (p *fileParser) parseInterface(name, pkg string, it *namedInterface) (*mode
 					}
 				}
 
-				//TODO, anything else we need to do here to support generics?
 				iface.AddMethod(gm)
 
 			}
