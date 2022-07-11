@@ -381,10 +381,16 @@ func (nt *NamedType) addImports(im map[string]bool) {
 }
 
 func (nt *NamedType) clone() Type {
+	if nt == nil {
+		return nil
+	}
+
 	ntt := &NamedType{
-		Package:    nt.Package,
-		Type:       nt.Type,
-		TypeParams: nt.TypeParams.clone().(*TypeParametersType),
+		Package: nt.Package,
+		Type:    nt.Type,
+	}
+	if nt.TypeParams != nil {
+		ntt.TypeParams = nt.TypeParams.clone().(*TypeParametersType)
 	}
 	return ntt
 }

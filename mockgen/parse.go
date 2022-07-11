@@ -340,46 +340,13 @@ func (p *fileParser) parseInterface(name, pkg string, it *namedInterface) (*mode
 			for _, m := range embeddedIface.Methods {
 				iface.AddMethod(m)
 			}
-		case *ast.SelectorExpr, *ast.IndexExpr, *ast.IndexListExpr:
+		case *ast.SelectorExpr:
 			// Embedded interface in another package.
-			// *ast.SelectorExpr for embedded legacy iface
-			// *ast.IndexExpr for embedded generic iface with single index e.g. DoSomething[T]
-			// *ast.IndexListExpr for embedded generic iface with multiple indexes e.g. DoSomething[T, K]
-			var (
-				ident      *ast.Ident
-				selIdent   *ast.Ident
-				path       string
-				typeParams []model.Type //unsure
-			)
-
-			if se, ok := v.(*ast.SelectorExpr); ok {
-				ident, selIdent = se.X.(*ast.Ident), se.Sel
-			} else if ie, ok := v.(*ast.IndexExpr); ok {
-				se := ie.X.(*ast.SelectorExpr)
-				ident, selIdent = se.X.(*ast.Ident), se.Sel
-				typParam, err := p.parseType(pkg, ie.Index, tps)
-				if err != nil {
-					return nil, err
-				}
-				typeParams = append(typeParams, typParam)
-			} else {
-				ile := v.(*ast.IndexListExpr)
-				se := ile.X.(*ast.SelectorExpr)
-				ident, selIdent = se.X.(*ast.Ident), se.Sel
-				for i := range ile.Indices {
-					typParam, err := p.parseType(pkg, ile.Indices[i], tps)
-					if err != nil {
-						return nil, err
-					}
-					typeParams = append(typeParams, typParam)
-				}
-			}
-			filePkg, sel := ident.String(), selIdent.String()
+			filePkg, sel := v.X.(*ast.Ident).String(), v.Sel.String()
 			embeddedPkg, ok := p.imports[filePkg]
 			if !ok {
-				return nil, p.errorf(ident.Pos(), "unknown package %s", filePkg)
+				return nil, p.errorf(v.X.Pos(), "unknown package %s", filePkg)
 			}
-			path = embeddedPkg.Path()
 
 			var embeddedIface *model.Interface
 			var err error
@@ -390,6 +357,7 @@ func (p *fileParser) parseInterface(name, pkg string, it *namedInterface) (*mode
 					return nil, err
 				}
 			} else {
+				path := embeddedPkg.Path()
 				parser := embeddedPkg.Parser()
 				if parser == nil {
 					ip, err := p.parsePackage(path)
@@ -412,13 +380,105 @@ func (p *fileParser) parseInterface(name, pkg string, it *namedInterface) (*mode
 			}
 			// Copy the methods.
 			// TODO: apply shadowing rules.
-			isGeneric := len(typeParams) > 0
 			for _, m := range embeddedIface.Methods {
-				if !isGeneric {
-					// trivial part - no generic params to consider
-					iface.AddMethod(m)
-					continue
+				iface.AddMethod(m)
+			}
+		case *ast.IndexExpr, *ast.IndexListExpr:
+			// generic embedded interface
+			// may or may not be external pkg
+			// *ast.IndexExpr for embedded generic iface with single index e.g. DoSomething[T]
+			// *ast.IndexListExpr for embedded generic iface with multiple indexes e.g. DoSomething[T, K]
+			var (
+				ident      *ast.Ident
+				selIdent   *ast.Ident // selector identity only used in external import
+				path       string
+				typeParams []model.Type //unsure
+			)
+			if ie, ok := v.(*ast.IndexExpr); ok {
+				// singular type param
+				if se, ok := ie.X.(*ast.SelectorExpr); ok {
+					ident, selIdent = se.X.(*ast.Ident), se.Sel
+				} else {
+					ident = ie.X.(*ast.Ident)
 				}
+				typParam, err := p.parseType(pkg, ie.Index, tps)
+				if err != nil {
+					return nil, err
+				}
+				typeParams = append(typeParams, typParam)
+			} else {
+				// multiple type params
+				ile := v.(*ast.IndexListExpr)
+				if se, ok := ile.X.(*ast.SelectorExpr); ok {
+					ident, selIdent = se.X.(*ast.Ident), se.Sel
+				} else {
+					ident = ile.X.(*ast.Ident)
+				}
+				for i := range ile.Indices {
+					typParam, err := p.parseType(pkg, ile.Indices[i], tps)
+					if err != nil {
+						return nil, err
+					}
+					typeParams = append(typeParams, typParam)
+				}
+			}
+
+			var (
+				embeddedIface *model.Interface
+				err           error
+			)
+
+			if selIdent == nil {
+				// trivial part: defined in this pkg
+				embeddedIfaceType := p.auxInterfaces.Get(pkg, ident.Name)
+				if embeddedIfaceType == nil {
+					embeddedIfaceType = p.importedInterfaces.Get(pkg, ident.Name)
+				}
+				embeddedIface, err = p.parseInterface(ident.Name, pkg, embeddedIfaceType)
+				if err != nil {
+					return nil, err
+				}
+			} else {
+				// non-trivial part: defined in external pkg
+				filePkg, sel := ident.String(), selIdent.String()
+				embeddedPkg, ok := p.imports[filePkg]
+				if !ok {
+					return nil, p.errorf(ident.Pos(), "unknown package %s", filePkg)
+				}
+				path = embeddedPkg.Path()
+
+				embeddedIfaceType := p.auxInterfaces.Get(filePkg, sel)
+				if embeddedIfaceType != nil {
+					embeddedIface, err = p.parseInterface(sel, filePkg, embeddedIfaceType)
+					if err != nil {
+						return nil, err
+					}
+				} else {
+					parser := embeddedPkg.Parser()
+					if parser == nil {
+						ip, err := p.parsePackage(path)
+						if err != nil {
+							return nil, p.errorf(v.Pos(), "could not parse package %s: %v", path, err)
+						}
+						parser = ip
+						p.imports[filePkg] = importedPkg{
+							path:   embeddedPkg.Path(),
+							parser: parser,
+						}
+					}
+					if embeddedIfaceType = parser.importedInterfaces.Get(path, sel); embeddedIfaceType == nil {
+						return nil, p.errorf(v.Pos(), "unknown embedded interface %s.%s", path, sel)
+					}
+					embeddedIface, err = parser.parseInterface(sel, path, embeddedIfaceType)
+					if err != nil {
+						return nil, err
+					}
+				}
+			}
+
+			// Copy the methods.
+			// TODO: apply shadowing rules.
+			for _, m := range embeddedIface.Methods {
 				// non-trivial part - we have to match up the as-used type params with the as-defined
 				//    defined as DoSomething[T any, K any]
 				//    used as    DoSomething[somPkg.SomeType, int64]

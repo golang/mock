@@ -38,3 +38,9 @@ type StructType struct{}
 type StructType2 struct{}
 
 type AliasType Baz[other.Three]
+
+type EmbeddingIface interface {
+	Bar[other.Three, error]
+	other.Otherer[StructType, other.Five]
+	LocalFunc() error
+}
