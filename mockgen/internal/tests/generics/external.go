@@ -19,3 +19,7 @@ type ExternalConstraint[I constraints.Integer, F constraints.Float] interface {
 	Nine(Iface[I])
 	Ten(*I)
 }
+
+type TwentyTwo[T any] interface {
+	TwentyTwo() T
+}

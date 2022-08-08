@@ -291,6 +291,48 @@ func (mr *MockBarMockRecorder[T, R]) Twelve() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Twelve", reflect.TypeOf((*MockBar[T, R])(nil).Twelve))
 }
 
+// Twenty mocks base method.
+func (m *MockBar[T, R]) Twenty() T {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Twenty")
+	ret0, _ := ret[0].(T)
+	return ret0
+}
+
+// Twenty indicates an expected call of Twenty.
+func (mr *MockBarMockRecorder[T, R]) Twenty() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Twenty", reflect.TypeOf((*MockBar[T, R])(nil).Twenty))
+}
+
+// TwentyOne mocks base method.
+func (m *MockBar[T, R]) TwentyOne() T {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "TwentyOne")
+	ret0, _ := ret[0].(T)
+	return ret0
+}
+
+// TwentyOne indicates an expected call of TwentyOne.
+func (mr *MockBarMockRecorder[T, R]) TwentyOne() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TwentyOne", reflect.TypeOf((*MockBar[T, R])(nil).TwentyOne))
+}
+
+// TwentyTwo mocks base method.
+func (m *MockBar[T, R]) TwentyTwo() T {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "TwentyTwo")
+	ret0, _ := ret[0].(T)
+	return ret0
+}
+
+// TwentyTwo indicates an expected call of TwentyTwo.
+func (mr *MockBarMockRecorder[T, R]) TwentyTwo() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TwentyTwo", reflect.TypeOf((*MockBar[T, R])(nil).TwentyTwo))
+}
+
 // Two mocks base method.
 func (m *MockBar[T, R]) Two(arg0 T) string {
 	m.ctrl.T.Helper()
@@ -303,6 +345,43 @@ func (m *MockBar[T, R]) Two(arg0 T) string {
 func (mr *MockBarMockRecorder[T, R]) Two(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Two", reflect.TypeOf((*MockBar[T, R])(nil).Two), arg0)
+}
+
+// MockTwentyOne is a mock of TwentyOne interface.
+type MockTwentyOne[T any] struct {
+	ctrl     *gomock.Controller
+	recorder *MockTwentyOneMockRecorder[T]
+}
+
+// MockTwentyOneMockRecorder is the mock recorder for MockTwentyOne.
+type MockTwentyOneMockRecorder[T any] struct {
+	mock *MockTwentyOne[T]
+}
+
+// NewMockTwentyOne creates a new mock instance.
+func NewMockTwentyOne[T any](ctrl *gomock.Controller) *MockTwentyOne[T] {
+	mock := &MockTwentyOne[T]{ctrl: ctrl}
+	mock.recorder = &MockTwentyOneMockRecorder[T]{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockTwentyOne[T]) EXPECT() *MockTwentyOneMockRecorder[T] {
+	return m.recorder
+}
+
+// TwentyOne mocks base method.
+func (m *MockTwentyOne[T]) TwentyOne() T {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "TwentyOne")
+	ret0, _ := ret[0].(T)
+	return ret0
+}
+
+// TwentyOne indicates an expected call of TwentyOne.
+func (mr *MockTwentyOneMockRecorder[T]) TwentyOne() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TwentyOne", reflect.TypeOf((*MockTwentyOne[T])(nil).TwentyOne))
 }
 
 // MockIface is a mock of Iface interface.

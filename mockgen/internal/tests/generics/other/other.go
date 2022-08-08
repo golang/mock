@@ -9,3 +9,7 @@ type Three struct{}
 type Four struct{}
 
 type Five interface{}
+
+type Twenty[T any] interface {
+	Twenty() T
+}
