@@ -165,7 +165,7 @@ func main() {
 		if err := os.MkdirAll(filepath.Dir(*destination), os.ModePerm); err != nil {
 			log.Fatalf("Unable to create directory: %v", err)
 		}
-		existing, err := os.ReadFile(*destination)
+		existing, err := ioutil.ReadFile(*destination)
 		if err != nil && !errors.Is(err, os.ErrNotExist) {
 			log.Fatalf("Failed reading pre-exiting destination file: %v", err)
 		}
