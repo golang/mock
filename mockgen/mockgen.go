@@ -170,7 +170,6 @@ func main() {
 			log.Fatalf("Failed reading pre-exiting destination file: %v", err)
 		}
 		if len(existing) == len(output) && bytes.Compare(existing, output) == 0 {
-			log.Println("Pre-existing file is already up to date.")
 			return
 		}
 		f, err := os.Create(*destination)
