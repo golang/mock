@@ -329,7 +329,7 @@ func (p *fileParser) parseInterface(name, pkg string, it *namedInterface) (*mode
 				if err != nil {
 					return nil, err
 				}
-				return iface, nil
+				continue
 			}
 			return nil, fmt.Errorf("don't know how to mock method of type %T", field.Type)
 		}
