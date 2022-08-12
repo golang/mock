@@ -274,144 +274,191 @@ func (p *fileParser) parsePackage(path string) (*fileParser, error) {
 	return newP, nil
 }
 
+func (p *fileParser) constructInstParams(pkg string, params []*ast.Field, instParams []model.Type, embeddedInstParams []ast.Expr, tps map[string]model.Type) ([]model.Type, error) {
+	pm := make(map[string]int)
+	var i int
+	for _, v := range params {
+		for _, n := range v.Names {
+			pm[n.Name] = i
+			instParams = append(instParams, model.PredeclaredType(n.Name))
+			i++
+		}
+	}
+
+	var runtimeInstParams []model.Type
+	for _, instParam := range embeddedInstParams {
+		switch t := instParam.(type) {
+		case *ast.Ident:
+			if idx, ok := pm[t.Name]; ok {
+				runtimeInstParams = append(runtimeInstParams, instParams[idx])
+				continue
+			}
+		}
+		modelType, err := p.parseType(pkg, instParam, tps)
+		if err != nil {
+			return nil, err
+		}
+		runtimeInstParams = append(runtimeInstParams, modelType)
+	}
+
+	return runtimeInstParams, nil
+}
+
+func (p *fileParser) constructTps(it *namedInterface) (tps map[string]model.Type) {
+	tps = make(map[string]model.Type)
+	n := 0
+	for _, tp := range it.typeParams {
+		for _, tm := range tp.Names {
+			tps[tm.Name] = nil
+			if len(it.instTypes) != 0 {
+				tps[tm.Name] = it.instTypes[n]
+				n++
+			}
+		}
+	}
+	return tps
+}
+
+// parseInterface loads interface specified by pkg and name, parses it and returns
+// a new model with the parsed.
 func (p *fileParser) parseInterface(name, pkg string, it *namedInterface) (*model.Interface, error) {
 	iface := &model.Interface{Name: name}
-	tps := make(map[string]bool)
-
+	tps := p.constructTps(it)
 	tp, err := p.parseFieldList(pkg, it.typeParams, tps)
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse interface type parameters: %v", name)
 	}
-	iface.TypeParams = tp
-	for _, v := range tp {
-		tps[v.Name] = true
-	}
 
+	iface.TypeParams = tp
 	for _, field := range it.it.Methods.List {
-		if err = p.parseField(field, field.Type, iface, pkg, tps); err != nil {
+		var methods []*model.Method
+		if methods, err = p.parseMethod(field, it, iface, pkg, tps); err != nil {
 			return nil, err
+		}
+		for _, m := range methods {
+			iface.AddMethod(m)
 		}
 	}
 	return iface, nil
 }
 
-func (p *fileParser) parseField(field *ast.Field, fieldType ast.Expr, iface *model.Interface, pkg string, tps map[string]bool) error {
-	switch v := fieldType.(type) {
-	case *ast.FuncType:
-		if nn := len(field.Names); nn != 1 {
-			return fmt.Errorf("expected one name for interface %v, got %d", iface.Name, nn)
-		}
-		m := &model.Method{
-			Name: field.Names[0].String(),
-		}
-		var err error
-		m.In, m.Variadic, m.Out, err = p.parseFunc(pkg, v, tps)
-		if err != nil {
-			return err
-		}
-		iface.AddMethod(m)
-	case *ast.Ident:
-		// Embedded interface in this package.
-		embeddedIfaceType := p.auxInterfaces.Get(pkg, v.String())
-		if embeddedIfaceType == nil {
-			embeddedIfaceType = p.importedInterfaces.Get(pkg, v.String())
-		}
-
-		var embeddedIface *model.Interface
-		if embeddedIfaceType != nil {
+func (p *fileParser) parseMethod(field *ast.Field, it *namedInterface, iface *model.Interface, pkg string, tps map[string]model.Type) ([]*model.Method, error) {
+	// {} for git diff
+	{
+		switch v := field.Type.(type) {
+		case *ast.FuncType:
+			if nn := len(field.Names); nn != 1 {
+				return nil, fmt.Errorf("expected one name for interface %v, got %d", iface.Name, nn)
+			}
+			m := &model.Method{
+				Name: field.Names[0].String(),
+			}
 			var err error
-			embeddedIface, err = p.parseInterface(v.String(), pkg, embeddedIfaceType)
+			m.In, m.Variadic, m.Out, err = p.parseFunc(pkg, v, tps)
 			if err != nil {
-				return err
+				return nil, err
 			}
-		} else {
-			// This is built-in error interface.
-			if v.String() == model.ErrorInterface.Name {
-				embeddedIface = &model.ErrorInterface
-			} else {
-				ip, err := p.parsePackage(pkg)
-				if err != nil {
-					return p.errorf(v.Pos(), "could not parse package %s: %v", pkg, err)
-				}
-
-				if embeddedIfaceType = ip.importedInterfaces.Get(pkg, v.String()); embeddedIfaceType == nil {
-					return p.errorf(v.Pos(), "unknown embedded interface %s.%s", pkg, v.String())
-				}
-
-				embeddedIface, err = ip.parseInterface(v.String(), pkg, embeddedIfaceType)
-				if err != nil {
-					return err
-				}
-			}
-		}
-		// Copy the methods.
-		for _, m := range embeddedIface.Methods {
-			iface.AddMethod(m)
-		}
-	case *ast.SelectorExpr:
-		// Embedded interface in another package.
-		filePkg, sel := v.X.(*ast.Ident).String(), v.Sel.String()
-		embeddedPkg, ok := p.imports[filePkg]
-		if !ok {
-			return p.errorf(v.X.Pos(), "unknown package %s", filePkg)
-		}
-
-		var embeddedIface *model.Interface
-		var err error
-		embeddedIfaceType := p.auxInterfaces.Get(filePkg, sel)
-		if embeddedIfaceType != nil {
-			embeddedIface, err = p.parseInterface(sel, filePkg, embeddedIfaceType)
-			if err != nil {
-				return err
-			}
-		} else {
-			path := embeddedPkg.Path()
-			parser := embeddedPkg.Parser()
-			if parser == nil {
-				ip, err := p.parsePackage(path)
-				if err != nil {
-					return p.errorf(v.Pos(), "could not parse package %s: %v", path, err)
-				}
-				parser = ip
-				p.imports[filePkg] = importedPkg{
-					path:   embeddedPkg.Path(),
-					parser: parser,
-				}
-			}
-			if embeddedIfaceType = parser.importedInterfaces.Get(path, sel); embeddedIfaceType == nil {
-				return p.errorf(v.Pos(), "unknown embedded interface %s.%s", path, sel)
-			}
-			embeddedIface, err = parser.parseInterface(sel, path, embeddedIfaceType)
-			if err != nil {
-				return err
-			}
-		}
-		// Copy the methods.
-		// TODO: apply shadowing rules.
-		for _, m := range embeddedIface.Methods {
-			iface.AddMethod(m)
-		}
-	case *ast.IndexExpr:
-		switch vv := v.X.(type) {
-		case *ast.SelectorExpr:
-			if err := p.parseField(nil, vv, iface, pkg, tps); err != nil {
-				return err
-			}
+			return []*model.Method{m}, nil
 		case *ast.Ident:
-			if err := p.parseField(nil, vv, iface, pkg, tps); err != nil {
-				return err
+			// Embedded interface in this package.
+			embeddedIfaceType := p.auxInterfaces.Get(pkg, v.String())
+			if embeddedIfaceType == nil {
+				embeddedIfaceType = p.importedInterfaces.Get(pkg, v.String())
 			}
-		default:
-			return fmt.Errorf("don't know how to mock method of type %T", field.Type)
-		}
 
-	default:
-		return fmt.Errorf("don't know how to mock method of type %T", field.Type)
+			var embeddedIface *model.Interface
+			if embeddedIfaceType != nil {
+				var err error
+				embeddedIfaceType.instTypes, err = p.constructInstParams(pkg, it.typeParams, it.instTypes, it.embeddedInstTypeParams, tps)
+				if err != nil {
+					return nil, err
+				}
+				embeddedIface, err = p.parseInterface(v.String(), pkg, embeddedIfaceType)
+				if err != nil {
+					return nil, err
+				}
+
+			} else {
+				// This is built-in error interface.
+				if v.String() == model.ErrorInterface.Name {
+					embeddedIface = &model.ErrorInterface
+				} else {
+					ip, err := p.parsePackage(pkg)
+					if err != nil {
+						return nil, p.errorf(v.Pos(), "could not parse package %s: %v", pkg, err)
+					}
+
+					if embeddedIfaceType = ip.importedInterfaces.Get(pkg, v.String()); embeddedIfaceType == nil {
+						return nil, p.errorf(v.Pos(), "unknown embedded interface %s.%s", pkg, v.String())
+					}
+
+					embeddedIfaceType.instTypes, err = p.constructInstParams(pkg, it.typeParams, it.instTypes, it.embeddedInstTypeParams, tps)
+					if err != nil {
+						return nil, err
+					}
+					embeddedIface, err = ip.parseInterface(v.String(), pkg, embeddedIfaceType)
+					if err != nil {
+						return nil, err
+					}
+				}
+			}
+			return embeddedIface.Methods, nil
+		case *ast.SelectorExpr:
+			// Embedded interface in another package.
+			filePkg, sel := v.X.(*ast.Ident).String(), v.Sel.String()
+			embeddedPkg, ok := p.imports[filePkg]
+			if !ok {
+				return nil, p.errorf(v.X.Pos(), "unknown package %s", filePkg)
+			}
+
+			var embeddedIface *model.Interface
+			var err error
+			embeddedIfaceType := p.auxInterfaces.Get(filePkg, sel)
+			if embeddedIfaceType != nil {
+				embeddedIfaceType.instTypes, err = p.constructInstParams(pkg, it.typeParams, it.instTypes, it.embeddedInstTypeParams, tps)
+				if err != nil {
+					return nil, err
+				}
+				embeddedIface, err = p.parseInterface(sel, filePkg, embeddedIfaceType)
+				if err != nil {
+					return nil, err
+				}
+			} else {
+				path := embeddedPkg.Path()
+				parser := embeddedPkg.Parser()
+				if parser == nil {
+					ip, err := p.parsePackage(path)
+					if err != nil {
+						return nil, p.errorf(v.Pos(), "could not parse package %s: %v", path, err)
+					}
+					parser = ip
+					p.imports[filePkg] = importedPkg{
+						path:   embeddedPkg.Path(),
+						parser: parser,
+					}
+				}
+				if embeddedIfaceType = parser.importedInterfaces.Get(path, sel); embeddedIfaceType == nil {
+					return nil, p.errorf(v.Pos(), "unknown embedded interface %s.%s", path, sel)
+				}
+
+				embeddedIfaceType.instTypes, err = p.constructInstParams(pkg, it.typeParams, it.instTypes, it.embeddedInstTypeParams, tps)
+				if err != nil {
+					return nil, err
+				}
+				embeddedIface, err = parser.parseInterface(sel, path, embeddedIfaceType)
+				if err != nil {
+					return nil, err
+				}
+			}
+			// TODO: apply shadowing rules.
+			return embeddedIface.Methods, nil
+		default:
+			return p.parseGenericMethod(field, it, iface, pkg, tps)
+		}
 	}
-	return nil
 }
 
-func (p *fileParser) parseFunc(pkg string, f *ast.FuncType, tps map[string]bool) (inParam []*model.Parameter, variadic *model.Parameter, outParam []*model.Parameter, err error) {
+func (p *fileParser) parseFunc(pkg string, f *ast.FuncType, tps map[string]model.Type) (inParam []*model.Parameter, variadic *model.Parameter, outParam []*model.Parameter, err error) {
 	if f.Params != nil {
 		regParams := f.Params.List
 		if isVariadic(f) {
@@ -438,7 +485,7 @@ func (p *fileParser) parseFunc(pkg string, f *ast.FuncType, tps map[string]bool)
 	return
 }
 
-func (p *fileParser) parseFieldList(pkg string, fields []*ast.Field, tps map[string]bool) ([]*model.Parameter, error) {
+func (p *fileParser) parseFieldList(pkg string, fields []*ast.Field, tps map[string]model.Type) ([]*model.Parameter, error) {
 	nf := 0
 	for _, f := range fields {
 		nn := len(f.Names)
@@ -472,7 +519,7 @@ func (p *fileParser) parseFieldList(pkg string, fields []*ast.Field, tps map[str
 	return ps, nil
 }
 
-func (p *fileParser) parseType(pkg string, typ ast.Expr, tps map[string]bool) (model.Type, error) {
+func (p *fileParser) parseType(pkg string, typ ast.Expr, tps map[string]model.Type) (model.Type, error) {
 	switch v := typ.(type) {
 	case *ast.ArrayType:
 		ln := -1
@@ -514,7 +561,8 @@ func (p *fileParser) parseType(pkg string, typ ast.Expr, tps map[string]bool) (m
 		}
 		return &model.FuncType{In: in, Out: out, Variadic: variadic}, nil
 	case *ast.Ident:
-		if v.IsExported() && !tps[v.Name] {
+		it, ok := tps[v.Name]
+		if v.IsExported() && !ok {
 			// `pkg` may be an aliased imported pkg
 			// if so, patch the import w/ the fully qualified import
 			maybeImportedPkg, ok := p.imports[pkg]
@@ -524,7 +572,9 @@ func (p *fileParser) parseType(pkg string, typ ast.Expr, tps map[string]bool) (m
 			// assume type in this package
 			return &model.NamedType{Package: pkg, Type: v.Name}, nil
 		}
-
+		if ok && it != nil {
+			return it, nil
+		}
 		// assume predeclared type
 		return model.PredeclaredType(v.Name), nil
 	case *ast.InterfaceType:
@@ -678,9 +728,11 @@ func importsOfFile(file *ast.File) (normalImports map[string]importedPackage, do
 }
 
 type namedInterface struct {
-	name       *ast.Ident
-	it         *ast.InterfaceType
-	typeParams []*ast.Field
+	name                   *ast.Ident
+	it                     *ast.InterfaceType
+	typeParams             []*ast.Field
+	embeddedInstTypeParams []ast.Expr
+	instTypes              []model.Type
 }
 
 // Create an iterator over all interfaces in file.
@@ -702,7 +754,7 @@ func iterInterfaces(file *ast.File) <-chan *namedInterface {
 					continue
 				}
 
-				ch <- &namedInterface{ts.Name, it, getTypeSpecTypeParams(ts)}
+				ch <- &namedInterface{name: ts.Name, it: it, typeParams: getTypeSpecTypeParams(ts)}
 			}
 		}
 		close(ch)

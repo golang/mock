@@ -18,6 +18,7 @@
 package main
 
 import (
+	"fmt"
 	"go/ast"
 
 	"github.com/golang/mock/mockgen/model"
@@ -27,10 +28,14 @@ func getTypeSpecTypeParams(ts *ast.TypeSpec) []*ast.Field {
 	return nil
 }
 
-func (p *fileParser) parseGenericType(pkg string, typ ast.Expr, tps map[string]bool) (model.Type, error) {
+func (p *fileParser) parseGenericType(pkg string, typ ast.Expr, tps map[string]model.Type) (model.Type, error) {
 	return nil, nil
 }
 
 func getIdentTypeParams(decl interface{}) string {
 	return ""
+}
+
+func (p *fileParser) parseGenericMethod(field *ast.Field, it *namedInterface, iface *model.Interface, pkg string, tps map[string]model.Type) ([]*model.Method, error) {
+	return nil, fmt.Errorf("don't know how to mock method of type %T", field.Type)
 }
