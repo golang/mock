@@ -87,14 +87,33 @@ func GotFormatterAdapter(s GotFormatter, m Matcher) Matcher {
 	}
 }
 
-type anyMatcher struct{}
-
-func (anyMatcher) Matches(interface{}) bool {
-	return true
+type anyMatcher struct {
+	matchers []Matcher
 }
 
-func (anyMatcher) String() string {
-	return "is anything"
+func (am anyMatcher) Matches(x interface{}) bool {
+	if len(am.matchers) == 0 {
+		return true
+	}
+
+	for _, m := range am.matchers {
+		if m.Matches(x) {
+			return true
+		}
+	}
+	return false
+}
+
+func (am anyMatcher) String() string {
+	if len(am.matchers) == 0 {
+		return "is anything"
+	}
+
+	ss := make([]string, 0, len(am.matchers))
+	for _, matcher := range am.matchers {
+		ss = append(ss, matcher.String())
+	}
+	return strings.Join(ss, " OR ")
 }
 
 type eqMatcher struct {
@@ -273,12 +292,13 @@ func (m inAnyOrderMatcher) String() string {
 
 // Constructors
 
-// All returns a composite Matcher that returns true if and only all of the
+// All returns a composite Matcher that returns true if and only if all of the
 // matchers return true.
 func All(ms ...Matcher) Matcher { return allMatcher{ms} }
 
-// Any returns a matcher that always matches.
-func Any() Matcher { return anyMatcher{} }
+// All returns a composite Matcher that returns true if any of the
+// matchers return true.
+func Any(ms ...Matcher) Matcher { return anyMatcher{ms} }
 
 // Eq returns a matcher that matches on equality.
 //
