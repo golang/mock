@@ -11,6 +11,7 @@
 package main
 
 import (
+	"fmt"
 	"go/ast"
 	"strings"
 
@@ -158,24 +159,24 @@ func (p *fileParser) parseEmbeddedGenericIface(iface *model.Interface, field *as
 			// overwrite all typed params for incoming/outgoing params
 			// to get the implementor-specified typing over the definition-specified typing
 
-			for _, pim := range gm.In {
-				if nt, ok := pim.Type.(*model.NamedType); ok && nt.TypeParams != nil {
-					for i, tp := range nt.TypeParams.TypeParameters {
-						if srcParamIdx := embeddedIface.TypeParamIndexByName(tp.String(nil, "")); srcParamIdx > -1 && srcParamIdx < len(typeParams) {
-							dstParamTyp := typeParams[srcParamIdx]
-							nt.TypeParams.TypeParameters[i] = dstParamTyp
-						}
-					}
+			for pinIdx, pin := range gm.In {
+				switch t := pin.Type.(type) {
+				case *model.NamedType:
+					p.populateTypedParamsFromNamedType(t, embeddedIface, typeParams)
+				case model.PredeclaredType:
+					p.populateTypedParamsFromPredeclaredType(t, pinIdx, gm.In, embeddedIface, typeParams)
+				case *model.PointerType:
+					p.populateTypedParamsFromPointerType(t, embeddedIface, typeParams)
 				}
 			}
-			for _, out := range gm.Out {
-				if nt, ok := out.Type.(*model.NamedType); ok && nt.TypeParams != nil {
-					for i, tp := range nt.TypeParams.TypeParameters {
-						if srcParamIdx := embeddedIface.TypeParamIndexByName(tp.String(nil, "")); srcParamIdx > -1 && srcParamIdx < len(typeParams) {
-							dstParamTyp := typeParams[srcParamIdx]
-							nt.TypeParams.TypeParameters[i] = dstParamTyp
-						}
-					}
+			for outIdx, out := range gm.Out {
+				switch t := out.Type.(type) {
+				case *model.NamedType:
+					p.populateTypedParamsFromNamedType(t, embeddedIface, typeParams)
+				case model.PredeclaredType:
+					p.populateTypedParamsFromPredeclaredType(t, outIdx, gm.Out, embeddedIface, typeParams)
+				case *model.PointerType:
+					p.populateTypedParamsFromPointerType(t, embeddedIface, typeParams)
 				}
 			}
 
@@ -184,4 +185,47 @@ func (p *fileParser) parseEmbeddedGenericIface(iface *model.Interface, field *as
 	}
 
 	return
+}
+
+func (p *fileParser) populateTypedParamsFromNamedType(nt *model.NamedType, iface *model.Interface, knownTypeParams []model.Type) {
+	if nt.TypeParams == nil {
+		return
+	}
+
+	for i, tp := range nt.TypeParams.TypeParameters {
+		switch tpt := tp.(type) {
+		case *model.PointerType:
+			p.populateTypedParamsFromPointerType(tpt, iface, knownTypeParams)
+		default:
+			if srcParamIdx := iface.TypeParamIndexByName(tp.String(nil, "")); srcParamIdx > -1 && srcParamIdx < len(knownTypeParams) {
+				dstParamTyp := knownTypeParams[srcParamIdx]
+				nt.TypeParams.TypeParameters[i] = dstParamTyp
+			}
+		}
+	}
+}
+
+func (p *fileParser) populateTypedParamsFromPredeclaredType(pt model.PredeclaredType, paramIdx int, inOrOutParams []*model.Parameter, iface *model.Interface, knownTypParams []model.Type) {
+	if srcParamIdx := iface.TypeParamIndexByName(pt.String(nil, "")); srcParamIdx > -1 {
+		dstParamTyp := knownTypParams[srcParamIdx]
+		inOrOutParams[paramIdx] = &model.Parameter{
+			Name: "",
+			Type: dstParamTyp,
+		}
+	}
+}
+
+func (p *fileParser) populateTypedParamsFromPointerType(pt *model.PointerType, iface *model.Interface, knownTypeParams []model.Type) {
+	switch t := pt.Type.(type) {
+	case model.PredeclaredType:
+		parms := make([]*model.Parameter, 1)
+		p.populateTypedParamsFromPredeclaredType(t, 0, parms, iface, knownTypeParams)
+		if parms[0] != nil {
+			pt.Type = parms[0].Type
+		}
+	case *model.NamedType:
+		p.populateTypedParamsFromNamedType(t, iface, knownTypeParams)
+	default:
+		fmt.Println("unhandled model PointerType")
+	}
 }
