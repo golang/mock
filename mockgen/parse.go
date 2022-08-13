@@ -398,6 +398,10 @@ func (p *fileParser) retrieveEmbeddedIfaceModel(pkg, ifaceName string, pos token
 		return
 	}
 
+	if importPkg != nil {
+		pkg = importPkg.Path()
+	}
+
 	// at this point, whether iface is of imported pkg or same pkg,
 	// the ifaceParser is appropriate and knows how to parse the iface
 	m, err = ifaceParser.parseInterface(ifaceName, pkg, typ)
