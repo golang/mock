@@ -1,4 +1,4 @@
-// Copyright 2020 Google LLC
+// Copyright 2022 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,18 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build !go1.14
-// +build !go1.14
+package main
 
-package gomock_test
+import (
+	"fmt"
+	"log"
+	"runtime/debug"
+)
 
-import "testing"
-
-func TestDuplicateFinishCallFails(t *testing.T) {
-	rep, ctrl := createFixtures(t)
-
-	ctrl.Finish()
-	rep.assertPass("the first Finish call should succeed")
-
-	rep.assertFatal(ctrl.Finish, "Controller.Finish was called more than once. It has to be called exactly once.")
+func printModuleVersion() {
+	if bi, exists := debug.ReadBuildInfo(); exists {
+		fmt.Println(bi.Main.Version)
+	} else {
+		log.Printf("No version information found. Make sure to use " +
+			"GO111MODULE=on when running 'go get' in order to use specific " +
+			"version of the binary.")
+	}
 }

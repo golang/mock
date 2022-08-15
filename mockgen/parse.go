@@ -62,8 +62,8 @@ func sourceMode(source string) (*model.Package, error) {
 	p := &fileParser{
 		fileSet:            fs,
 		imports:            make(map[string]importedPackage),
-		importedInterfaces: make(map[string]map[string]*ast.InterfaceType),
-		auxInterfaces:      make(map[string]map[string]*ast.InterfaceType),
+		importedInterfaces: newInterfaceCache(),
+		auxInterfaces:      newInterfaceCache(),
 		srcDir:             srcDir,
 	}
 
@@ -127,15 +127,48 @@ func (d duplicateImport) Error() string {
 func (d duplicateImport) Path() string        { log.Fatal(d.Error()); return "" }
 func (d duplicateImport) Parser() *fileParser { log.Fatal(d.Error()); return nil }
 
+type interfaceCache struct {
+	m map[string]map[string]*namedInterface
+}
+
+func newInterfaceCache() *interfaceCache {
+	return &interfaceCache{
+		m: make(map[string]map[string]*namedInterface),
+	}
+}
+
+func (i *interfaceCache) Set(pkg, name string, it *namedInterface) {
+	if _, ok := i.m[pkg]; !ok {
+		i.m[pkg] = make(map[string]*namedInterface)
+	}
+	i.m[pkg][name] = it
+}
+
+func (i *interfaceCache) Get(pkg, name string) *namedInterface {
+	if _, ok := i.m[pkg]; !ok {
+		return nil
+	}
+	return i.m[pkg][name]
+}
+
+func (i *interfaceCache) GetASTIface(pkg, name string) *ast.InterfaceType {
+	if _, ok := i.m[pkg]; !ok {
+		return nil
+	}
+	it, ok := i.m[pkg][name]
+	if !ok {
+		return nil
+	}
+	return it.it
+}
+
 type fileParser struct {
 	fileSet            *token.FileSet
-	imports            map[string]importedPackage               // package name => imported package
-	importedInterfaces map[string]map[string]*ast.InterfaceType // package (or "") => name => interface
-
-	auxFiles      []*ast.File
-	auxInterfaces map[string]map[string]*ast.InterfaceType // package (or "") => name => interface
-
-	srcDir string
+	imports            map[string]importedPackage // package name => imported package
+	importedInterfaces *interfaceCache
+	auxFiles           []*ast.File
+	auxInterfaces      *interfaceCache
+	srcDir             string
 }
 
 func (p *fileParser) errorf(pos token.Pos, format string, args ...interface{}) error {
@@ -168,11 +201,8 @@ func (p *fileParser) parseAuxFiles(auxFiles string) error {
 }
 
 func (p *fileParser) addAuxInterfacesFromFile(pkg string, file *ast.File) {
-	if _, ok := p.auxInterfaces[pkg]; !ok {
-		p.auxInterfaces[pkg] = make(map[string]*ast.InterfaceType)
-	}
 	for ni := range iterInterfaces(file) {
-		p.auxInterfaces[pkg][ni.name.Name] = ni.it
+		p.auxInterfaces.Set(pkg, ni.name.Name, ni)
 	}
 }
 
@@ -199,7 +229,7 @@ func (p *fileParser) parseFile(importPath string, file *ast.File) (*model.Packag
 
 	var is []*model.Interface
 	for ni := range iterInterfaces(file) {
-		i, err := p.parseInterface(ni.name.String(), importPath, ni.it)
+		i, err := p.parseInterface(ni.name.String(), importPath, ni)
 		if err != nil {
 			return nil, err
 		}
@@ -219,8 +249,8 @@ func (p *fileParser) parsePackage(path string) (*fileParser, error) {
 	newP := &fileParser{
 		fileSet:            token.NewFileSet(),
 		imports:            make(map[string]importedPackage),
-		importedInterfaces: make(map[string]map[string]*ast.InterfaceType),
-		auxInterfaces:      make(map[string]map[string]*ast.InterfaceType),
+		importedInterfaces: newInterfaceCache(),
+		auxInterfaces:      newInterfaceCache(),
 		srcDir:             p.srcDir,
 	}
 
@@ -233,11 +263,8 @@ func (p *fileParser) parsePackage(path string) (*fileParser, error) {
 
 	for _, pkg := range pkgs {
 		file := ast.MergePackageFiles(pkg, ast.FilterFuncDuplicates|ast.FilterUnassociatedComments|ast.FilterImportDuplicates)
-		if _, ok := newP.importedInterfaces[path]; !ok {
-			newP.importedInterfaces[path] = make(map[string]*ast.InterfaceType)
-		}
 		for ni := range iterInterfaces(file) {
-			newP.importedInterfaces[path][ni.name.Name] = ni.it
+			newP.importedInterfaces.Set(path, ni.name.Name, ni)
 		}
 		imports, _ := importsOfFile(file)
 		for pkgName, pkgI := range imports {
@@ -247,9 +274,20 @@ func (p *fileParser) parsePackage(path string) (*fileParser, error) {
 	return newP, nil
 }
 
-func (p *fileParser) parseInterface(name, pkg string, it *ast.InterfaceType) (*model.Interface, error) {
+func (p *fileParser) parseInterface(name, pkg string, it *namedInterface) (*model.Interface, error) {
 	iface := &model.Interface{Name: name}
-	for _, field := range it.Methods.List {
+	tps := make(map[string]bool)
+
+	tp, err := p.parseFieldList(pkg, it.typeParams, tps)
+	if err != nil {
+		return nil, fmt.Errorf("unable to parse interface type parameters: %v", name)
+	}
+	iface.TypeParams = tp
+	for _, v := range tp {
+		tps[v.Name] = true
+	}
+
+	for _, field := range it.it.Methods.List {
 		switch v := field.Type.(type) {
 		case *ast.FuncType:
 			if nn := len(field.Names); nn != 1 {
@@ -259,16 +297,16 @@ func (p *fileParser) parseInterface(name, pkg string, it *ast.InterfaceType) (*m
 				Name: field.Names[0].String(),
 			}
 			var err error
-			m.In, m.Variadic, m.Out, err = p.parseFunc(pkg, v)
+			m.In, m.Variadic, m.Out, err = p.parseFunc(pkg, v, tps)
 			if err != nil {
 				return nil, err
 			}
 			iface.AddMethod(m)
 		case *ast.Ident:
 			// Embedded interface in this package.
-			embeddedIfaceType := p.auxInterfaces[pkg][v.String()]
+			embeddedIfaceType := p.auxInterfaces.Get(pkg, v.String())
 			if embeddedIfaceType == nil {
-				embeddedIfaceType = p.importedInterfaces[pkg][v.String()]
+				embeddedIfaceType = p.importedInterfaces.Get(pkg, v.String())
 			}
 
 			var embeddedIface *model.Interface
@@ -288,7 +326,7 @@ func (p *fileParser) parseInterface(name, pkg string, it *ast.InterfaceType) (*m
 						return nil, p.errorf(v.Pos(), "could not parse package %s: %v", pkg, err)
 					}
 
-					if embeddedIfaceType = ip.importedInterfaces[pkg][v.String()]; embeddedIfaceType == nil {
+					if embeddedIfaceType = ip.importedInterfaces.Get(pkg, v.String()); embeddedIfaceType == nil {
 						return nil, p.errorf(v.Pos(), "unknown embedded interface %s.%s", pkg, v.String())
 					}
 
@@ -312,7 +350,7 @@ func (p *fileParser) parseInterface(name, pkg string, it *ast.InterfaceType) (*m
 
 			var embeddedIface *model.Interface
 			var err error
-			embeddedIfaceType := p.auxInterfaces[filePkg][sel]
+			embeddedIfaceType := p.auxInterfaces.Get(filePkg, sel)
 			if embeddedIfaceType != nil {
 				embeddedIface, err = p.parseInterface(sel, filePkg, embeddedIfaceType)
 				if err != nil {
@@ -332,7 +370,7 @@ func (p *fileParser) parseInterface(name, pkg string, it *ast.InterfaceType) (*m
 						parser: parser,
 					}
 				}
-				if embeddedIfaceType = parser.importedInterfaces[path][sel]; embeddedIfaceType == nil {
+				if embeddedIfaceType = parser.importedInterfaces.Get(path, sel); embeddedIfaceType == nil {
 					return nil, p.errorf(v.Pos(), "unknown embedded interface %s.%s", path, sel)
 				}
 				embeddedIface, err = parser.parseInterface(sel, path, embeddedIfaceType)
@@ -352,26 +390,26 @@ func (p *fileParser) parseInterface(name, pkg string, it *ast.InterfaceType) (*m
 	return iface, nil
 }
 
-func (p *fileParser) parseFunc(pkg string, f *ast.FuncType) (inParam []*model.Parameter, variadic *model.Parameter, outParam []*model.Parameter, err error) {
+func (p *fileParser) parseFunc(pkg string, f *ast.FuncType, tps map[string]bool) (inParam []*model.Parameter, variadic *model.Parameter, outParam []*model.Parameter, err error) {
 	if f.Params != nil {
 		regParams := f.Params.List
 		if isVariadic(f) {
 			n := len(regParams)
 			varParams := regParams[n-1:]
 			regParams = regParams[:n-1]
-			vp, err := p.parseFieldList(pkg, varParams)
+			vp, err := p.parseFieldList(pkg, varParams, tps)
 			if err != nil {
 				return nil, nil, nil, p.errorf(varParams[0].Pos(), "failed parsing variadic argument: %v", err)
 			}
 			variadic = vp[0]
 		}
-		inParam, err = p.parseFieldList(pkg, regParams)
+		inParam, err = p.parseFieldList(pkg, regParams, tps)
 		if err != nil {
 			return nil, nil, nil, p.errorf(f.Pos(), "failed parsing arguments: %v", err)
 		}
 	}
 	if f.Results != nil {
-		outParam, err = p.parseFieldList(pkg, f.Results.List)
+		outParam, err = p.parseFieldList(pkg, f.Results.List, tps)
 		if err != nil {
 			return nil, nil, nil, p.errorf(f.Pos(), "failed parsing returns: %v", err)
 		}
@@ -379,7 +417,7 @@ func (p *fileParser) parseFunc(pkg string, f *ast.FuncType) (inParam []*model.Pa
 	return
 }
 
-func (p *fileParser) parseFieldList(pkg string, fields []*ast.Field) ([]*model.Parameter, error) {
+func (p *fileParser) parseFieldList(pkg string, fields []*ast.Field, tps map[string]bool) ([]*model.Parameter, error) {
 	nf := 0
 	for _, f := range fields {
 		nn := len(f.Names)
@@ -394,7 +432,7 @@ func (p *fileParser) parseFieldList(pkg string, fields []*ast.Field) ([]*model.P
 	ps := make([]*model.Parameter, nf)
 	i := 0 // destination index
 	for _, f := range fields {
-		t, err := p.parseType(pkg, f.Type)
+		t, err := p.parseType(pkg, f.Type, tps)
 		if err != nil {
 			return nil, err
 		}
@@ -413,7 +451,7 @@ func (p *fileParser) parseFieldList(pkg string, fields []*ast.Field) ([]*model.P
 	return ps, nil
 }
 
-func (p *fileParser) parseType(pkg string, typ ast.Expr) (model.Type, error) {
+func (p *fileParser) parseType(pkg string, typ ast.Expr, tps map[string]bool) (model.Type, error) {
 	switch v := typ.(type) {
 	case *ast.ArrayType:
 		ln := -1
@@ -427,13 +465,13 @@ func (p *fileParser) parseType(pkg string, typ ast.Expr) (model.Type, error) {
 				return nil, p.errorf(v.Len.Pos(), "bad array size: %v", err)
 			}
 		}
-		t, err := p.parseType(pkg, v.Elt)
+		t, err := p.parseType(pkg, v.Elt, tps)
 		if err != nil {
 			return nil, err
 		}
 		return &model.ArrayType{Len: ln, Type: t}, nil
 	case *ast.ChanType:
-		t, err := p.parseType(pkg, v.Value)
+		t, err := p.parseType(pkg, v.Value, tps)
 		if err != nil {
 			return nil, err
 		}
@@ -447,15 +485,15 @@ func (p *fileParser) parseType(pkg string, typ ast.Expr) (model.Type, error) {
 		return &model.ChanType{Dir: dir, Type: t}, nil
 	case *ast.Ellipsis:
 		// assume we're parsing a variadic argument
-		return p.parseType(pkg, v.Elt)
+		return p.parseType(pkg, v.Elt, tps)
 	case *ast.FuncType:
-		in, variadic, out, err := p.parseFunc(pkg, v)
+		in, variadic, out, err := p.parseFunc(pkg, v, tps)
 		if err != nil {
 			return nil, err
 		}
 		return &model.FuncType{In: in, Out: out, Variadic: variadic}, nil
 	case *ast.Ident:
-		if v.IsExported() {
+		if v.IsExported() && !tps[v.Name] {
 			// `pkg` may be an aliased imported pkg
 			// if so, patch the import w/ the fully qualified import
 			maybeImportedPkg, ok := p.imports[pkg]
@@ -474,11 +512,11 @@ func (p *fileParser) parseType(pkg string, typ ast.Expr) (model.Type, error) {
 		}
 		return model.PredeclaredType("interface{}"), nil
 	case *ast.MapType:
-		key, err := p.parseType(pkg, v.Key)
+		key, err := p.parseType(pkg, v.Key, tps)
 		if err != nil {
 			return nil, err
 		}
-		value, err := p.parseType(pkg, v.Value)
+		value, err := p.parseType(pkg, v.Value, tps)
 		if err != nil {
 			return nil, err
 		}
@@ -491,7 +529,7 @@ func (p *fileParser) parseType(pkg string, typ ast.Expr) (model.Type, error) {
 		}
 		return &model.NamedType{Package: pkg.Path(), Type: v.Sel.String()}, nil
 	case *ast.StarExpr:
-		t, err := p.parseType(pkg, v.X)
+		t, err := p.parseType(pkg, v.X, tps)
 		if err != nil {
 			return nil, err
 		}
@@ -502,7 +540,16 @@ func (p *fileParser) parseType(pkg string, typ ast.Expr) (model.Type, error) {
 		}
 		return model.PredeclaredType("struct{}"), nil
 	case *ast.ParenExpr:
-		return p.parseType(pkg, v.X)
+		return p.parseType(pkg, v.X, tps)
+	default:
+		mt, err := p.parseGenericType(pkg, typ, tps)
+		if err != nil {
+			return nil, err
+		}
+		if mt == nil {
+			break
+		}
+		return mt, nil
 	}
 
 	return nil, fmt.Errorf("don't know how to parse type %T", typ)
@@ -610,13 +657,14 @@ func importsOfFile(file *ast.File) (normalImports map[string]importedPackage, do
 }
 
 type namedInterface struct {
-	name *ast.Ident
-	it   *ast.InterfaceType
+	name       *ast.Ident
+	it         *ast.InterfaceType
+	typeParams []*ast.Field
 }
 
 // Create an iterator over all interfaces in file.
-func iterInterfaces(file *ast.File) <-chan namedInterface {
-	ch := make(chan namedInterface)
+func iterInterfaces(file *ast.File) <-chan *namedInterface {
+	ch := make(chan *namedInterface)
 	go func() {
 		for _, decl := range file.Decls {
 			gd, ok := decl.(*ast.GenDecl)
@@ -633,7 +681,7 @@ func iterInterfaces(file *ast.File) <-chan namedInterface {
 					continue
 				}
 
-				ch <- namedInterface{ts.Name, it}
+				ch <- &namedInterface{ts.Name, it, getTypeSpecTypeParams(ts)}
 			}
 		}
 		close(ch)

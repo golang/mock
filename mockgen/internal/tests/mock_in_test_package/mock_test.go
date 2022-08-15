@@ -8,7 +8,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	mock_in_test_package "github.com/golang/mock/mockgen/internal/tests/mock_in_test_package"
+	users "github.com/golang/mock/mockgen/internal/tests/mock_in_test_package"
 )
 
 // MockFinder is a mock of Finder interface.
@@ -35,7 +35,7 @@ func (m *MockFinder) EXPECT() *MockFinderMockRecorder {
 }
 
 // Add mocks base method.
-func (m *MockFinder) Add(u mock_in_test_package.User) {
+func (m *MockFinder) Add(u users.User) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "Add", u)
 }
@@ -47,10 +47,10 @@ func (mr *MockFinderMockRecorder) Add(u interface{}) *gomock.Call {
 }
 
 // FindUser mocks base method.
-func (m *MockFinder) FindUser(name string) mock_in_test_package.User {
+func (m *MockFinder) FindUser(name string) users.User {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FindUser", name)
-	ret0, _ := ret[0].(mock_in_test_package.User)
+	ret0, _ := ret[0].(users.User)
 	return ret0
 }
 
