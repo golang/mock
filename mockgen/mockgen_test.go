@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -369,7 +368,7 @@ func Test_createPackageMap(t *testing.T) {
 }
 
 func TestParsePackageImport_FallbackGoPath(t *testing.T) {
-	goPath, err := ioutil.TempDir("", "gopath")
+	goPath, err := os.MkdirTemp("", "gopath")
 	if err != nil {
 		t.Error(err)
 	}
@@ -404,7 +403,7 @@ func TestParsePackageImport_FallbackMultiGoPath(t *testing.T) {
 	var goPathList []string
 
 	// first gopath
-	goPath, err := ioutil.TempDir("", "gopath1")
+	goPath, err := os.MkdirTemp("", "gopath1")
 	if err != nil {
 		t.Error(err)
 	}
@@ -421,7 +420,7 @@ func TestParsePackageImport_FallbackMultiGoPath(t *testing.T) {
 	}
 
 	// second gopath
-	goPath, err = ioutil.TempDir("", "gopath2")
+	goPath, err = os.MkdirTemp("", "gopath2")
 	if err != nil {
 		t.Error(err)
 	}
