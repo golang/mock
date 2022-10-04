@@ -169,7 +169,7 @@ func main() {
 		if err != nil && !errors.Is(err, os.ErrNotExist) {
 			log.Fatalf("Failed reading pre-exiting destination file: %v", err)
 		}
-		if len(existing) == len(output) && bytes.Compare(existing, output) == 0 {
+		if len(existing) == len(output) && bytes.Equal(existing, output) {
 			return
 		}
 		f, err := os.Create(*destination)
