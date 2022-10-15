@@ -11,7 +11,6 @@
 package main
 
 import (
-	"fmt"
 	"go/ast"
 	"strings"
 
@@ -160,23 +159,13 @@ func (p *fileParser) parseEmbeddedGenericIface(iface *model.Interface, field *as
 			// to get the implementor-specified typing over the definition-specified typing
 
 			for pinIdx, pin := range gm.In {
-				switch t := pin.Type.(type) {
-				case *model.NamedType:
-					p.populateTypedParamsFromNamedType(t, embeddedIface, typeParams)
-				case model.PredeclaredType:
-					p.populateTypedParamsFromPredeclaredType(t, pinIdx, gm.In, embeddedIface, typeParams)
-				case *model.PointerType:
-					p.populateTypedParamsFromPointerType(t, embeddedIface, typeParams)
+				if genType, hasGeneric := p.getTypedParamForGeneric(pin.Type, embeddedIface, typeParams); hasGeneric {
+					gm.In[pinIdx].Type = genType
 				}
 			}
 			for outIdx, out := range gm.Out {
-				switch t := out.Type.(type) {
-				case *model.NamedType:
-					p.populateTypedParamsFromNamedType(t, embeddedIface, typeParams)
-				case model.PredeclaredType:
-					p.populateTypedParamsFromPredeclaredType(t, outIdx, gm.Out, embeddedIface, typeParams)
-				case *model.PointerType:
-					p.populateTypedParamsFromPointerType(t, embeddedIface, typeParams)
+				if genType, hasGeneric := p.getTypedParamForGeneric(out.Type, embeddedIface, typeParams); hasGeneric {
+					gm.Out[outIdx].Type = genType
 				}
 			}
 
@@ -187,45 +176,87 @@ func (p *fileParser) parseEmbeddedGenericIface(iface *model.Interface, field *as
 	return
 }
 
-func (p *fileParser) populateTypedParamsFromNamedType(nt *model.NamedType, iface *model.Interface, knownTypeParams []model.Type) {
-	if nt.TypeParams == nil {
-		return
-	}
-
-	for i, tp := range nt.TypeParams.TypeParameters {
-		switch tpt := tp.(type) {
-		case *model.PointerType:
-			p.populateTypedParamsFromPointerType(tpt, iface, knownTypeParams)
-		default:
-			if srcParamIdx := iface.TypeParamIndexByName(tp.String(nil, "")); srcParamIdx > -1 && srcParamIdx < len(knownTypeParams) {
-				dstParamTyp := knownTypeParams[srcParamIdx]
-				nt.TypeParams.TypeParameters[i] = dstParamTyp
+// getTypedParamForGeneric is recursive func to hydrate all generic types within a model.Type
+// so they get populated instead with the actual desired target types
+func (p *fileParser) getTypedParamForGeneric(t model.Type, iface *model.Interface, knownTypeParams []model.Type) (model.Type, bool) {
+	switch typ := t.(type) {
+	case *model.ArrayType:
+		if gType, wasGeneric := p.getTypedParamForGeneric(typ.Type, iface, knownTypeParams); wasGeneric {
+			typ.Type = gType
+			return typ, true
+		}
+	case *model.ChanType:
+		if gType, wasGeneric := p.getTypedParamForGeneric(typ.Type, iface, knownTypeParams); wasGeneric {
+			typ.Type = gType
+			return typ, true
+		}
+	case *model.FuncType:
+		hasGeneric := false
+		for inIdx, inParam := range typ.In {
+			if genType, ok := p.getTypedParamForGeneric(inParam.Type, iface, knownTypeParams); ok {
+				hasGeneric = true
+				typ.In[inIdx].Type = genType
 			}
 		}
-	}
-}
-
-func (p *fileParser) populateTypedParamsFromPredeclaredType(pt model.PredeclaredType, paramIdx int, inOrOutParams []*model.Parameter, iface *model.Interface, knownTypParams []model.Type) {
-	if srcParamIdx := iface.TypeParamIndexByName(pt.String(nil, "")); srcParamIdx > -1 {
-		dstParamTyp := knownTypParams[srcParamIdx]
-		inOrOutParams[paramIdx] = &model.Parameter{
-			Name: "",
-			Type: dstParamTyp,
+		for outIdx, outParam := range typ.Out {
+			if genType, ok := p.getTypedParamForGeneric(outParam.Type, iface, knownTypeParams); ok {
+				hasGeneric = true
+				typ.Out[outIdx].Type = genType
+			}
 		}
-	}
-}
-
-func (p *fileParser) populateTypedParamsFromPointerType(pt *model.PointerType, iface *model.Interface, knownTypeParams []model.Type) {
-	switch t := pt.Type.(type) {
-	case model.PredeclaredType:
-		parms := make([]*model.Parameter, 1)
-		p.populateTypedParamsFromPredeclaredType(t, 0, parms, iface, knownTypeParams)
-		if parms[0] != nil {
-			pt.Type = parms[0].Type
+		if typ.Variadic != nil {
+			if genType, ok := p.getTypedParamForGeneric(typ.Variadic.Type, iface, knownTypeParams); ok {
+				hasGeneric = true
+				typ.Variadic.Type = genType
+			}
+		}
+		if hasGeneric {
+			return typ, true
+		}
+	case *model.MapType:
+		var (
+			keyTyp, valTyp               model.Type
+			wasKeyGeneric, wasValGeneric bool
+		)
+		if keyTyp, wasKeyGeneric = p.getTypedParamForGeneric(typ.Key, iface, knownTypeParams); wasKeyGeneric {
+			typ.Key = keyTyp
+		}
+		if valTyp, wasValGeneric = p.getTypedParamForGeneric(typ.Value, iface, knownTypeParams); wasValGeneric {
+			typ.Value = valTyp
+		}
+		if wasKeyGeneric || wasValGeneric {
+			return typ, true
 		}
 	case *model.NamedType:
-		p.populateTypedParamsFromNamedType(t, iface, knownTypeParams)
-	default:
-		fmt.Println("unhandled model PointerType")
+		if typ.TypeParams == nil {
+			return nil, false
+		}
+		hasGeneric := false
+		for i, tp := range typ.TypeParams.TypeParameters {
+			// it will either be a type with name matching a generic parameter
+			// or it will be something like ptr or slice etc...
+			if srcParamIdx := iface.TypeParamIndexByName(tp.String(nil, "")); srcParamIdx > -1 && srcParamIdx < len(knownTypeParams) {
+				hasGeneric = true
+				dstParamTyp := knownTypeParams[srcParamIdx]
+				typ.TypeParams.TypeParameters[i] = dstParamTyp
+			} else if _, ok := p.getTypedParamForGeneric(tp, iface, knownTypeParams); ok {
+				hasGeneric = true
+			}
+		}
+		if hasGeneric {
+			return typ, true
+		}
+	case model.PredeclaredType:
+		if srcParamIdx := iface.TypeParamIndexByName(typ.String(nil, "")); srcParamIdx > -1 {
+			dstParamTyp := knownTypeParams[srcParamIdx]
+			return dstParamTyp, true
+		}
+	case *model.PointerType:
+		if gType, hasGeneric := p.getTypedParamForGeneric(typ.Type, iface, knownTypeParams); hasGeneric {
+			typ.Type = gType
+			return typ, true
+		}
 	}
+
+	return nil, false
 }
