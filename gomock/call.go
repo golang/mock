@@ -19,6 +19,9 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+
+	gogo "github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto" // TODO: change to "google.golang.org/protobuf/proto"
 )
 
 // Call represents an expected call to a mock.
@@ -58,6 +61,10 @@ func newCall(t TestHelper, receiver interface{}, method string, methodType refle
 			// Handle nil specially so that passing a nil interface value
 			// will match the typed nils of concrete args.
 			mArgs[i] = Nil()
+		} else if p, ok := arg.(proto.Message); ok {
+			mArgs[i] = protoEq(p)
+		} else if p, ok := arg.(gogo.Message); ok {
+			mArgs[i] = gogoEq(p)
 		} else {
 			mArgs[i] = Eq(arg)
 		}
