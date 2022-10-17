@@ -168,6 +168,11 @@ func (p *fileParser) parseEmbeddedGenericIface(iface *model.Interface, field *as
 					gm.Out[outIdx].Type = genType
 				}
 			}
+			if gm.Variadic != nil {
+				if vGenType, hasGeneric := p.getTypedParamForGeneric(gm.Variadic.Type, embeddedIface, typeParams); hasGeneric {
+					gm.Variadic.Type = vGenType
+				}
+			}
 
 			iface.AddMethod(gm)
 		}
