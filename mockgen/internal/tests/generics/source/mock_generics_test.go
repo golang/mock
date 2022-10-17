@@ -7,9 +7,9 @@ package source
 import (
 	reflect "reflect"
 
+	other "github.com/golang/mock/mockgen/internal/tests/generics/other"
 	gomock "github.com/golang/mock/gomock"
 	generics "github.com/golang/mock/mockgen/internal/tests/generics"
-	other "github.com/golang/mock/mockgen/internal/tests/generics/other"
 )
 
 // MockBar is a mock of Bar interface.
@@ -379,6 +379,20 @@ func (m *MockEmbeddingIface) EXPECT() *MockEmbeddingIfaceMockRecorder {
 	return m.recorder
 }
 
+// AddChan mocks base method.
+func (m *MockEmbeddingIface) AddChan(arg0 chan generics.StructType) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddChan", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AddChan indicates an expected call of AddChan.
+func (mr *MockEmbeddingIfaceMockRecorder) AddChan(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddChan", reflect.TypeOf((*MockEmbeddingIface)(nil).AddChan), arg0)
+}
+
 // DoR mocks base method.
 func (m *MockEmbeddingIface) DoR(arg0 other.Five) error {
 	m.ctrl.T.Helper()
@@ -509,6 +523,66 @@ func (mr *MockEmbeddingIfaceMockRecorder) Fourteen() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Fourteen", reflect.TypeOf((*MockEmbeddingIface)(nil).Fourteen))
 }
 
+// GetMap mocks base method.
+func (m *MockEmbeddingIface) GetMap() (map[bool]generics.StructType, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMap")
+	ret0, _ := ret[0].(map[bool]generics.StructType)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMap indicates an expected call of GetMap.
+func (mr *MockEmbeddingIfaceMockRecorder) GetMap() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMap", reflect.TypeOf((*MockEmbeddingIface)(nil).GetMap))
+}
+
+// GetThem mocks base method.
+func (m *MockEmbeddingIface) GetThem() ([]generics.StructType, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetThem")
+	ret0, _ := ret[0].([]generics.StructType)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetThem indicates an expected call of GetThem.
+func (mr *MockEmbeddingIfaceMockRecorder) GetThem() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetThem", reflect.TypeOf((*MockEmbeddingIface)(nil).GetThem))
+}
+
+// GetThemMapped mocks base method.
+func (m *MockEmbeddingIface) GetThemMapped() ([]map[int64]*generics.StructType, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetThemMapped")
+	ret0, _ := ret[0].([]map[int64]*generics.StructType)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetThemMapped indicates an expected call of GetThemMapped.
+func (mr *MockEmbeddingIfaceMockRecorder) GetThemMapped() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetThemMapped", reflect.TypeOf((*MockEmbeddingIface)(nil).GetThemMapped))
+}
+
+// GetThemPtr mocks base method.
+func (m *MockEmbeddingIface) GetThemPtr() ([]*generics.StructType, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetThemPtr")
+	ret0, _ := ret[0].([]*generics.StructType)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetThemPtr indicates an expected call of GetThemPtr.
+func (mr *MockEmbeddingIfaceMockRecorder) GetThemPtr() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetThemPtr", reflect.TypeOf((*MockEmbeddingIface)(nil).GetThemPtr))
+}
+
 // LocalFunc mocks base method.
 func (m *MockEmbeddingIface) LocalFunc() error {
 	m.ctrl.T.Helper()
@@ -524,19 +598,22 @@ func (mr *MockEmbeddingIfaceMockRecorder) LocalFunc() *gomock.Call {
 }
 
 // MakeThem mocks base method.
-func (m *MockEmbeddingIface) MakeThem() (generics.StructType, other.Five, error) {
+func (m *MockEmbeddingIface) MakeThem(arg0 ...generics.StructType) (other.Five, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "MakeThem")
-	ret0, _ := ret[0].(generics.StructType)
-	ret1, _ := ret[1].(other.Five)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
+	varargs := []interface{}{}
+	for _, a := range arg0 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "MakeThem", varargs...)
+	ret0, _ := ret[0].(other.Five)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // MakeThem indicates an expected call of MakeThem.
-func (mr *MockEmbeddingIfaceMockRecorder) MakeThem() *gomock.Call {
+func (mr *MockEmbeddingIfaceMockRecorder) MakeThem(arg0 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MakeThem", reflect.TypeOf((*MockEmbeddingIface)(nil).MakeThem))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MakeThem", reflect.TypeOf((*MockEmbeddingIface)(nil).MakeThem), arg0...)
 }
 
 // Nine mocks base method.
