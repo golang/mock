@@ -3,8 +3,8 @@ package gomock
 import (
 	"fmt"
 
-	gogo "github.com/gogo/protobuf/proto"
-	"github.com/golang/protobuf/proto" // TODO: change to "google.golang.org/protobuf/proto"
+	protov1 "github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 )
 
 func protoEq(p proto.Message) *protoMatcher {
@@ -29,24 +29,24 @@ func (m protoMatcher) String() string {
 	return fmt.Sprintf("is equal to %v (%T)", m.Message, m.Message)
 }
 
-func gogoEq(p proto.Message) *gogoMatcher {
-	return &gogoMatcher{
+func protoV1Eq(p protov1.Message) *protoV1Matcher {
+	return &protoV1Matcher{
 		Message: p,
 	}
 }
 
-type gogoMatcher struct {
-	gogo.Message
+type protoV1Matcher struct {
+	protov1.Message
 }
 
-func (m gogoMatcher) Matches(v interface{}) bool {
-	vp, ok := v.(proto.Message)
+func (m protoV1Matcher) Matches(v interface{}) bool {
+	vp, ok := v.(protov1.Message)
 	if !ok {
 		return false
 	}
-	return proto.Equal(vp, m.Message)
+	return protov1.Equal(vp, m.Message)
 }
 
-func (m gogoMatcher) String() string {
+func (m protoV1Matcher) String() string {
 	return fmt.Sprintf("is equal to %v (%T)", m.Message, m.Message)
 }
