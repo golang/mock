@@ -412,14 +412,13 @@ func typeFromType(t reflect.Type) (Type, error) {
 		return PredeclaredType("byte"), nil
 	}
 
-	tp := t.Name()
-	if l, r := strings.Index(tp, "["), strings.Index(tp, "]"); l != -1 && r != -1 {
-		content := tp[l+1 : r]
-		sp := strings.Split(content, "/")
-		tp = tp[:l+1] + sp[len(sp)-1] + tp[r:]
-	}
-
 	if imp := t.PkgPath(); imp != "" {
+		tp := t.Name()
+		if l, r := strings.Index(tp, "["), strings.Index(tp, "]"); l != -1 && r != -1 {
+			content := tp[l+1 : r]
+			sp := strings.Split(content, "/")
+			tp = tp[:l+1] + sp[len(sp)-1] + tp[r:]
+		}
 		return &NamedType{
 			Package: impPath(imp),
 			Type:    tp,
