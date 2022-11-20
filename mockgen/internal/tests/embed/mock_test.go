@@ -1,3 +1,4 @@
+// This test is for when mock is same package as the source.
 package embed_test
 
 import (
