@@ -61,6 +61,7 @@ var (
 	selfPackage     = flag.String("self_package", "", "The full package import path for the generated code. The purpose of this flag is to prevent import cycles in the generated code by trying to include its own package. This can happen if the mock's package is set to one of its inputs (usually the main one) and the output is stdio so mockgen cannot detect the final output package. Setting this flag will then tell mockgen which import to exclude.")
 	writePkgComment = flag.Bool("write_package_comment", true, "Writes package documentation comment (godoc) if true.")
 	copyrightFile   = flag.String("copyright_file", "", "Copyright file used to add copyright header")
+	embed           = flag.Bool("embed", false, "Embed source interface into generated mock structure")
 
 	debugParser = flag.Bool("debug_parser", false, "Print out parser results only.")
 	showVersion = flag.Bool("version", false, "Print version.")
@@ -341,6 +342,9 @@ func (g *generator) Generate(pkg *model.Package, outputPkgName string, outputPac
 		g.packageMap[pth] = pkgName
 		localNames[pkgName] = true
 	}
+	if *embed {
+		g.packageMap[g.srcPackage] = pkg.Name
+	}
 
 	if *writePkgComment {
 		g.p("// Package %v is a generated GoMock package.", outputPkgName)
@@ -362,7 +366,7 @@ func (g *generator) Generate(pkg *model.Package, outputPkgName string, outputPac
 	g.p(")")
 
 	for _, intf := range pkg.Interfaces {
-		if err := g.GenerateMockInterface(intf, outputPackagePath); err != nil {
+		if err := g.GenerateMockInterface(pkg.Name, intf, outputPackagePath); err != nil {
 			return err
 		}
 	}
@@ -404,7 +408,7 @@ func (g *generator) formattedTypeParams(it *model.Interface, pkgOverride string)
 	return long.String(), short.String()
 }
 
-func (g *generator) GenerateMockInterface(intf *model.Interface, outputPackagePath string) error {
+func (g *generator) GenerateMockInterface(pkgName string, intf *model.Interface, outputPackagePath string) error {
 	mockType := g.mockName(intf.Name)
 	longTp, shortTp := g.formattedTypeParams(intf, outputPackagePath)
 
@@ -412,6 +416,9 @@ func (g *generator) GenerateMockInterface(intf *model.Interface, outputPackagePa
 	g.p("// %v is a mock of %v interface.", mockType, intf.Name)
 	g.p("type %v%v struct {", mockType, longTp)
 	g.in()
+	if *embed {
+		g.p("%v.%v", pkgName, intf.Name)
+	}
 	g.p("ctrl     *gomock.Controller")
 	g.p("recorder *%vMockRecorder%v", mockType, shortTp)
 	g.out()
