@@ -342,7 +342,7 @@ func (g *generator) Generate(pkg *model.Package, outputPkgName string, outputPac
 		g.packageMap[pth] = pkgName
 		localNames[pkgName] = true
 	}
-	if *embed {
+	if *embed && pkg.Name != *packageOut {
 		g.packageMap[g.srcPackage] = pkg.Name
 	}
 
@@ -417,7 +417,11 @@ func (g *generator) GenerateMockInterface(pkgName string, intf *model.Interface,
 	g.p("type %v%v struct {", mockType, longTp)
 	g.in()
 	if *embed {
-		g.p("%v.%v", pkgName, intf.Name)
+		if pkgName != *packageOut {
+			g.p("%v.%v", pkgName, intf.Name)
+		} else {
+			g.p("%v", intf.Name)
+		}
 	}
 	g.p("ctrl     *gomock.Controller")
 	g.p("recorder *%vMockRecorder%v", mockType, shortTp)
