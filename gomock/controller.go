@@ -114,6 +114,26 @@ type ControllerOption interface {
 	apply(*Controller)
 }
 
+// NewOverridableController returns a new Controller that allows for overridable call expectations
+func NewOverridableController(t TestReporter) *Controller {
+	h, ok := t.(TestHelper)
+	if !ok {
+		h = &nopTestHelper{t}
+	}
+	ctrl := &Controller{
+		T:             h,
+		expectedCalls: newOverridableCallSet(),
+	}
+	if c, ok := isCleanuper(ctrl.T); ok {
+		c.Cleanup(func() {
+			ctrl.T.Helper()
+			ctrl.finish(true, nil)
+		})
+	}
+
+	return ctrl
+}
+
 type cancelReporter struct {
 	t      TestHelper
 	cancel func()
