@@ -24,6 +24,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/golang/mock/gomock/internal/mock_gomock"
+	"github.com/golang/mock/gomock/internal/testproto"
 )
 
 type A []string
@@ -49,6 +50,21 @@ func TestMatchers(t *testing.T) {
 		{"test assignable types", gomock.Eq(A{"a", "b"}),
 			[]e{[]string{"a", "b"}, A{"a", "b"}},
 			[]e{[]string{"a"}, A{"b"}},
+		},
+		{"test proto v2 matcher",
+			gomock.ProtoEq(&testproto.MessageV2{Field1: "hello", Field2: int64(123)}),
+			[]e{&testproto.MessageV2{Field1: "hello", Field2: int64(123)}},
+			[]e{&testproto.MessageV2{Field1: "hello"}, nil, &testproto.MessageV2{}},
+		},
+		{"test proto v1 matcher",
+			gomock.ProtoV1Eq(&testproto.MessageV1{Field1: "hello", Field2: int64(123)}),
+			[]e{&testproto.MessageV1{Field1: "hello", Field2: int64(123)}},
+			[]e{&testproto.MessageV1{Field1: "hello"}, nil},
+		},
+		{"test proto gogo matcher",
+			gomock.ProtoV1Eq(&testproto.MessageGoGo{Field1: "hello", Field2: int64(123)}),
+			[]e{&testproto.MessageGoGo{Field1: "hello", Field2: int64(123)}},
+			[]e{&testproto.MessageGoGo{Field1: "hello"}, nil},
 		},
 	}
 	for _, tt := range tests {

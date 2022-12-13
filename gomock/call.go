@@ -62,9 +62,9 @@ func newCall(t TestHelper, receiver interface{}, method string, methodType refle
 			// will match the typed nils of concrete args.
 			mArgs[i] = Nil()
 		} else if p, ok := arg.(proto.Message); ok {
-			mArgs[i] = protoEq(p)
+			mArgs[i] = ProtoEq(p)
 		} else if p, ok := arg.(protov1.Message); ok {
-			mArgs[i] = protoV1Eq(p)
+			mArgs[i] = ProtoV1Eq(p)
 		} else {
 			mArgs[i] = Eq(arg)
 		}

@@ -7,7 +7,7 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-func protoEq(p proto.Message) *protoMatcher {
+func ProtoEq(p proto.Message) *protoMatcher {
 	return &protoMatcher{
 		Message: p,
 	}
@@ -29,7 +29,7 @@ func (m protoMatcher) String() string {
 	return fmt.Sprintf("is equal to %v (%T)", m.Message, m.Message)
 }
 
-func protoV1Eq(p protov1.Message) *protoV1Matcher {
+func ProtoV1Eq(p protov1.Message) *protoV1Matcher {
 	return &protoV1Matcher{
 		Message: p,
 	}
