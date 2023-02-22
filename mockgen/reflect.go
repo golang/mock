@@ -20,7 +20,9 @@ import (
 	"bytes"
 	"encoding/gob"
 	"flag"
+	"fmt"
 	"go/build"
+	"io"
 	"io/ioutil"
 	"log"
 	"os"
@@ -159,11 +161,18 @@ func runInDir(program []byte, dir string) (*model.Package, error) {
 	cmdArgs = append(cmdArgs, "-o", progBinary, progSource)
 
 	// Build the program.
+	buf := bytes.NewBuffer(nil)
 	cmd := exec.Command("go", cmdArgs...)
 	cmd.Dir = tmpDir
 	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	cmd.Stderr = io.MultiWriter(os.Stderr, buf)
 	if err := cmd.Run(); err != nil {
+		sErr := buf.String()
+		if strings.Contains(sErr, `cannot find package "."`) &&
+			strings.Contains(sErr, "github.com/golang/mock/mockgen/model") {
+			fmt.Fprint(os.Stderr, "Please reference the steps in the README to fix this error:\n\thttps://github.com/golang/mock#reflect-vendoring-error.\n")
+			return nil, err
+		}
 		return nil, err
 	}
 

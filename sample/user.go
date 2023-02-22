@@ -1,11 +1,12 @@
 // Package user is an example package with an interface.
 package user
 
-//go:generate mockgen -destination mock_user/mock_user.go github.com/golang/mock/sample Index,Embed,Embedded
+//go:generate mockgen -destination mock_user_test.go -package user_test github.com/golang/mock/sample Index,Embed,Embedded
 
 // Random bunch of imports to test mockgen.
-import "io"
 import (
+	"io"
+
 	btz "bytes"
 	"hash"
 	"log"
@@ -14,16 +15,21 @@ import (
 
 	// Two imports with the same base name.
 	t1 "html/template"
+
 	t2 "text/template"
+
+	"github.com/golang/mock/sample/imp1"
+
+	// Dependencies outside the standard library.
+
+	renamed2 "github.com/golang/mock/sample/imp2"
+
+	. "github.com/golang/mock/sample/imp3"
+
+	imp_four "github.com/golang/mock/sample/imp4"
 )
 
-// Dependencies outside the standard library.
-import (
-	"github.com/golang/mock/sample/imp1"
-	renamed2 "github.com/golang/mock/sample/imp2"
-	. "github.com/golang/mock/sample/imp3"
-	"github.com/golang/mock/sample/imp4" // calls itself "imp_four"
-)
+// calls itself "imp_four"
 
 // A bizarre interface to test corner cases in mockgen.
 // This would normally be in its own file or package,

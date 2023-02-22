@@ -1,4 +1,4 @@
-// Copyright 2019 Google LLC
+// Copyright 2022 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,25 +11,26 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
 
-// +build go1.12
+//go:build !go1.18
+// +build !go1.18
 
 package main
 
 import (
-	"fmt"
-	"log"
-	"runtime/debug"
+	"go/ast"
+
+	"github.com/golang/mock/mockgen/model"
 )
 
-func printModuleVersion() {
-	if bi, exists := debug.ReadBuildInfo(); exists {
-		fmt.Println(bi.Main.Version)
-	} else {
-		log.Printf("No version information found. Make sure to use " +
-			"GO111MODULE=on when running 'go get' in order to use specific " +
-			"version of the binary.")
-	}
+func getTypeSpecTypeParams(ts *ast.TypeSpec) []*ast.Field {
+	return nil
+}
 
+func (p *fileParser) parseGenericType(pkg string, typ ast.Expr, tps map[string]bool) (model.Type, error) {
+	return nil, nil
+}
+
+func getIdentTypeParams(decl interface{}) string {
+	return ""
 }
