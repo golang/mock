@@ -56,6 +56,32 @@ func (mr *MockIndexMockRecorder) Anon(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Anon", reflect.TypeOf((*MockIndex)(nil).Anon), arg0)
 }
 
+// AnonStructReturn mocks base method.
+func (m *MockIndex) AnonStructReturn() struct {
+	ValueA string
+	ValueB imp1.Imp1
+	Nested struct {
+		Value int
+	}
+} {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AnonStructReturn")
+	ret0, _ := ret[0].(struct {
+		ValueA string
+		ValueB imp1.Imp1
+		Nested struct {
+			Value int
+		}
+	})
+	return ret0
+}
+
+// AnonStructReturn indicates an expected call of AnonStructReturn.
+func (mr *MockIndexMockRecorder) AnonStructReturn() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AnonStructReturn", reflect.TypeOf((*MockIndex)(nil).AnonStructReturn))
+}
+
 // Chan mocks base method.
 func (m *MockIndex) Chan(arg0 chan int, arg1 chan<- hash.Hash) {
 	m.ctrl.T.Helper()

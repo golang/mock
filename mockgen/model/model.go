@@ -148,6 +148,7 @@ type Type interface {
 
 func init() {
 	gob.Register(&ArrayType{})
+	gob.Register(&StructType{})
 	gob.Register(&ChanType{})
 	gob.Register(&FuncType{})
 	gob.Register(&MapType{})
@@ -179,6 +180,32 @@ func (at *ArrayType) String(pm map[string]string, pkgOverride string) string {
 }
 
 func (at *ArrayType) addImports(im map[string]bool) { at.Type.addImports(im) }
+
+type NamedField struct {
+	Name string
+	Type Type
+}
+
+type StructType struct {
+	Fields []NamedField
+}
+
+func (s *StructType) String(
+	pm map[string]string,
+	pkgOverride string,
+) string {
+	parts := []string{"struct {"}
+	for _, f := range s.Fields {
+		part := fmt.Sprintf("%s %s", f.Name, f.Type.String(pm, pkgOverride))
+		parts = append(parts, part)
+	}
+	parts = append(parts, "}")
+	return strings.Join(parts, "\n")
+}
+
+func (s *StructType) addImports(im map[string]bool) {
+	return
+}
 
 // ChanType is a channel type.
 type ChanType struct {
@@ -494,9 +521,24 @@ func typeFromType(t reflect.Type) (Type, error) {
 		if t.NumField() == 0 {
 			return PredeclaredType("struct{}"), nil
 		}
+		fields := make([]NamedField, 0, t.NumField())
+		for i := 0; i < t.NumField(); i++ {
+			iField := t.Field(i)
+			iType, err := typeFromType(iField.Type)
+			if err != nil {
+				return nil, err
+			}
+			fields = append(fields, NamedField{
+				Name: iField.Name,
+				Type: iType,
+			})
+		}
+		return &StructType{
+			Fields: fields,
+		}, nil
 	}
 
-	// TODO: Struct, UnsafePointer
+	// TODO: UnsafePointer
 	return nil, fmt.Errorf("can't yet turn %v (%v) into a model.Type", t, t.Kind())
 }
 

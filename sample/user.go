@@ -5,17 +5,14 @@ package user
 
 // Random bunch of imports to test mockgen.
 import (
-	"io"
-
 	btz "bytes"
 	"hash"
+	// Two imports with the same base name.
+	t1 "html/template"
+	"io"
 	"log"
 	"net"
 	"net/http"
-
-	// Two imports with the same base name.
-	t1 "html/template"
-
 	t2 "text/template"
 
 	"github.com/golang/mock/sample/imp1"
@@ -46,6 +43,14 @@ type Index interface {
 
 	// A method with an anonymous argument.
 	Anon(string)
+	// A method with an anoymous struct return
+	AnonStructReturn() struct {
+		ValueA string
+		ValueB imp1.Imp1
+		Nested struct {
+			Value int
+		}
+	}
 
 	// Methods using foreign types outside the standard library.
 	ForeignOne(imp1.Imp1)
