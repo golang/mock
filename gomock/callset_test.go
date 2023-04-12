@@ -69,6 +69,9 @@ func TestCallSetRemove(t *testing.T) {
 		}
 	}
 
+	cs.expectedMu.Lock()
+	defer cs.expectedMu.Unlock()
+
 	for _, c := range ourCalls {
 		validateOrder(cs.expected[callSetKey{receiver, method}])
 		cs.Remove(c)
