@@ -235,8 +235,14 @@ func (c *Call) SetArg(n int, value interface{}) *Call {
 	c.t.Helper()
 
 	mt := c.methodType
-	// TODO: This will break on variadic methods.
-	// We will need to check those at invocation time.
+
+	// At this point it possible to validate a type of variadic args only.
+	// In methodType variadic args type is the last one.
+	// And is required to preserve an original n value for future actions.
+	on := n
+	if mt.IsVariadic() && n >= mt.NumIn() {
+		n = mt.NumIn() - 1
+	}
 	if n < 0 || n >= mt.NumIn() {
 		c.t.Fatalf("SetArg(%d, ...) called for a method with %d args [%s]",
 			n, mt.NumIn(), c.origin)
@@ -263,14 +269,20 @@ func (c *Call) SetArg(n int, value interface{}) *Call {
 	}
 
 	c.addAction(func(args []interface{}) []interface{} {
+		if on >= len(args) {
+			c.t.Fatalf("SetArg(%d, ...) called for a method with %d args [%s]",
+				on, len(args), c.origin)
+			return nil
+		}
+
 		v := reflect.ValueOf(value)
-		switch reflect.TypeOf(args[n]).Kind() {
+		switch reflect.TypeOf(args[on]).Kind() {
 		case reflect.Slice:
-			setSlice(args[n], v)
+			setSlice(args[on], v)
 		case reflect.Map:
-			setMap(args[n], v)
+			setMap(args[on], v)
 		default:
-			reflect.ValueOf(args[n]).Elem().Set(v)
+			reflect.ValueOf(args[on]).Elem().Set(v)
 		}
 		return nil
 	})

@@ -623,6 +623,35 @@ func TestSetArgPtr(t *testing.T) {
 	ctrl.Finish()
 }
 
+func TestSetArgVariadic(t *testing.T) {
+	rep, ctrl := createFixtures(t)
+	subject := new(Subject)
+
+	var inFirst, inSecond = "in", "in"
+	const set = "set"
+
+	ctrl.RecordCall(subject, "VariadicMethod", 1, &inFirst, &inSecond).SetArg(1, set)
+	ctrl.Call(subject, "VariadicMethod", 1, &inFirst, &inSecond)
+
+	if inFirst != set {
+		t.Error("Expected SetArg() to modify the first value pointed as variadic argument")
+	}
+
+	ctrl.RecordCall(subject, "VariadicMethod", 1, &inFirst, &inSecond).SetArg(2, set)
+	ctrl.Call(subject, "VariadicMethod", 1, &inFirst, &inSecond)
+
+	if inSecond != set {
+		t.Error("Expected SetArg() to modify the second value pointed as variadic argument")
+	}
+
+	rep.assertFatal(func() {
+		ctrl.RecordCall(subject, "VariadicMethod", 1, &inFirst, &inSecond).SetArg(3, set)
+		ctrl.Call(subject, "VariadicMethod", 1, &inFirst, &inSecond)
+	})
+
+	ctrl.Finish()
+}
+
 func TestReturn(t *testing.T) {
 	_, ctrl := createFixtures(t)
 	subject := new(Subject)
