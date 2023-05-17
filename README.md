@@ -6,6 +6,12 @@ gomock is a mocking framework for the [Go programming language][golang]. It
 integrates well with Go's built-in `testing` package, but can be used in other
 contexts too.
 
+This project originates from Google's `golang/mock` repo. Unfortunately Google
+no longer maintains this project, and given the heavy usage of gomock project
+within Uber, we've decided to fork and maintain this going forward at Uber.
+
+Contributions are welcome in the form of GitHub issue or PR!
+
 ## Installation
 
 Once you have [installed Go][golang-install], install the `mockgen` tool.

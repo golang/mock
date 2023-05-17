@@ -4,7 +4,7 @@ First off, thank you for taking an interest to contribute to this project!
 
 ## Opening issues
 
-When opening a [new issue](https://github.com/golang/mock/issues/new/choose)
+When opening a [new issue](https://github.com/uber/mock/issues/new/choose)
 please:
 
 1. Make sure there are not other open/closed issues asking/reporting/requesting
