@@ -24,7 +24,7 @@ import (
 )
 
 // pkgPath is the importable path for package model
-const pkgPath = "github.com/golang/mock/mockgen/model"
+const pkgPath = "go.uber.org/mock/mockgen/model"
 
 // Package is a Go package. It may be a subset.
 type Package struct {
@@ -160,7 +160,7 @@ func init() {
 	// For a non-pointer type, gob.Register will try to get package full path by
 	// calling rt.PkgPath() for a name to register. If your project has vendor
 	// directory, it is possible that PkgPath will get a path like this:
-	//     ../../../vendor/github.com/golang/mock/mockgen/model
+	//     ../../../vendor/go.uber.org/mock/mockgen/model
 	gob.RegisterName(pkgPath+".PredeclaredType", PredeclaredType(""))
 }
 

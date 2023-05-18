@@ -1,7 +1,7 @@
 // Package user is an example package with an interface.
 package user
 
-//go:generate mockgen -destination mock_user_test.go -package user_test github.com/golang/mock/sample Index,Embed,Embedded
+//go:generate mockgen -destination mock_user_test.go -package user_test go.uber.org/mock/sample Index,Embed,Embedded
 
 // Random bunch of imports to test mockgen.
 import (
@@ -18,15 +18,15 @@ import (
 
 	t2 "text/template"
 
-	"github.com/golang/mock/sample/imp1"
+	"go.uber.org/mock/sample/imp1"
 
 	// Dependencies outside the standard library.
 
-	renamed2 "github.com/golang/mock/sample/imp2"
+	renamed2 "go.uber.org/mock/sample/imp2"
 
-	. "github.com/golang/mock/sample/imp3"
+	. "go.uber.org/mock/sample/imp3"
 
-	imp_four "github.com/golang/mock/sample/imp4"
+	imp_four "go.uber.org/mock/sample/imp4"
 )
 
 // calls itself "imp_four"
