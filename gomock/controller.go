@@ -296,3 +296,9 @@ func unwrapTestReporter(t TestReporter) TestReporter {
 	}
 	return tr
 }
+
+// AllExpectedCallsSatisfied returns true in case all expected calls bound to this Controller are satisfied.
+// Calling Finish is then guaranteed to not fail due to missing calls.
+func (ctrl *Controller) AllExpectedCallsSatisfied() bool {
+	return ctrl.expectedCalls.AllExpectedCallsSatisfied()
+}
