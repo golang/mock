@@ -19,6 +19,8 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 // Call represents an expected call to a mock.
@@ -42,11 +44,13 @@ type Call struct {
 	// can set the return values by returning a non-nil slice. Actions run in the
 	// order they are created.
 	actions []func([]interface{}) []interface{}
+
+	cmpOpts cmp.Options
 }
 
 // newCall creates a *Call. It requires the method type in order to support
 // unexported methods.
-func newCall(t TestHelper, receiver interface{}, method string, methodType reflect.Type, args ...interface{}) *Call {
+func newCall(t TestHelper, receiver interface{}, method string, methodType reflect.Type, cmpOpts cmp.Options, args ...interface{}) *Call {
 	t.Helper()
 
 	// TODO: check arity, types.
@@ -76,7 +80,8 @@ func newCall(t TestHelper, receiver interface{}, method string, methodType refle
 		return rets
 	}}
 	return &Call{t: t, receiver: receiver, method: method, methodType: methodType,
-		args: mArgs, origin: origin, minCalls: 1, maxCalls: 1, actions: actions}
+		args: mArgs, origin: origin, minCalls: 1, maxCalls: 1, actions: actions,
+		cmpOpts: cmpOpts}
 }
 
 // AnyTimes allows the expectation to be called 0 or more times
@@ -331,10 +336,28 @@ func (c *Call) matches(args []interface{}) error {
 		}
 
 		for i, m := range c.args {
-			if !m.Matches(args[i]) {
+			arg := args[i]
+			if !m.Matches(arg) {
+				var sb strings.Builder
+				sb.WriteString(
+					fmt.Sprintf("expected call at %s doesn't match the argument at index %d.", c.origin, i),
+				)
+				if g, ok := m.(GotFormatter); ok {
+					return fmt.Errorf(
+						"expected call at %s doesn't match the argument at index %d.\nGot: %v\nWant: %v",
+						c.origin, i, g.Got(arg), m,
+					)
+				}
+				if d, ok := m.(Differ); ok {
+					diff := d.Diff(arg, c.cmpOpts...)
+					return fmt.Errorf(
+						"expected call at %s doesn't match the argument at index %d.\nDiff (-want +got): %s",
+						c.origin, i, diff,
+					)
+				}
 				return fmt.Errorf(
 					"expected call at %s doesn't match the argument at index %d.\nGot: %v\nWant: %v",
-					c.origin, i, formatGottenArg(m, args[i]), m,
+					c.origin, i, formatGottenArg(m, arg), m,
 				)
 			}
 		}

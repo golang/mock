@@ -18,6 +18,8 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 // A Matcher is a representation of a class of values.
@@ -28,6 +30,11 @@ type Matcher interface {
 
 	// String describes what the matcher matches.
 	String() string
+}
+
+type Differ interface {
+	// Diff shows the difference between the value and x.
+	Diff(x interface{}, opts ...cmp.Option) string
 }
 
 // WantFormatter modifies the given Matcher's String() method to the given
@@ -93,6 +100,10 @@ func (anyMatcher) Matches(interface{}) bool {
 	return true
 }
 
+func (anyMatcher) Diff(interface{}) string {
+	return ""
+}
+
 func (anyMatcher) String() string {
 	return "is anything"
 }
@@ -119,6 +130,10 @@ func (e eqMatcher) Matches(x interface{}) bool {
 	return false
 }
 
+func (e eqMatcher) Diff(x interface{}, opts ...cmp.Option) string {
+	return cmp.Diff(e.x, x, opts...)
+}
+
 func (e eqMatcher) String() string {
 	return fmt.Sprintf("is equal to %v (%T)", e.x, e.x)
 }
@@ -138,6 +153,10 @@ func (nilMatcher) Matches(x interface{}) bool {
 	}
 
 	return false
+}
+
+func (nilMatcher) Diff(x interface{}, opts ...cmp.Option) string {
+	return cmp.Diff(nil, x, opts...)
 }
 
 func (nilMatcher) String() string {
@@ -164,6 +183,10 @@ func (m assignableToTypeOfMatcher) Matches(x interface{}) bool {
 	return reflect.TypeOf(x).AssignableTo(m.targetType)
 }
 
+func (m assignableToTypeOfMatcher) Diff(x interface{}, opts ...cmp.Option) string {
+	return cmp.Diff(m.targetType, reflect.TypeOf(x), opts...)
+}
+
 func (m assignableToTypeOfMatcher) String() string {
 	return "is assignable to " + m.targetType.Name()
 }
@@ -179,6 +202,18 @@ func (am allMatcher) Matches(x interface{}) bool {
 		}
 	}
 	return true
+}
+
+func (am allMatcher) Diff(x interface{}, opts ...cmp.Option) string {
+	ss := make([]string, 0, len(am.matchers))
+	for _, matcher := range am.matchers {
+		if d, ok := matcher.(Differ); ok {
+			ss = append(ss, d.Diff(x))
+		} else {
+			ss = append(ss, matcher.String())
+		}
+	}
+	return strings.Join(ss, "; ")
 }
 
 func (am allMatcher) String() string {
@@ -200,6 +235,16 @@ func (m lenMatcher) Matches(x interface{}) bool {
 		return v.Len() == m.i
 	default:
 		return false
+	}
+}
+
+func (m lenMatcher) Diff(x interface{}, opts ...cmp.Option) string {
+	v := reflect.ValueOf(x)
+	switch v.Kind() {
+	case reflect.Array, reflect.Chan, reflect.Map, reflect.Slice, reflect.String:
+		return cmp.Diff(m.i, v.Len(), opts...)
+	default:
+		return cmp.Diff(m.i, fmt.Sprintf("invalid: len(%T)", x), opts...)
 	}
 }
 
@@ -255,6 +300,52 @@ func (m inAnyOrderMatcher) Matches(x interface{}) bool {
 	}
 
 	return extraInGiven == 0 && missingFromWanted == 0
+}
+
+func (m inAnyOrderMatcher) Diff(x interface{}, opts ...cmp.Option) string {
+	given, ok := m.prepareValue(x)
+	if !ok {
+		return cmp.Diff(m.x, x, opts...)
+	}
+	wanted, ok := m.prepareValue(m.x)
+	if !ok {
+		return cmp.Diff(m.x, x, opts...)
+	}
+
+	if given.Len() != wanted.Len() {
+		return cmp.Diff(m.x, x, opts...)
+	}
+
+	usedFromGiven := make([]bool, given.Len())
+	foundFromWanted := make([]bool, wanted.Len())
+	for i := 0; i < wanted.Len(); i++ {
+		wantedMatcher := Eq(wanted.Index(i).Interface())
+		for j := 0; j < given.Len(); j++ {
+			if usedFromGiven[j] {
+				continue
+			}
+			if wantedMatcher.Matches(given.Index(j).Interface()) {
+				foundFromWanted[i] = true
+				usedFromGiven[j] = true
+				break
+			}
+		}
+	}
+
+	missingFromWanted := 0
+	for _, found := range foundFromWanted {
+		if !found {
+			missingFromWanted++
+		}
+	}
+	extraInGiven := 0
+	for _, used := range usedFromGiven {
+		if !used {
+			extraInGiven++
+		}
+	}
+
+	return cmp.Diff(m.x, x, opts...)
 }
 
 func (m inAnyOrderMatcher) prepareValue(x interface{}) (reflect.Value, bool) {
