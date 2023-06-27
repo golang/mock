@@ -1,5 +1,8 @@
 # gomock
 
+**Update, June 2023**: _This repo and tool are no longer maintained.
+Please see [go.uber.org/mock](https://github.com/uber/mock) for a maintained fork instead._
+
 [![Build Status][ci-badge]][ci-runs] [![Go Reference][reference-badge]][reference]
 
 gomock is a mocking framework for the [Go programming language][golang]. It
