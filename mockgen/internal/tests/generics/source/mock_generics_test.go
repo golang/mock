@@ -291,6 +291,21 @@ func (mr *MockBarMockRecorder[T, R]) Twelve() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Twelve", reflect.TypeOf((*MockBar[T, R])(nil).Twelve))
 }
 
+// Twenty mocks base method.
+func (m *MockBar[T, R]) Twenty(arg0, arg1 any) (any, *other.Four) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Twenty", arg0, arg1)
+	ret0, _ := ret[0].(any)
+	ret1, _ := ret[1].(*other.Four)
+	return ret0, ret1
+}
+
+// Twenty indicates an expected call of Twenty.
+func (mr *MockBarMockRecorder[T, R]) Twenty(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Twenty", reflect.TypeOf((*MockBar[T, R])(nil).Twenty), arg0, arg1)
+}
+
 // Two mocks base method.
 func (m *MockBar[T, R]) Two(arg0 T) string {
 	m.ctrl.T.Helper()
@@ -326,4 +341,41 @@ func NewMockIface[T any](ctrl *gomock.Controller) *MockIface[T] {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockIface[T]) EXPECT() *MockIfaceMockRecorder[T] {
 	return m.recorder
+}
+
+// MockTwentyTwo is a mock of TwentyTwo interface.
+type MockTwentyTwo[T any] struct {
+	ctrl     *gomock.Controller
+	recorder *MockTwentyTwoMockRecorder[T]
+}
+
+// MockTwentyTwoMockRecorder is the mock recorder for MockTwentyTwo.
+type MockTwentyTwoMockRecorder[T any] struct {
+	mock *MockTwentyTwo[T]
+}
+
+// NewMockTwentyTwo creates a new mock instance.
+func NewMockTwentyTwo[T any](ctrl *gomock.Controller) *MockTwentyTwo[T] {
+	mock := &MockTwentyTwo[T]{ctrl: ctrl}
+	mock.recorder = &MockTwentyTwoMockRecorder[T]{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockTwentyTwo[T]) EXPECT() *MockTwentyTwoMockRecorder[T] {
+	return m.recorder
+}
+
+// TwentyTwo mocks base method.
+func (m *MockTwentyTwo[T]) TwentyTwo() T {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "TwentyTwo")
+	ret0, _ := ret[0].(T)
+	return ret0
+}
+
+// TwentyTwo indicates an expected call of TwentyTwo.
+func (mr *MockTwentyTwoMockRecorder[T]) TwentyTwo() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TwentyTwo", reflect.TypeOf((*MockTwentyTwo[T])(nil).TwentyTwo))
 }
