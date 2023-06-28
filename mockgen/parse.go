@@ -304,37 +304,9 @@ func (p *fileParser) parseInterface(name, pkg string, it *namedInterface) (*mode
 			iface.AddMethod(m)
 		case *ast.Ident:
 			// Embedded interface in this package.
-			embeddedIfaceType := p.auxInterfaces.Get(pkg, v.String())
-			if embeddedIfaceType == nil {
-				embeddedIfaceType = p.importedInterfaces.Get(pkg, v.String())
-			}
-
-			var embeddedIface *model.Interface
-			if embeddedIfaceType != nil {
-				var err error
-				embeddedIface, err = p.parseInterface(v.String(), pkg, embeddedIfaceType)
-				if err != nil {
-					return nil, err
-				}
-			} else {
-				// This is built-in error interface.
-				if v.String() == model.ErrorInterface.Name {
-					embeddedIface = &model.ErrorInterface
-				} else {
-					ip, err := p.parsePackage(pkg)
-					if err != nil {
-						return nil, p.errorf(v.Pos(), "could not parse package %s: %v", pkg, err)
-					}
-
-					if embeddedIfaceType = ip.importedInterfaces.Get(pkg, v.String()); embeddedIfaceType == nil {
-						return nil, p.errorf(v.Pos(), "unknown embedded interface %s.%s", pkg, v.String())
-					}
-
-					embeddedIface, err = ip.parseInterface(v.String(), pkg, embeddedIfaceType)
-					if err != nil {
-						return nil, err
-					}
-				}
+			embeddedIface, err := p.retrieveEmbeddedIfaceModel(pkg, v.String(), v.Pos(), false)
+			if err != nil {
+				return nil, err
 			}
 			// Copy the methods.
 			for _, m := range embeddedIface.Methods {
@@ -343,40 +315,9 @@ func (p *fileParser) parseInterface(name, pkg string, it *namedInterface) (*mode
 		case *ast.SelectorExpr:
 			// Embedded interface in another package.
 			filePkg, sel := v.X.(*ast.Ident).String(), v.Sel.String()
-			embeddedPkg, ok := p.imports[filePkg]
-			if !ok {
-				return nil, p.errorf(v.X.Pos(), "unknown package %s", filePkg)
-			}
-
-			var embeddedIface *model.Interface
-			var err error
-			embeddedIfaceType := p.auxInterfaces.Get(filePkg, sel)
-			if embeddedIfaceType != nil {
-				embeddedIface, err = p.parseInterface(sel, filePkg, embeddedIfaceType)
-				if err != nil {
-					return nil, err
-				}
-			} else {
-				path := embeddedPkg.Path()
-				parser := embeddedPkg.Parser()
-				if parser == nil {
-					ip, err := p.parsePackage(path)
-					if err != nil {
-						return nil, p.errorf(v.Pos(), "could not parse package %s: %v", path, err)
-					}
-					parser = ip
-					p.imports[filePkg] = importedPkg{
-						path:   embeddedPkg.Path(),
-						parser: parser,
-					}
-				}
-				if embeddedIfaceType = parser.importedInterfaces.Get(path, sel); embeddedIfaceType == nil {
-					return nil, p.errorf(v.Pos(), "unknown embedded interface %s.%s", path, sel)
-				}
-				embeddedIface, err = parser.parseInterface(sel, path, embeddedIfaceType)
-				if err != nil {
-					return nil, err
-				}
+			embeddedIface, err := p.retrieveEmbeddedIfaceModel(filePkg, sel, v.X.Pos(), true)
+			if err != nil {
+				return nil, err
 			}
 			// Copy the methods.
 			// TODO: apply shadowing rules.
@@ -384,10 +325,88 @@ func (p *fileParser) parseInterface(name, pkg string, it *namedInterface) (*mode
 				iface.AddMethod(m)
 			}
 		default:
+			if wasEmbeddedGeneric, err := p.parseEmbeddedGenericIface(iface, field, pkg, tps); wasEmbeddedGeneric {
+				if err != nil {
+					return nil, err
+				}
+				continue
+			}
 			return nil, fmt.Errorf("don't know how to mock method of type %T", field.Type)
 		}
 	}
 	return iface, nil
+}
+
+func (p *fileParser) retrieveEmbeddedIfaceModel(pkg, ifaceName string, pos token.Pos, isImport bool) (m *model.Interface, err error) {
+	var (
+		typ       *namedInterface
+		importPkg importedPackage
+	)
+
+	if isImport {
+		var ok bool
+		if importPkg, ok = p.imports[pkg]; !ok {
+			err = p.errorf(pos, "unknown package %s", pkg)
+			return
+		}
+	}
+
+	typ = p.auxInterfaces.Get(pkg, ifaceName)
+	if typ == nil {
+		typ = p.importedInterfaces.Get(pkg, ifaceName)
+	}
+	if typ != nil {
+		m, err = p.parseInterface(ifaceName, pkg, typ)
+		return
+	}
+	if ifaceName == model.ErrorInterface.Name {
+		// built-in error interface
+		m = &model.ErrorInterface
+		return
+	}
+	// parse from pkg (may be current pkg, may be imported pkg)
+	// so need to get the proper parser for the pkg
+	var ifaceParser *fileParser
+
+	if importPkg != nil {
+		// imported pkg
+		if ifaceParser = importPkg.Parser(); ifaceParser == nil {
+			path := importPkg.Path()
+			if ifaceParser, err = p.parsePackage(path); err != nil {
+				err = p.errorf(pos, "could not parse package %s: %v", path, err)
+				return
+			}
+			p.imports[pkg] = importedPkg{
+				path:   importPkg.Path(),
+				parser: ifaceParser,
+			}
+		}
+		typ = ifaceParser.importedInterfaces.Get(importPkg.Path(), ifaceName)
+	}
+
+	if ifaceParser == nil {
+		// this pkg
+		if ifaceParser, err = p.parsePackage(pkg); err != nil {
+			err = p.errorf(pos, "could not parse package %s: %v", pkg, err)
+			return
+		}
+		typ = ifaceParser.importedInterfaces.Get(pkg, ifaceName)
+	}
+
+	if typ == nil {
+		err = p.errorf(pos, "unknown embedded interface %s.%s", pkg, ifaceName)
+		return
+	}
+
+	if importPkg != nil {
+		pkg = importPkg.Path()
+	}
+
+	// at this point, whether iface is of imported pkg or same pkg,
+	// the ifaceParser is appropriate and knows how to parse the iface
+	m, err = ifaceParser.parseInterface(ifaceName, pkg, typ)
+
+	return
 }
 
 func (p *fileParser) parseFunc(pkg string, f *ast.FuncType, tps map[string]bool) (inParam []*model.Parameter, variadic *model.Parameter, outParam []*model.Parameter, err error) {

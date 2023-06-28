@@ -25,6 +25,8 @@ type Bar[T any, R any] interface {
 	Seventeen() (*Foo[other.Three, other.Four], error)
 	Eighteen() (Iface[*other.Five], error)
 	Nineteen() AliasType
+	Twenty(*other.One[T]) *other.Two[T, R]
+	TwentyOne(*string) *other.Two[*T, *R]
 }
 
 type Foo[T any, R any] struct{}
@@ -38,3 +40,9 @@ type StructType struct{}
 type StructType2 struct{}
 
 type AliasType Baz[other.Three]
+
+type EmbeddingIface interface {
+	Bar[other.Three, error]
+	other.Otherer[StructType, other.Five]
+	LocalFunc() error
+}

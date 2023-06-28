@@ -34,3 +34,7 @@ func (p *fileParser) parseGenericType(pkg string, typ ast.Expr, tps map[string]b
 func getIdentTypeParams(decl interface{}) string {
 	return ""
 }
+
+func (p *fileParser) parseEmbeddedGenericIface(iface *model.Interface, field *ast.Field, pkg string, tps map[string]bool) (wasGeneric bool, err error) {
+	return false, nil
+}

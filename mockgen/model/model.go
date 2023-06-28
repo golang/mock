@@ -61,6 +61,38 @@ type Interface struct {
 	TypeParams []*Parameter
 }
 
+// TypeParamIndexByName returns the index of the type parameter matching on name. If none matching, returns -1.
+//
+// This is especially useful for generics where interface is something like this:
+//    Doer[T any, K any]{
+//        Start(T)
+//        Add(K) error
+//        Stop() []K
+//    }
+//
+// But it is used like this:
+//                      [     T        ,        K               ]
+//    type MyDoer = Doer[types.SomeType, otherPkg.SomeOtherThing]
+// or as an embedded interface:
+//    type MyDoer interface {
+//            [      T       ,       K                ]
+//        Doer[types.SomeType, otherPkg.SomeOtherThing]
+//    }
+//
+// If parsing the Add method for an implementation of this interface,
+// we need to be able to swap out K for whatever the actual type is.
+// K will be at index 1 of the interface's TypeParams,
+// but it will also be at index 1 of the actual type params in either the
+// definition of the interface being mocked or the generic interface it embeds.
+func (intf *Interface) TypeParamIndexByName(name string) int {
+	for i, p := range intf.TypeParams {
+		if p.Name == name {
+			return i
+		}
+	}
+	return -1
+}
+
 // Print writes the interface name and its methods.
 func (intf *Interface) Print(w io.Writer) {
 	_, _ = fmt.Fprintf(w, "interface %s\n", intf.Name)
@@ -90,6 +122,28 @@ type Method struct {
 	Name     string
 	In, Out  []*Parameter
 	Variadic *Parameter // may be nil
+}
+
+// Clone makes a deep clone of a Method.
+//
+// This is useful specifically for generics so that generic parameters
+// from source interface methods (e.g. Iface[T any, R any])
+// can be swapped out with actualized types from a referencing entity
+// (e.g. type OtherIface = Iface[external.Foo, Baz]).
+func (m *Method) Clone() *Method {
+	mm := &Method{
+		Name:     m.Name,
+		In:       make([]*Parameter, 0),
+		Out:      make([]*Parameter, 0),
+		Variadic: m.Variadic.clone(),
+	}
+	for _, in := range m.In {
+		mm.In = append(mm.In, in.clone())
+	}
+	for _, out := range m.Out {
+		mm.Out = append(mm.Out, out.clone())
+	}
+	return mm
 }
 
 // Print writes the method name and its signature.
@@ -131,6 +185,16 @@ type Parameter struct {
 	Type Type
 }
 
+func (p *Parameter) clone() *Parameter {
+	if p == nil {
+		return nil
+	}
+	return &Parameter{
+		Name: p.Name,
+		Type: p.Type.clone(),
+	}
+}
+
 // Print writes a method parameter.
 func (p *Parameter) Print(w io.Writer) {
 	n := p.Name
@@ -144,6 +208,7 @@ func (p *Parameter) Print(w io.Writer) {
 type Type interface {
 	String(pm map[string]string, pkgOverride string) string
 	addImports(im map[string]bool)
+	clone() Type
 }
 
 func init() {
@@ -180,6 +245,13 @@ func (at *ArrayType) String(pm map[string]string, pkgOverride string) string {
 
 func (at *ArrayType) addImports(im map[string]bool) { at.Type.addImports(im) }
 
+func (at *ArrayType) clone() Type {
+	return &ArrayType{
+		Len:  at.Len,
+		Type: at.Type.clone(),
+	}
+}
+
 // ChanType is a channel type.
 type ChanType struct {
 	Dir  ChanDir // 0, 1 or 2
@@ -198,6 +270,13 @@ func (ct *ChanType) String(pm map[string]string, pkgOverride string) string {
 }
 
 func (ct *ChanType) addImports(im map[string]bool) { ct.Type.addImports(im) }
+
+func (ct *ChanType) clone() Type {
+	return &ChanType{
+		Dir:  ct.Dir,
+		Type: ct.Type.clone(),
+	}
+}
 
 // ChanDir is a channel direction.
 type ChanDir int
@@ -247,6 +326,21 @@ func (ft *FuncType) addImports(im map[string]bool) {
 	}
 }
 
+func (ft *FuncType) clone() Type {
+	ftt := &FuncType{
+		In:       make([]*Parameter, 0),
+		Out:      make([]*Parameter, 0),
+		Variadic: ft.Variadic.clone(),
+	}
+	for _, in := range ft.In {
+		ftt.In = append(ftt.In, in.clone())
+	}
+	for _, out := range ft.Out {
+		ftt.Out = append(ftt.Out, out.clone())
+	}
+	return ftt
+}
+
 // MapType is a map type.
 type MapType struct {
 	Key, Value Type
@@ -259,6 +353,13 @@ func (mt *MapType) String(pm map[string]string, pkgOverride string) string {
 func (mt *MapType) addImports(im map[string]bool) {
 	mt.Key.addImports(im)
 	mt.Value.addImports(im)
+}
+
+func (mt *MapType) clone() Type {
+	return &MapType{
+		Key:   mt.Key,
+		Value: mt.Value.clone(),
+	}
 }
 
 // NamedType is an exported type in a package.
@@ -287,6 +388,21 @@ func (nt *NamedType) addImports(im map[string]bool) {
 	nt.TypeParams.addImports(im)
 }
 
+func (nt *NamedType) clone() Type {
+	if nt == nil {
+		return nil
+	}
+
+	ntt := &NamedType{
+		Package: nt.Package,
+		Type:    nt.Type,
+	}
+	if nt.TypeParams != nil {
+		ntt.TypeParams = nt.TypeParams.clone().(*TypeParametersType)
+	}
+	return ntt
+}
+
 // PointerType is a pointer to another type.
 type PointerType struct {
 	Type Type
@@ -297,11 +413,16 @@ func (pt *PointerType) String(pm map[string]string, pkgOverride string) string {
 }
 func (pt *PointerType) addImports(im map[string]bool) { pt.Type.addImports(im) }
 
+func (pt *PointerType) clone() Type {
+	return &PointerType{Type: pt.Type.clone()}
+}
+
 // PredeclaredType is a predeclared type such as "int".
 type PredeclaredType string
 
 func (pt PredeclaredType) String(map[string]string, string) string { return string(pt) }
 func (pt PredeclaredType) addImports(map[string]bool)              {}
+func (pt PredeclaredType) clone() Type                             { return PredeclaredType(pt) }
 
 // TypeParametersType contains type paramters for a NamedType.
 type TypeParametersType struct {
@@ -331,6 +452,17 @@ func (tp *TypeParametersType) addImports(im map[string]bool) {
 	for _, v := range tp.TypeParameters {
 		v.addImports(im)
 	}
+}
+
+func (tp *TypeParametersType) clone() Type {
+	if tp == nil {
+		return nil
+	}
+	tpt := &TypeParametersType{}
+	for _, t := range tp.TypeParameters {
+		tpt.TypeParameters = append(tpt.TypeParameters, t.clone())
+	}
+	return tpt
 }
 
 // The following code is intended to be called by the program generated by ../reflect.go.
