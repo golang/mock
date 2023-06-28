@@ -16,7 +16,7 @@ package bugreport
 import (
 	"testing"
 
-	"github.com/golang/mock/gomock"
+	"go.uber.org/mock/gomock"
 )
 
 // TestValidInterface assesses whether or not the generated mock is valid

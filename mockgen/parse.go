@@ -33,7 +33,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/golang/mock/mockgen/model"
+	"go.uber.org/mock/mockgen/model"
 )
 
 var (
@@ -536,7 +536,13 @@ func (p *fileParser) parseType(pkg string, typ ast.Expr, tps map[string]bool) (m
 		return &model.PointerType{Type: t}, nil
 	case *ast.StructType:
 		if v.Fields != nil && len(v.Fields.List) > 0 {
-			return nil, p.errorf(v.Pos(), "can't handle non-empty unnamed struct types")
+			fields, err := p.parseStructFields(pkg, v.Fields, tps)
+			if err != nil {
+				return nil, err
+			}
+			return &model.StructType{
+				Fields: fields,
+			}, nil
 		}
 		return model.PredeclaredType("struct{}"), nil
 	case *ast.ParenExpr:
@@ -593,6 +599,25 @@ func (p *fileParser) parseArrayLength(expr ast.Expr) (string, error) {
 	default:
 		return "", p.errorf(expr.Pos(), "invalid expression in array length: %v", val)
 	}
+}
+
+func (p *fileParser) parseStructFields(
+	pkg string,
+	fields *ast.FieldList,
+	tps map[string]bool,
+) ([]model.NamedField, error) {
+	out := make([]model.NamedField, 0, fields.NumFields())
+	for i := 0; i < fields.NumFields(); i++ {
+		typ, err := p.parseType(pkg, fields.List[i].Type, tps)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, model.NamedField{
+			Name: fields.List[i].Names[0].Name,
+			Type: typ,
+		})
+	}
+	return out, nil
 }
 
 // importsOfFile returns a map of package name to import path

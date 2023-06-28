@@ -1,32 +1,29 @@
 // Package user is an example package with an interface.
 package user
 
-//go:generate mockgen -destination mock_user_test.go -package user_test github.com/golang/mock/sample Index,Embed,Embedded
+//go:generate mockgen -destination mock_user_test.go -package user_test go.uber.org/mock/sample Index,Embed,Embedded
 
 // Random bunch of imports to test mockgen.
 import (
-	"io"
-
 	btz "bytes"
 	"hash"
+	// Two imports with the same base name.
+	t1 "html/template"
+	"io"
 	"log"
 	"net"
 	"net/http"
-
-	// Two imports with the same base name.
-	t1 "html/template"
-
 	t2 "text/template"
 
-	"github.com/golang/mock/sample/imp1"
+	"go.uber.org/mock/sample/imp1"
 
 	// Dependencies outside the standard library.
 
-	renamed2 "github.com/golang/mock/sample/imp2"
+	renamed2 "go.uber.org/mock/sample/imp2"
 
-	. "github.com/golang/mock/sample/imp3"
+	. "go.uber.org/mock/sample/imp3"
 
-	imp_four "github.com/golang/mock/sample/imp4"
+	imp_four "go.uber.org/mock/sample/imp4"
 )
 
 // calls itself "imp_four"
@@ -46,6 +43,14 @@ type Index interface {
 
 	// A method with an anonymous argument.
 	Anon(string)
+	// A method with an anoymous struct return
+	AnonStructReturn() struct {
+		ValueA string
+		ValueB imp1.Imp1
+		Nested struct {
+			Value int
+		}
+	}
 
 	// Methods using foreign types outside the standard library.
 	ForeignOne(imp1.Imp1)
