@@ -7,8 +7,8 @@ package users_test
 import (
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
-	users "github.com/golang/mock/mockgen/internal/tests/mock_in_test_package"
+	gomock "go.uber.org/mock/gomock"
+	users "go.uber.org/mock/mockgen/internal/tests/mock_in_test_package"
 )
 
 // MockFinder is a mock of Finder interface.

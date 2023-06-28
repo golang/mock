@@ -1,6 +1,6 @@
 package generics
 
-import "github.com/golang/mock/mockgen/internal/tests/generics/other"
+import "go.uber.org/mock/mockgen/internal/tests/generics/other"
 
 //go:generate mockgen --source=generics.go --destination=source/mock_generics_test.go --package source
 ////go:generate mockgen --destination=reflect/mock_test.go --package reflect . Bar,Bar2

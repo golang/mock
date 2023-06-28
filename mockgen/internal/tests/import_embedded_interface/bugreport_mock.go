@@ -7,9 +7,9 @@ package bugreport
 import (
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
-	ersatz "github.com/golang/mock/mockgen/internal/tests/import_embedded_interface/ersatz"
-	ersatz0 "github.com/golang/mock/mockgen/internal/tests/import_embedded_interface/other/ersatz"
+	gomock "go.uber.org/mock/gomock"
+	ersatz "go.uber.org/mock/mockgen/internal/tests/import_embedded_interface/ersatz"
+	ersatz0 "go.uber.org/mock/mockgen/internal/tests/import_embedded_interface/other/ersatz"
 )
 
 // MockSource is a mock of Source interface.
