@@ -266,6 +266,9 @@ If the received value is `3`, then it will be printed as `03`.
 ```text
 cannot find package "."
 ... github.com/golang/mock/mockgen/model
+
+prog.go:14:2: no required module provides package ...: go.mod file not found in current directory or any parent directory; see 'go help modules'
+prog.go:12:2: no required module provides package github.com/golang/mock/mockgen/model: go.mod file not found in current directory or any parent directory; see 'go help modules'
 ```
 
 If you come across this error while using reflect mode and vendoring
