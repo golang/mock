@@ -190,7 +190,7 @@ func (ctrl *Controller) Call(receiver interface{}, method string, args ...interf
 			// and this line changes, i.e. this code is wrapped in another anonymous function.
 			// 0 is us, 1 is controller.Call(), 2 is the generated mock, and 3 is the user's test.
 			origin := callerInfo(3)
-			ctrl.T.Fatalf("Unexpected call to %T.%v(%v) at %s because: %s", receiver, method, args, origin, err)
+			ctrl.T.Fatalf("Unexpected call to %T.%v(%v) at %s because: %s\n  from %s", receiver, method, args, origin, err, debug.Stack())
 		}
 
 		// Two things happen here:
