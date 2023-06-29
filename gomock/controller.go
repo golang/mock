@@ -51,24 +51,24 @@ type cleanuper interface {
 // goroutines. Each test should create a new Controller and invoke Finish via
 // defer.
 //
-//   func TestFoo(t *testing.T) {
-//     ctrl := gomock.NewController(t)
-//     defer ctrl.Finish()
-//     // ..
-//   }
+//	func TestFoo(t *testing.T) {
+//	  ctrl := gomock.NewController(t)
+//	  defer ctrl.Finish()
+//	  // ..
+//	}
 //
-//   func TestBar(t *testing.T) {
-//     t.Run("Sub-Test-1", st) {
-//       ctrl := gomock.NewController(st)
-//       defer ctrl.Finish()
-//       // ..
-//     })
-//     t.Run("Sub-Test-2", st) {
-//       ctrl := gomock.NewController(st)
-//       defer ctrl.Finish()
-//       // ..
-//     })
-//   })
+//	func TestBar(t *testing.T) {
+//	  t.Run("Sub-Test-1", st) {
+//	    ctrl := gomock.NewController(st)
+//	    defer ctrl.Finish()
+//	    // ..
+//	  })
+//	  t.Run("Sub-Test-2", st) {
+//	    ctrl := gomock.NewController(st)
+//	    defer ctrl.Finish()
+//	    // ..
+//	  })
+//	})
 type Controller struct {
 	// T should only be called within a generated mock. It is not intended to
 	// be used in user code and may be changed in future versions. T is the

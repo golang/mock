@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package faux
 
 import "go.uber.org/mock/mockgen/internal/tests/import_embedded_interface/other/log"
