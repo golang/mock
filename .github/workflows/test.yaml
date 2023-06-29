@@ -1,11 +1,16 @@
 name: Run tests
 on:
   push:
-    branches: [main]
+    branches: ['*']
   pull_request:
-    branches: [main]
+    branches: ['*']
+
+permissions:
+  contents: read
+
 env:
   GO111MODULE: on
+
 jobs:
   test:
     strategy:
@@ -16,12 +21,12 @@ jobs:
     steps:
 
     - name: Install Go
-      uses: actions/setup-go@v2
+      uses: actions/setup-go@v4
       with:
         go-version: ${{ matrix.go-version }}
 
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Vet and build
       run: |
@@ -37,16 +42,10 @@ jobs:
         ./ci/test.sh
         ./ci/check_panic_handling.sh
 
-    - name: Run Go tests all
-      if: ${{ startsWith(matrix.go-version, '1.18') }}
+    - name: Run Tests
       run: |
         for i in $(find $PWD -name go.mod); do
           pushd $(dirname $i)
           go test ./...
           popd
         done 
-
-    - name: Run Go tests some
-      if: ${{ startsWith(matrix.go-version, '1.18') == false }}
-      run: |
-          go test ./...
