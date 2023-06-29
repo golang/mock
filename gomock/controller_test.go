@@ -826,6 +826,266 @@ func TestVariadicArgumentsGotFormatterTooManyArgsFailure(t *testing.T) {
 	ctrl.Finish()
 }
 
+// Test ByDefault call that is used to define a default behavior
+
+func TestByDefaultOnly(t *testing.T) {
+	// no call
+	reporter, ctrl := createFixtures(t)
+	subject := new(Subject)
+
+	ctrl.RecordCall(subject, "FooMethod", "something").ByDefault().Return(5)
+	ctrl.Finish()
+
+	reporter.assertPass("not calling a function with defined default is ok")
+
+	// multiple arbitrary calls
+	reporter, ctrl = createFixtures(t)
+	subject = new(Subject)
+
+	ctrl.RecordCall(subject, "FooMethod", gomock.Any()).ByDefault().Return(5)
+
+	rets := ctrl.Call(subject, "FooMethod", "123")
+	if ret, ok := rets[0].(int); !ok {
+		t.Fatalf("Return value is not an int")
+	} else if ret != 5 {
+		t.Errorf("Return value is %v want 5", ret)
+	}
+
+	rets = ctrl.Call(subject, "FooMethod", "")
+	if ret, ok := rets[0].(int); !ok {
+		t.Fatalf("Return value is not an int")
+	} else if ret != 5 {
+		t.Errorf("Return value is %v want 5", ret)
+	}
+
+	ctrl.Finish()
+	reporter.assertPass("calling a function with defined default n times with arbitrary parameters is ok")
+}
+
+func TestByDefaultAndExpectationWithMissingCall(t *testing.T) {
+	reporter, ctrl := createFixtures(t)
+	subject := new(Subject)
+
+	ctrl.RecordCall(subject, "FooMethod", gomock.Any()).ByDefault().Return(5)
+	ctrl.RecordCall(subject, "FooMethod", "123").Return(123)
+
+	// does call default and not match expectation
+	ctrl.Call(subject, "FooMethod", "should default")
+
+	// does call default and not match expectation
+	ctrl.Call(subject, "FooMethod", "also default")
+
+	reporter.assertFatal(func() {
+		ctrl.Finish()
+	}, "aborting test due to missing call(s)")
+}
+
+func TestByDefaultAndExpectationWithAllExpectationsMet(t *testing.T) {
+	reporter, ctrl := createFixtures(t)
+	subject := new(Subject)
+
+	// every expectation should have precedence over default call
+	ctrl.RecordCall(subject, "FooMethod", gomock.Any()).ByDefault().Return(5)
+	ctrl.RecordCall(subject, "FooMethod", "123").Return(123)
+	ctrl.RecordCall(subject, "FooMethod", "345").Return(345)
+
+	// should not use default but match expectation
+	rets := ctrl.Call(subject, "FooMethod", "123")
+	if ret, ok := rets[0].(int); !ok {
+		t.Fatalf("Return value is not an int")
+	} else if ret != 123 {
+		t.Errorf("Return value is %v want 123", ret)
+	}
+
+	// should call default since expectation is consumed
+	rets = ctrl.Call(subject, "FooMethod", "123")
+	if ret, ok := rets[0].(int); !ok {
+		t.Fatalf("Return value is not an int")
+	} else if ret != 5 {
+		t.Errorf("Return value is %v want 5", ret)
+	}
+
+	// should not call default but match expectation
+	rets = ctrl.Call(subject, "FooMethod", "345")
+	if ret, ok := rets[0].(int); !ok {
+		t.Fatalf("Return value is not an int")
+	} else if ret != 345 {
+		t.Errorf("Return value is %v want 345", ret)
+	}
+
+	// should call default since expectation is consumed
+	rets = ctrl.Call(subject, "FooMethod", "345")
+	if ret, ok := rets[0].(int); !ok {
+		t.Fatalf("Return value is not an int")
+	} else if ret != 5 {
+		t.Errorf("Return value is %v want 5", ret)
+	}
+
+	ctrl.Finish()
+	reporter.assertPass("expectations should have precedence over default call")
+}
+
+func TestOverwriteByDefault(t *testing.T) {
+	reporter, ctrl := createFixtures(t)
+	subject := new(Subject)
+
+	// first defaultCall
+	ctrl.RecordCall(subject, "FooMethod", "defaultCall").ByDefault().Return(123)
+
+	// uses current default
+	rets := ctrl.Call(subject, "FooMethod", "defaultCall")
+	if ret, ok := rets[0].(int); !ok {
+		t.Fatalf("Return value is not an int")
+	} else if ret != 123 {
+		t.Errorf("Return value is %v want 123", ret)
+	}
+
+	// overwrite default (when second one matches at least all parameters that first one matched)
+	ctrl.RecordCall(subject, "FooMethod", "defaultCall").ByDefault().Return(456)
+
+	// matches new default
+	rets = ctrl.Call(subject, "FooMethod", "defaultCall")
+	if ret, ok := rets[0].(int); !ok {
+		t.Fatalf("Return value is not an int")
+	} else if ret != 456 {
+		t.Errorf("Return value is %v want 456", ret)
+	}
+
+	// overwrite default with more loose one
+	ctrl.RecordCall(subject, "FooMethod", gomock.Any()).ByDefault().Return(789)
+
+	// matches new default
+	rets = ctrl.Call(subject, "FooMethod", "defaultCall")
+	if ret, ok := rets[0].(int); !ok {
+		t.Fatalf("Return value is not an int")
+	} else if ret != 789 {
+		t.Errorf("Return value is %v want 789", ret)
+	}
+
+	ctrl.Finish()
+	reporter.assertPass("should always take the latest default definition")
+}
+
+func TestByDefaultWithMissingReturn(t *testing.T) {
+	reporter, ctrl := createFixtures(t)
+	subject := new(Subject)
+
+	ctrl.RecordCall(subject, "FooMethod", gomock.Any()).ByDefault()
+
+	rets := ctrl.Call(subject, "FooMethod", "something")
+	if ret, ok := rets[0].(int); !ok {
+		t.Fatalf("Return value is not an int")
+	} else if ret != 0 {
+		t.Errorf("Return value is %v want 0", ret)
+	}
+
+	ctrl.Finish()
+	reporter.assertPass("should return zero value on missing return definition")
+}
+
+func TestByDefaultMinMaxTimesNotAllowed(t *testing.T) {
+	// test MinTimes not allowed
+	reporter, ctrl := createFixtures(t)
+	subject := new(Subject)
+
+	reporter.assertFatal(func() {
+		ctrl.RecordCall(subject, "FooMethod", gomock.Any()).ByDefault().MinTimes(2).Return(5)
+	}, "MinTimes() is not allowed when using ByDefault()")
+
+	// test MaxTimes not allowed
+	reporter, ctrl = createFixtures(t)
+	subject = new(Subject)
+
+	reporter.assertFatal(func() {
+		ctrl.RecordCall(subject, "FooMethod", gomock.Any()).ByDefault().MaxTimes(2).Return(5)
+	}, "MaxTimes() is not allowed when using ByDefault()")
+
+	// test AnyTimes not allowed
+	reporter, ctrl = createFixtures(t)
+	subject = new(Subject)
+
+	reporter.assertFatal(func() {
+		ctrl.RecordCall(subject, "FooMethod", gomock.Any()).ByDefault().AnyTimes().Return(5)
+	}, "AnyTimes() is not allowed when using ByDefault()")
+
+	// test Times not allowed
+	reporter, ctrl = createFixtures(t)
+	subject = new(Subject)
+
+	reporter.assertFatal(func() {
+		ctrl.RecordCall(subject, "FooMethod", gomock.Any()).ByDefault().Times(4).Return(5)
+	}, "Times() is not allowed when using ByDefault()")
+}
+
+func TestByDefaultAfterNotAllowed(t *testing.T) {
+	// test After not allowed
+	reporter, ctrl := createFixtures(t)
+	subject := new(Subject)
+
+	someCall := ctrl.RecordCall(subject, "FooMethod", "123").Return(123)
+
+	reporter.assertFatal(func() {
+		ctrl.RecordCall(subject, "FooMethod", gomock.Any()).ByDefault().After(someCall)
+	}, "ByDefault() isn't allowed to have prerequisites")
+
+	// test default call used as prerequisite not allowed
+	reporter, ctrl = createFixtures(t)
+	subject = new(Subject)
+
+	defaultCall := ctrl.RecordCall(subject, "FooMethod", gomock.Any()).ByDefault()
+
+	reporter.assertFatal(func() {
+		ctrl.RecordCall(subject, "FooMethod", "123").Return(123).After(defaultCall)
+	}, "Default isn't allowed to be a prerequisite")
+}
+
+func TestByDefaultCallsDoFunc(t *testing.T) {
+	reporter, ctrl := createFixtures(t)
+	subject := new(Subject)
+
+	str := ""
+
+	ctrl.RecordCall(subject, "FooMethod", gomock.Any()).ByDefault().Do(func(s string) {
+		str = s
+	})
+
+	ctrl.Call(subject, "FooMethod", "something")
+
+	if str != "something" {
+		t.Errorf("value is %v want 'something'", str)
+	}
+
+	ctrl.Finish()
+	reporter.assertPass("defaultCall should ignore After()")
+}
+
+func TestByDefaultCallsDoAndReturnFunc(t *testing.T) {
+	reporter, ctrl := createFixtures(t)
+	subject := new(Subject)
+
+	str := ""
+
+	ctrl.RecordCall(subject, "FooMethod", gomock.Any()).ByDefault().DoAndReturn(func(s string) int {
+		str = s
+		return 5
+	})
+
+	rets := ctrl.Call(subject, "FooMethod", "something")
+	if ret, ok := rets[0].(int); !ok {
+		t.Fatalf("Return value is not an int")
+	} else if ret != 5 {
+		t.Errorf("Return value is %v want 5", ret)
+	}
+
+	if str != "something" {
+		t.Errorf("value is %v want 'something'", str)
+	}
+
+	ctrl.Finish()
+	reporter.assertPass("defaultCall work with DoAndReturn")
+
+}
+
 func TestNoHelper(t *testing.T) {
 	ctrlNoHelper := gomock.NewController(NewErrorReporter(t))
 
