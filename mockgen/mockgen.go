@@ -54,13 +54,14 @@ var (
 )
 
 var (
-	source          = flag.String("source", "", "(source mode) Input Go source file; enables source mode.")
-	destination     = flag.String("destination", "", "Output file; defaults to stdout.")
-	mockNames       = flag.String("mock_names", "", "Comma-separated interfaceName=mockName pairs of explicit mock names to use. Mock names default to 'Mock'+ interfaceName suffix.")
-	packageOut      = flag.String("package", "", "Package of the generated code; defaults to the package of the input with a 'mock_' prefix.")
-	selfPackage     = flag.String("self_package", "", "The full package import path for the generated code. The purpose of this flag is to prevent import cycles in the generated code by trying to include its own package. This can happen if the mock's package is set to one of its inputs (usually the main one) and the output is stdio so mockgen cannot detect the final output package. Setting this flag will then tell mockgen which import to exclude.")
-	writePkgComment = flag.Bool("write_package_comment", true, "Writes package documentation comment (godoc) if true.")
-	copyrightFile   = flag.String("copyright_file", "", "Copyright file used to add copyright header")
+	source           = flag.String("source", "", "(source mode) Input Go source file; enables source mode.")
+	destination      = flag.String("destination", "", "Output file; defaults to stdout.")
+	mockNames        = flag.String("mock_names", "", "Comma-separated interfaceName=mockName pairs of explicit mock names to use. Mock names default to 'Mock'+ interfaceName suffix.")
+	packageOut       = flag.String("package", "", "Package of the generated code; defaults to the name formatted with -package_format.")
+	packageOutFormat = flag.String("package_format", "mock_%s", "The package name format when -package is not specified. Only one %s should be included.")
+	selfPackage      = flag.String("self_package", "", "The full package import path for the generated code. The purpose of this flag is to prevent import cycles in the generated code by trying to include its own package. This can happen if the mock's package is set to one of its inputs (usually the main one) and the output is stdio so mockgen cannot detect the final output package. Setting this flag will then tell mockgen which import to exclude.")
+	writePkgComment  = flag.Bool("write_package_comment", true, "Writes package documentation comment (godoc) if true.")
+	copyrightFile    = flag.String("copyright_file", "", "Copyright file used to add copyright header")
 
 	debugParser = flag.Bool("debug_parser", false, "Print out parser results only.")
 	showVersion = flag.Bool("version", false, "Print version.")
@@ -112,7 +113,7 @@ func main() {
 	if outputPackageName == "" {
 		// pkg.Name in reflect mode is the base name of the import path,
 		// which might have characters that are illegal to have in package names.
-		outputPackageName = "mock_" + sanitize(pkg.Name)
+		outputPackageName = fmt.Sprintf(*packageOutFormat, sanitize(pkg.Name))
 	}
 
 	// outputPackagePath represents the fully qualified name of the package of

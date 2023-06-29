@@ -80,8 +80,10 @@ It supports the following flags:
   don't set this, the code is printed to standard output.
 
 - `-package`: The package to use for the resulting mock class
-  source code. If you don't set this, the package name is `mock_` concatenated
-  with the package of the input file.
+  source code. If you don't set this, the name is formatted with -package_format.
+
+- `-package_format`: The package name format when -package is not specified.
+  If you don't set this, `mock_%s` will be used.
 
 - `-imports`: A list of explicit imports that should be used in the resulting
   source code, specified as a comma-separated list of elements of the form
