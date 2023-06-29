@@ -693,7 +693,7 @@ func printVersion() {
 	}
 }
 
-// parseImportPackage get package import path via source file
+// parsePackageImport get package import path via source file
 // an alternative implementation is to use:
 // cfg := &packages.Config{Mode: packages.NeedName, Tests: true, Dir: srcDir}
 // pkgs, err := packages.Load(cfg, "file="+source)
