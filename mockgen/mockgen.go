@@ -26,7 +26,6 @@ import (
 	"fmt"
 	"go/token"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -149,7 +148,7 @@ func main() {
 		g.mockNames = parseMockNames(*mockNames)
 	}
 	if *copyrightFile != "" {
-		header, err := ioutil.ReadFile(*copyrightFile)
+		header, err := os.ReadFile(*copyrightFile)
 		if err != nil {
 			log.Fatalf("Failed reading copyright file: %v", err)
 		}
@@ -165,7 +164,7 @@ func main() {
 		if err := os.MkdirAll(filepath.Dir(*destination), os.ModePerm); err != nil {
 			log.Fatalf("Unable to create directory: %v", err)
 		}
-		existing, err := ioutil.ReadFile(*destination)
+		existing, err := os.ReadFile(*destination)
 		if err != nil && !errors.Is(err, os.ErrNotExist) {
 			log.Fatalf("Failed reading pre-exiting destination file: %v", err)
 		}
@@ -704,7 +703,7 @@ func parsePackageImport(srcDir string) (string, error) {
 	if moduleMode != "off" {
 		currentDir := srcDir
 		for {
-			dat, err := ioutil.ReadFile(filepath.Join(currentDir, "go.mod"))
+			dat, err := os.ReadFile(filepath.Join(currentDir, "go.mod"))
 			if os.IsNotExist(err) {
 				if currentDir == filepath.Dir(currentDir) {
 					// at the root
