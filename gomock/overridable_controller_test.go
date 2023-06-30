@@ -3,7 +3,7 @@ package gomock_test
 import (
 	"testing"
 
-	"github.com/golang/mock/gomock"
+	"go.uber.org/mock/gomock"
 )
 
 func TestEcho_NoOverride(t *testing.T) {
