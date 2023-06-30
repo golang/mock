@@ -77,7 +77,7 @@ func TestCallSetRemove(t *testing.T) {
 
 func TestCallSetFindMatch(t *testing.T) {
 	t.Run("call is exhausted", func(t *testing.T) {
-		cs := callSet{}
+		cs := newCallSet()
 		var receiver interface{} = "TestReceiver"
 		method := "TestMethod"
 		args := []interface{}{}

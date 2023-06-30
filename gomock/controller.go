@@ -231,6 +231,12 @@ func (ctrl *Controller) Finish() {
 	ctrl.finish(false, err)
 }
 
+// Satisfied returns whether all expected calls bound to this Controller have been satisfied.
+// Calling Finish is then guaranteed to not fail due to missing calls.
+func (ctrl *Controller) Satisfied() bool {
+	return ctrl.expectedCalls.Satisfied()
+}
+
 func (ctrl *Controller) finish(cleanup bool, panicErr interface{}) {
 	ctrl.T.Helper()
 
