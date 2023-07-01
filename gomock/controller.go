@@ -86,7 +86,7 @@ type Controller struct {
 //
 // New in go1.14+, if you are passing a *testing.T into this function you no
 // longer need to call ctrl.Finish() in your test methods.
-func NewController(t TestReporter) *Controller {
+func NewController(t TestReporter, opts ...ControllerOption) *Controller {
 	h, ok := t.(TestHelper)
 	if !ok {
 		h = &nopTestHelper{t}
@@ -94,6 +94,9 @@ func NewController(t TestReporter) *Controller {
 	ctrl := &Controller{
 		T:             h,
 		expectedCalls: newCallSet(),
+	}
+	for _, opt := range opts {
+		opt.apply(ctrl)
 	}
 	if c, ok := isCleanuper(ctrl.T); ok {
 		c.Cleanup(func() {
@@ -103,6 +106,12 @@ func NewController(t TestReporter) *Controller {
 	}
 
 	return ctrl
+}
+
+// ControllerOption configures how a Controller should behave. Currently
+// there are no implementations of it.
+type ControllerOption interface {
+	apply(*Controller)
 }
 
 type cancelReporter struct {
