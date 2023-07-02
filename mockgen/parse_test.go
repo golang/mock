@@ -50,7 +50,7 @@ func TestFileParser_ParsePackage(t *testing.T) {
 		importedInterfaces: newInterfaceCache(),
 	}
 
-	newP, err := p.parsePackage("github.com/golang/mock/mockgen/internal/tests/custom_package_name/greeter")
+	newP, err := p.parsePackage("go.uber.org/mock/mockgen/internal/tests/custom_package_name/greeter")
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
@@ -84,7 +84,7 @@ func checkGreeterImports(t *testing.T, imports map[string]importedPackage) {
 	if validatorPackage, ok := imports["validator"]; !ok {
 		t.Errorf("Expected imports to have key \"fmt\"")
 	} else {
-		expectedValidatorPackage := "github.com/golang/mock/mockgen/internal/tests/custom_package_name/validator"
+		expectedValidatorPackage := "go.uber.org/mock/mockgen/internal/tests/custom_package_name/validator"
 		if validatorPackage.Path() != expectedValidatorPackage {
 			t.Errorf("Expected validator key to have value %s but got %s", expectedValidatorPackage, validatorPackage.Path())
 		}
@@ -94,7 +94,7 @@ func checkGreeterImports(t *testing.T, imports map[string]importedPackage) {
 	if clientPackage, ok := imports["client"]; !ok {
 		t.Errorf("Expected imports to have key \"client\"")
 	} else {
-		expectedClientPackage := "github.com/golang/mock/mockgen/internal/tests/custom_package_name/client/v1"
+		expectedClientPackage := "go.uber.org/mock/mockgen/internal/tests/custom_package_name/client/v1"
 		if clientPackage.Path() != expectedClientPackage {
 			t.Errorf("Expected client key to have value %s but got %s", expectedClientPackage, clientPackage.Path())
 		}

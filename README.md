@@ -9,30 +9,21 @@ gomock is a mocking framework for the [Go programming language][golang]. It
 integrates well with Go's built-in `testing` package, but can be used in other
 contexts too.
 
-## Installation
+This project originates from Google's `golang/mock` repo. Unfortunately Google
+no longer maintains this project, and given the heavy usage of gomock project
+within Uber, we've decided to fork and maintain this going forward at Uber.
 
-Once you have [installed Go][golang-install], install the `mockgen` tool.
+Contributions are welcome in the form of GitHub issue or PR!
 
-**Note**: If you have not done so already be sure to add `$GOPATH/bin` to your
-`PATH`.
+## Status
 
-To get the latest released version use:
+This project is still WIP. We will be tagging a release shortly, in early July.
 
-### Go version < 1.16
+## Supported Go Versions
 
-```bash
-GO111MODULE=on go get github.com/golang/mock/mockgen@v1.6.0
-```
-
-### Go 1.16+
-
-```bash
-go install github.com/golang/mock/mockgen@v1.6.0
-```
-
-If you use `mockgen` in your CI pipeline, it may be more appropriate to fixate
-on a specific mockgen version. You should try to keep the library in sync with
-the version of mockgen used to generate your mocks.
+go.uber.org/mock supports all Go versions supported by the official
+[Go Release Policy](https://go.dev/doc/devel/release#policy). That is,
+the two most recent releases of Go.
 
 ## Running mockgen
 
@@ -253,28 +244,7 @@ If the received value is `3`, then it will be printed as `03`.
 
 [golang]:              http://golang.org/
 [golang-install]:      http://golang.org/doc/install.html#releases
-[gomock-reference]:    https://pkg.go.dev/github.com/golang/mock/gomock
-[ci-badge]:            https://github.com/golang/mock/actions/workflows/test.yaml/badge.svg
-[ci-runs]:             https://github.com/golang/mock/actions
-[reference-badge]:     https://pkg.go.dev/badge/github.com/golang/mock.svg
-[reference]:           https://pkg.go.dev/github.com/golang/mock
-
-## Debugging Errors
-
-### reflect vendoring error
-
-```text
-cannot find package "."
-... github.com/golang/mock/mockgen/model
-```
-
-If you come across this error while using reflect mode and vendoring
-dependencies there are three workarounds you can choose from:
-
-1. Use source mode.
-2. Include an empty import `import _ "github.com/golang/mock/mockgen/model"`.
-3. Add `--build_flags=--mod=mod` to your mockgen command.
-
-This error is due to changes in default behavior of the `go` command in more
-recent versions. More details can be found in
-[#494](https://github.com/golang/mock/issues/494).
+[ci-badge]:            https://github.com/uber/mock/actions/workflows/test.yaml/badge.svg
+[ci-runs]:             https://github.com/uber/mock/actions
+[reference-badge]:     https://pkg.go.dev/badge/github.com/uber/mock.svg
+[reference]:           https://pkg.go.dev/github.com/uber/mock

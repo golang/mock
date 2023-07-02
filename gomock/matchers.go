@@ -283,8 +283,9 @@ func Any() Matcher { return anyMatcher{} }
 // Eq returns a matcher that matches on equality.
 //
 // Example usage:
-//   Eq(5).Matches(5) // returns true
-//   Eq(5).Matches(4) // returns false
+//
+//	Eq(5).Matches(5) // returns true
+//	Eq(5).Matches(4) // returns false
 func Eq(x interface{}) Matcher { return eqMatcher{x} }
 
 // Len returns a matcher that matches on length. This matcher returns false if
@@ -296,17 +297,19 @@ func Len(i int) Matcher {
 // Nil returns a matcher that matches if the received value is nil.
 //
 // Example usage:
-//   var x *bytes.Buffer
-//   Nil().Matches(x) // returns true
-//   x = &bytes.Buffer{}
-//   Nil().Matches(x) // returns false
+//
+//	var x *bytes.Buffer
+//	Nil().Matches(x) // returns true
+//	x = &bytes.Buffer{}
+//	Nil().Matches(x) // returns false
 func Nil() Matcher { return nilMatcher{} }
 
 // Not reverses the results of its given child matcher.
 //
 // Example usage:
-//   Not(Eq(5)).Matches(4) // returns true
-//   Not(Eq(5)).Matches(5) // returns false
+//
+//	Not(Eq(5)).Matches(4) // returns true
+//	Not(Eq(5)).Matches(5) // returns false
 func Not(x interface{}) Matcher {
 	if m, ok := x.(Matcher); ok {
 		return notMatcher{m}
@@ -318,12 +321,13 @@ func Not(x interface{}) Matcher {
 // function is assignable to the type of the parameter to this function.
 //
 // Example usage:
-//   var s fmt.Stringer = &bytes.Buffer{}
-//   AssignableToTypeOf(s).Matches(time.Second) // returns true
-//   AssignableToTypeOf(s).Matches(99) // returns false
 //
-//   var ctx = reflect.TypeOf((*context.Context)(nil)).Elem()
-//   AssignableToTypeOf(ctx).Matches(context.Background()) // returns true
+//	var s fmt.Stringer = &bytes.Buffer{}
+//	AssignableToTypeOf(s).Matches(time.Second) // returns true
+//	AssignableToTypeOf(s).Matches(99) // returns false
+//
+//	var ctx = reflect.TypeOf((*context.Context)(nil)).Elem()
+//	AssignableToTypeOf(ctx).Matches(context.Background()) // returns true
 func AssignableToTypeOf(x interface{}) Matcher {
 	if xt, ok := x.(reflect.Type); ok {
 		return assignableToTypeOfMatcher{xt}
@@ -334,8 +338,9 @@ func AssignableToTypeOf(x interface{}) Matcher {
 // InAnyOrder is a Matcher that returns true for collections of the same elements ignoring the order.
 //
 // Example usage:
-//   InAnyOrder([]int{1, 2, 3}).Matches([]int{1, 3, 2}) // returns true
-//   InAnyOrder([]int{1, 2, 3}).Matches([]int{1, 2}) // returns false
+//
+//	InAnyOrder([]int{1, 2, 3}).Matches([]int{1, 3, 2}) // returns true
+//	InAnyOrder([]int{1, 2, 3}).Matches([]int{1, 2}) // returns false
 func InAnyOrder(x interface{}) Matcher {
 	return inAnyOrderMatcher{x}
 }

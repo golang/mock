@@ -7,7 +7,7 @@ package paniccode
 import (
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockFoo is a mock of Foo interface.
