@@ -49,7 +49,7 @@ func ExampleCall_DoAndReturn_captureArguments() {
 	// Output: I'm sleepy foo
 }
 
-func ExampleCall_WithOverridableExpectations() {
+func ExampleCall_DoAndReturn_withOverridableExpectations() {
 	t := &testing.T{} // provided by test
 	ctrl := gomock.NewController(t, gomock.WithOverridableExpectations())
 	mockIndex := NewMockFoo(ctrl)
