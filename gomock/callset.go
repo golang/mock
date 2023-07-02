@@ -29,7 +29,7 @@ type callSet struct {
 	expectedMu *sync.Mutex
 	// Calls that have been exhausted.
 	exhausted map[callSetKey][]*Call
-	// when set to true,
+	// when set to true, existing call expectations are overridden when new call expectations are made
 	allowOverride bool
 }
 
@@ -68,7 +68,6 @@ func (cs callSet) Add(call *Call) {
 		m = cs.exhausted
 	}
 	if cs.allowOverride {
-		delete(m, key)
 		m[key] = make([]*Call, 0)
 	}
 

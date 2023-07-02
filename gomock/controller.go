@@ -108,30 +108,21 @@ func NewController(t TestReporter, opts ...ControllerOption) *Controller {
 	return ctrl
 }
 
-// ControllerOption configures how a Controller should behave. Currently
-// there are no implementations of it.
+// ControllerOption configures how a Controller should behave.
 type ControllerOption interface {
 	apply(*Controller)
 }
 
-// NewOverridableController returns a new Controller that allows for overridable call expectations
-func NewOverridableController(t TestReporter) *Controller {
-	h, ok := t.(TestHelper)
-	if !ok {
-		h = &nopTestHelper{t}
-	}
-	ctrl := &Controller{
-		T:             h,
-		expectedCalls: newOverridableCallSet(),
-	}
-	if c, ok := isCleanuper(ctrl.T); ok {
-		c.Cleanup(func() {
-			ctrl.T.Helper()
-			ctrl.finish(true, nil)
-		})
-	}
+type overridableExpectationsOption struct{}
 
-	return ctrl
+// WithOverridableExpectations allows for overridable call expectations
+// i.e., subsequent call expectations override existing call expectations
+func WithOverridableExpectations() overridableExpectationsOption {
+	return overridableExpectationsOption{}
+}
+
+func (o overridableExpectationsOption) apply(ctrl *Controller) {
+	ctrl.expectedCalls = newOverridableCallSet()
 }
 
 type cancelReporter struct {

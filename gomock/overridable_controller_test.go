@@ -7,7 +7,7 @@ import (
 )
 
 func TestEcho_NoOverride(t *testing.T) {
-	ctrl := gomock.NewOverridableController(t)
+	ctrl := gomock.NewController(t, gomock.WithOverridableExpectations())
 	mockIndex := NewMockFoo(ctrl)
 
 	mockIndex.EXPECT().Bar(gomock.Any()).Return("foo")
@@ -19,7 +19,7 @@ func TestEcho_NoOverride(t *testing.T) {
 }
 
 func TestEcho_WithOverride_BaseCase(t *testing.T) {
-	ctrl := gomock.NewOverridableController(t)
+	ctrl := gomock.NewController(t, gomock.WithOverridableExpectations())
 	mockIndex := NewMockFoo(ctrl)
 
 	// initial expectation set

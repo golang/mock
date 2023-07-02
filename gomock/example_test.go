@@ -49,9 +49,9 @@ func ExampleCall_DoAndReturn_captureArguments() {
 	// Output: I'm sleepy foo
 }
 
-func ExampleCall_OverridableController_HappyPath() {
+func ExampleCall_WithOverridableExpectations() {
 	t := &testing.T{} // provided by test
-	ctrl := gomock.NewOverridableController(t)
+	ctrl := gomock.NewController(t, gomock.WithOverridableExpectations())
 	mockIndex := NewMockFoo(ctrl)
 	var s string
 
