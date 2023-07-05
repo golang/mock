@@ -12,10 +12,6 @@ within Uber, we've decided to fork and maintain this going forward at Uber.
 
 Contributions are welcome in the form of GitHub issue or PR!
 
-## Status
-
-This project is still WIP. We will be tagging a release shortly, in early July.
-
 ## Supported Go Versions
 
 go.uber.org/mock supports all Go versions supported by the official
