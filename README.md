@@ -251,5 +251,5 @@ If the received value is `3`, then it will be printed as `03`.
 [golang-install]:      http://golang.org/doc/install.html#releases
 [ci-badge]:            https://github.com/uber/mock/actions/workflows/test.yaml/badge.svg
 [ci-runs]:             https://github.com/uber/mock/actions
-[reference-badge]:     https://pkg.go.dev/badge/github.com/uber/mock.svg
-[reference]:           https://pkg.go.dev/github.com/uber/mock
+[reference-badge]:     https://pkg.go.dev/badge/go.uber.org/mock.svg
+[reference]:           https://pkg.go.dev/go.uber.org/mock
