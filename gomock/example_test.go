@@ -48,3 +48,21 @@ func ExampleCall_DoAndReturn_captureArguments() {
 	fmt.Printf("%s %s", r, s)
 	// Output: I'm sleepy foo
 }
+
+func ExampleCall_DoAndReturn_withOverridableExpectations() {
+	t := &testing.T{} // provided by test
+	ctrl := gomock.NewController(t, gomock.WithOverridableExpectations())
+	mockIndex := NewMockFoo(ctrl)
+	var s string
+
+	mockIndex.EXPECT().Bar(gomock.AssignableToTypeOf(s)).DoAndReturn(
+		func(arg string) interface{} {
+			s = arg
+			return "I'm sleepy"
+		},
+	)
+
+	r := mockIndex.Bar("foo")
+	fmt.Printf("%s %s", r, s)
+	// Output: I'm sleepy foo
+}

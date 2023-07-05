@@ -42,6 +42,24 @@ func TestCallSetAdd(t *testing.T) {
 	}
 }
 
+func TestCallSetAdd_WhenOverridable_ClearsPreviousExpectedAndExhausted(t *testing.T) {
+	method := "TestMethod"
+	var receiver interface{} = "TestReceiver"
+	cs := newOverridableCallSet()
+
+	cs.Add(newCall(t, receiver, method, reflect.TypeOf(receiverType{}.Func)))
+	numExpectedCalls := len(cs.expected[callSetKey{receiver, method}])
+	if numExpectedCalls != 1 {
+		t.Fatalf("Expected 1 expected call in callset, got %d", numExpectedCalls)
+	}
+
+	cs.Add(newCall(t, receiver, method, reflect.TypeOf(receiverType{}.Func)))
+	newNumExpectedCalls := len(cs.expected[callSetKey{receiver, method}])
+	if newNumExpectedCalls != 1 {
+		t.Fatalf("Expected 1 expected call in callset, got %d", newNumExpectedCalls)
+	}
+}
+
 func TestCallSetRemove(t *testing.T) {
 	method := "TestMethod"
 	var receiver interface{} = "TestReceiver"
