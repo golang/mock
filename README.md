@@ -22,6 +22,14 @@ go.uber.org/mock supports all Go versions supported by the official
 [Go Release Policy](https://go.dev/doc/devel/release#policy). That is,
 the two most recent releases of Go.
 
+## Installation
+
+Install the `mockgen` tool.
+
+```
+go install go.uber.org/mock/mockgen@latest
+```
+
 ## Running mockgen
 
 `mockgen` has two modes of operation: source and reflect.
