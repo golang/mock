@@ -1,8 +1,11 @@
 package generics
 
-import "go.uber.org/mock/mockgen/internal/tests/generics/other"
+import (
+	"go.uber.org/mock/mockgen/internal/tests/generics/other"
+	"golang.org/x/exp/constraints"
+)
 
-//go:generate mockgen --source=generics.go --destination=source/mock_generics_test.go --package source
+//go:generate mockgen --source=generics.go --destination=source/mock_generics_mock.go --package source
 ////go:generate mockgen --destination=reflect/mock_test.go --package reflect . Bar,Bar2
 
 type Bar[T any, R any] interface {
@@ -38,3 +41,19 @@ type StructType struct{}
 type StructType2 struct{}
 
 type AliasType Baz[other.Three]
+
+type Universe[T constraints.Signed] interface {
+	MilkyWay[T]
+}
+
+type MilkyWay[R constraints.Integer] interface {
+	SolarSystem[R]
+}
+
+type SolarSystem[T constraints.Ordered] interface {
+	Earth[T]
+}
+
+type Earth[R any] interface {
+	Water(R) []R
+}
