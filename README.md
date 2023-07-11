@@ -113,6 +113,8 @@ It supports the following flags:
 
 - `-write_package_comment`: Writes package documentation comment (godoc) if true. (default true)
 
+- `-write_source_comment`: Writes original file (source mode) or interface names (reflect mode) comment if true. (default true)
+
 - `-typed`: Generate Type-safe 'Return', 'Do', 'DoAndReturn' function. (default false)
 
 For an example of the use of `mockgen`, see the `sample/` directory. In simple
