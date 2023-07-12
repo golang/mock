@@ -1,6 +1,6 @@
 package core
 
-//go:generate mockgen -package core -self_package github.com/golang/mock/mockgen/internal/tests/self_package -destination mock.go github.com/golang/mock/mockgen/internal/tests/self_package Methods
+//go:generate mockgen -package core -self_package go.uber.org/mock/mockgen/internal/tests/self_package -destination mock.go go.uber.org/mock/mockgen/internal/tests/self_package Methods
 
 type Info struct{}
 
