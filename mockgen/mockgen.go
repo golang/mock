@@ -37,10 +37,10 @@ import (
 	"strings"
 	"unicode"
 
-	"go.uber.org/mock/mockgen/model"
-
 	"golang.org/x/mod/modfile"
 	toolsimports "golang.org/x/tools/imports"
+
+	"go.uber.org/mock/mockgen/model"
 )
 
 const (
@@ -162,28 +162,32 @@ func main() {
 		log.Fatalf("Failed generating mock: %v", err)
 	}
 	output := g.Output()
-	dst := os.Stdout
-	if len(*destination) > 0 {
-		if err := os.MkdirAll(filepath.Dir(*destination), os.ModePerm); err != nil {
-			log.Fatalf("Unable to create directory: %v", err)
+	if *destination == "" {
+		if _, err := os.Stdout.Write(output); err != nil {
+			log.Fatalf("Failed writing to stdout: %v", err)
 		}
-		existing, err := ioutil.ReadFile(*destination)
-		if err != nil && !errors.Is(err, os.ErrNotExist) {
-			log.Fatalf("Failed reading pre-exiting destination file: %v", err)
-		}
-		if len(existing) == len(output) && bytes.Compare(existing, output) == 0 {
-			return
-		}
-		f, err := os.Create(*destination)
-		if err != nil {
-			log.Fatalf("Failed opening destination file: %v", err)
-		}
-		defer f.Close()
-		dst = f
+		return
 	}
-	if _, err := dst.Write(output); err != nil {
-		log.Fatalf("Failed writing to destination: %v", err)
+
+	if err := os.MkdirAll(filepath.Dir(*destination), os.ModePerm); err != nil {
+		log.Fatalf("Unable to create directory: %v", err)
 	}
+	existing, err := ioutil.ReadFile(*destination)
+	if err != nil && !errors.Is(err, os.ErrNotExist) {
+		log.Fatalf("Failed reading pre-exiting destination file: %v", err)
+	}
+	if len(existing) == len(output) && bytes.Equal(existing, output) {
+		return
+	}
+	f, err := os.Create(*destination)
+	if err != nil {
+		log.Fatalf("Failed opening destination file: %v", err)
+	}
+	if _, err := f.Write(output); err != nil {
+		f.Close()
+		log.Fatalf("Failed writing to file: %v", err)
+	}
+	f.Close()
 }
 
 func parseMockNames(names string) map[string]string {
