@@ -7,10 +7,10 @@ import (
 	"fmt"
 
 	// non-matching import suffix and package name
-	"github.com/golang/mock/mockgen/internal/tests/custom_package_name/client/v1"
+	"go.uber.org/mock/mockgen/internal/tests/custom_package_name/client/v1"
 
 	//  matching import suffix and package name
-	"github.com/golang/mock/mockgen/internal/tests/custom_package_name/validator"
+	"go.uber.org/mock/mockgen/internal/tests/custom_package_name/validator"
 )
 
 type InputMaker interface {

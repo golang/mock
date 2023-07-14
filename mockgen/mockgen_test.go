@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/golang/mock/mockgen/model"
+	"go.uber.org/mock/mockgen/model"
 )
 
 func TestMakeArgString(t *testing.T) {
@@ -332,7 +332,7 @@ func TestGetArgNames(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			g := generator{}
 
-			result := g.getArgNames(testCase.method)
+			result := g.getArgNames(testCase.method, true)
 			if !reflect.DeepEqual(result, testCase.expected) {
 				t.Fatalf("expected %s, got %s", result, testCase.expected)
 			}

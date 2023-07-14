@@ -51,24 +51,24 @@ type cleanuper interface {
 // goroutines. Each test should create a new Controller and invoke Finish via
 // defer.
 //
-//   func TestFoo(t *testing.T) {
-//     ctrl := gomock.NewController(t)
-//     defer ctrl.Finish()
-//     // ..
-//   }
+//	func TestFoo(t *testing.T) {
+//	  ctrl := gomock.NewController(t)
+//	  defer ctrl.Finish()
+//	  // ..
+//	}
 //
-//   func TestBar(t *testing.T) {
-//     t.Run("Sub-Test-1", st) {
-//       ctrl := gomock.NewController(st)
-//       defer ctrl.Finish()
-//       // ..
-//     })
-//     t.Run("Sub-Test-2", st) {
-//       ctrl := gomock.NewController(st)
-//       defer ctrl.Finish()
-//       // ..
-//     })
-//   })
+//	func TestBar(t *testing.T) {
+//	  t.Run("Sub-Test-1", st) {
+//	    ctrl := gomock.NewController(st)
+//	    defer ctrl.Finish()
+//	    // ..
+//	  })
+//	  t.Run("Sub-Test-2", st) {
+//	    ctrl := gomock.NewController(st)
+//	    defer ctrl.Finish()
+//	    // ..
+//	  })
+//	})
 type Controller struct {
 	// T should only be called within a generated mock. It is not intended to
 	// be used in user code and may be changed in future versions. T is the
@@ -86,7 +86,7 @@ type Controller struct {
 //
 // New in go1.14+, if you are passing a *testing.T into this function you no
 // longer need to call ctrl.Finish() in your test methods.
-func NewController(t TestReporter) *Controller {
+func NewController(t TestReporter, opts ...ControllerOption) *Controller {
 	h, ok := t.(TestHelper)
 	if !ok {
 		h = &nopTestHelper{t}
@@ -94,6 +94,9 @@ func NewController(t TestReporter) *Controller {
 	ctrl := &Controller{
 		T:             h,
 		expectedCalls: newCallSet(),
+	}
+	for _, opt := range opts {
+		opt.apply(ctrl)
 	}
 	if c, ok := isCleanuper(ctrl.T); ok {
 		c.Cleanup(func() {
@@ -103,6 +106,23 @@ func NewController(t TestReporter) *Controller {
 	}
 
 	return ctrl
+}
+
+// ControllerOption configures how a Controller should behave.
+type ControllerOption interface {
+	apply(*Controller)
+}
+
+type overridableExpectationsOption struct{}
+
+// WithOverridableExpectations allows for overridable call expectations
+// i.e., subsequent call expectations override existing call expectations
+func WithOverridableExpectations() overridableExpectationsOption {
+	return overridableExpectationsOption{}
+}
+
+func (o overridableExpectationsOption) apply(ctrl *Controller) {
+	ctrl.expectedCalls = newOverridableCallSet()
 }
 
 type cancelReporter struct {
@@ -229,6 +249,12 @@ func (ctrl *Controller) Finish() {
 	// This must be recovered in the deferred function.
 	err := recover()
 	ctrl.finish(false, err)
+}
+
+// Satisfied returns whether all expected calls bound to this Controller have been satisfied.
+// Calling Finish is then guaranteed to not fail due to missing calls.
+func (ctrl *Controller) Satisfied() bool {
+	return ctrl.expectedCalls.Satisfied()
 }
 
 func (ctrl *Controller) finish(cleanup bool, panicErr interface{}) {
