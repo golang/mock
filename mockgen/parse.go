@@ -26,8 +26,8 @@ import (
 	"go/parser"
 	"go/token"
 	"go/types"
-	"io/ioutil"
 	"log"
+	"os"
 	"path"
 	"path/filepath"
 	"strconv"
@@ -774,7 +774,7 @@ func isVariadic(f *ast.FuncType) bool {
 
 // packageNameOfDir get package import path via dir
 func packageNameOfDir(srcDir string) (string, error) {
-	files, err := ioutil.ReadDir(srcDir)
+	files, err := os.ReadDir(srcDir)
 	if err != nil {
 		log.Fatal(err)
 	}
