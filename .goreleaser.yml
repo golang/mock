@@ -4,7 +4,7 @@
 ---
 release:
   github:
-    owner: golang
+    owner: uber
     name: mock
 
 builds:
@@ -33,6 +33,7 @@ archives:
 checksum:
 snapshot:
   name_template: "snap-{{ .Commit }}"
+
 changelog:
   sort: asc
   filters:
