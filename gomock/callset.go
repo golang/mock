@@ -35,7 +35,7 @@ type callSet struct {
 
 // callSetKey is the key in the maps in callSet
 type callSetKey struct {
-	receiver interface{}
+	receiver any
 	fname    string
 }
 
@@ -50,7 +50,7 @@ func newCallSet() *callSet {
 func newOverridableCallSet() *callSet {
 	return &callSet{
 		expected:      make(map[callSetKey][]*Call),
-		expectedMu: &sync.Mutex{},
+		expectedMu:    &sync.Mutex{},
 		exhausted:     make(map[callSetKey][]*Call),
 		allowOverride: true,
 	}
@@ -93,7 +93,7 @@ func (cs callSet) Remove(call *Call) {
 }
 
 // FindMatch searches for a matching call. Returns error with explanation message if no call matched.
-func (cs callSet) FindMatch(receiver interface{}, method string, args []interface{}) (*Call, error) {
+func (cs callSet) FindMatch(receiver any, method string, args []any) (*Call, error) {
 	key := callSetKey{receiver, method}
 
 	cs.expectedMu.Lock()

@@ -18,4 +18,4 @@ type Embedded interface {
 	OtherErsatz() Return
 }
 
-type Return interface{}
+type Return any

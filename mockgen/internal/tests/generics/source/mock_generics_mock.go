@@ -45,7 +45,7 @@ func (m *MockBar[T, R]) Eight(arg0 T) other.Two[T, R] {
 }
 
 // Eight indicates an expected call of Eight.
-func (mr *MockBarMockRecorder[T, R]) Eight(arg0 interface{}) *gomock.Call {
+func (mr *MockBarMockRecorder[T, R]) Eight(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Eight", reflect.TypeOf((*MockBar[T, R])(nil).Eight), arg0)
 }
@@ -104,7 +104,7 @@ func (m *MockBar[T, R]) Five(arg0 T) generics.Baz[T] {
 }
 
 // Five indicates an expected call of Five.
-func (mr *MockBarMockRecorder[T, R]) Five(arg0 interface{}) *gomock.Call {
+func (mr *MockBarMockRecorder[T, R]) Five(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Five", reflect.TypeOf((*MockBar[T, R])(nil).Five), arg0)
 }
@@ -118,7 +118,7 @@ func (m *MockBar[T, R]) Four(arg0 T) generics.Foo[T, R] {
 }
 
 // Four indicates an expected call of Four.
-func (mr *MockBarMockRecorder[T, R]) Four(arg0 interface{}) *gomock.Call {
+func (mr *MockBarMockRecorder[T, R]) Four(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Four", reflect.TypeOf((*MockBar[T, R])(nil).Four), arg0)
 }
@@ -145,7 +145,7 @@ func (m *MockBar[T, R]) Nine(arg0 generics.Iface[T]) {
 }
 
 // Nine indicates an expected call of Nine.
-func (mr *MockBarMockRecorder[T, R]) Nine(arg0 interface{}) *gomock.Call {
+func (mr *MockBarMockRecorder[T, R]) Nine(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Nine", reflect.TypeOf((*MockBar[T, R])(nil).Nine), arg0)
 }
@@ -173,7 +173,7 @@ func (m *MockBar[T, R]) One(arg0 string) string {
 }
 
 // One indicates an expected call of One.
-func (mr *MockBarMockRecorder[T, R]) One(arg0 interface{}) *gomock.Call {
+func (mr *MockBarMockRecorder[T, R]) One(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "One", reflect.TypeOf((*MockBar[T, R])(nil).One), arg0)
 }
@@ -187,7 +187,7 @@ func (m *MockBar[T, R]) Seven(arg0 T) other.One[T] {
 }
 
 // Seven indicates an expected call of Seven.
-func (mr *MockBarMockRecorder[T, R]) Seven(arg0 interface{}) *gomock.Call {
+func (mr *MockBarMockRecorder[T, R]) Seven(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Seven", reflect.TypeOf((*MockBar[T, R])(nil).Seven), arg0)
 }
@@ -216,7 +216,7 @@ func (m *MockBar[T, R]) Six(arg0 T) *generics.Baz[T] {
 }
 
 // Six indicates an expected call of Six.
-func (mr *MockBarMockRecorder[T, R]) Six(arg0 interface{}) *gomock.Call {
+func (mr *MockBarMockRecorder[T, R]) Six(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Six", reflect.TypeOf((*MockBar[T, R])(nil).Six), arg0)
 }
@@ -243,7 +243,7 @@ func (m *MockBar[T, R]) Ten(arg0 *T) {
 }
 
 // Ten indicates an expected call of Ten.
-func (mr *MockBarMockRecorder[T, R]) Ten(arg0 interface{}) *gomock.Call {
+func (mr *MockBarMockRecorder[T, R]) Ten(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Ten", reflect.TypeOf((*MockBar[T, R])(nil).Ten), arg0)
 }
@@ -272,7 +272,7 @@ func (m *MockBar[T, R]) Three(arg0 T) R {
 }
 
 // Three indicates an expected call of Three.
-func (mr *MockBarMockRecorder[T, R]) Three(arg0 interface{}) *gomock.Call {
+func (mr *MockBarMockRecorder[T, R]) Three(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Three", reflect.TypeOf((*MockBar[T, R])(nil).Three), arg0)
 }
@@ -301,7 +301,7 @@ func (m *MockBar[T, R]) Two(arg0 T) string {
 }
 
 // Two indicates an expected call of Two.
-func (mr *MockBarMockRecorder[T, R]) Two(arg0 interface{}) *gomock.Call {
+func (mr *MockBarMockRecorder[T, R]) Two(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Two", reflect.TypeOf((*MockBar[T, R])(nil).Two), arg0)
 }
@@ -361,7 +361,7 @@ func (m *MockUniverse[T]) Water(arg0 T) []T {
 }
 
 // Water indicates an expected call of Water.
-func (mr *MockUniverseMockRecorder[T]) Water(arg0 interface{}) *gomock.Call {
+func (mr *MockUniverseMockRecorder[T]) Water(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Water", reflect.TypeOf((*MockUniverse[T])(nil).Water), arg0)
 }
@@ -398,7 +398,7 @@ func (m *MockMilkyWay[R]) Water(arg0 R) []R {
 }
 
 // Water indicates an expected call of Water.
-func (mr *MockMilkyWayMockRecorder[R]) Water(arg0 interface{}) *gomock.Call {
+func (mr *MockMilkyWayMockRecorder[R]) Water(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Water", reflect.TypeOf((*MockMilkyWay[R])(nil).Water), arg0)
 }
@@ -435,7 +435,7 @@ func (m *MockSolarSystem[T]) Water(arg0 T) []T {
 }
 
 // Water indicates an expected call of Water.
-func (mr *MockSolarSystemMockRecorder[T]) Water(arg0 interface{}) *gomock.Call {
+func (mr *MockSolarSystemMockRecorder[T]) Water(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Water", reflect.TypeOf((*MockSolarSystem[T])(nil).Water), arg0)
 }
@@ -472,7 +472,7 @@ func (m *MockEarth[R]) Water(arg0 R) []R {
 }
 
 // Water indicates an expected call of Water.
-func (mr *MockEarthMockRecorder[R]) Water(arg0 interface{}) *gomock.Call {
+func (mr *MockEarthMockRecorder[R]) Water(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Water", reflect.TypeOf((*MockEarth[R])(nil).Water), arg0)
 }

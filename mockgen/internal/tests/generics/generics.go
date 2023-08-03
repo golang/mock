@@ -34,7 +34,7 @@ type Foo[T any, R any] struct{}
 
 type Baz[T any] struct{}
 
-type Iface[T any] interface{}
+type Iface[T any] any
 
 type StructType struct{}
 

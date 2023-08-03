@@ -25,7 +25,7 @@ func (receiverType) Func() {}
 
 func TestCallSetAdd(t *testing.T) {
 	method := "TestMethod"
-	var receiver interface{} = "TestReceiver"
+	var receiver any = "TestReceiver"
 	cs := newCallSet()
 
 	numCalls := 10
@@ -33,7 +33,7 @@ func TestCallSetAdd(t *testing.T) {
 		cs.Add(newCall(t, receiver, method, reflect.TypeOf(receiverType{}.Func)))
 	}
 
-	call, err := cs.FindMatch(receiver, method, []interface{}{})
+	call, err := cs.FindMatch(receiver, method, []any{})
 	if err != nil {
 		t.Fatalf("FindMatch: %v", err)
 	}
@@ -44,7 +44,7 @@ func TestCallSetAdd(t *testing.T) {
 
 func TestCallSetAdd_WhenOverridable_ClearsPreviousExpectedAndExhausted(t *testing.T) {
 	method := "TestMethod"
-	var receiver interface{} = "TestReceiver"
+	var receiver any = "TestReceiver"
 	cs := newOverridableCallSet()
 
 	cs.Add(newCall(t, receiver, method, reflect.TypeOf(receiverType{}.Func)))
@@ -62,7 +62,7 @@ func TestCallSetAdd_WhenOverridable_ClearsPreviousExpectedAndExhausted(t *testin
 
 func TestCallSetRemove(t *testing.T) {
 	method := "TestMethod"
-	var receiver interface{} = "TestReceiver"
+	var receiver any = "TestReceiver"
 
 	cs := newCallSet()
 	ourCalls := []*Call{}
@@ -96,9 +96,9 @@ func TestCallSetRemove(t *testing.T) {
 func TestCallSetFindMatch(t *testing.T) {
 	t.Run("call is exhausted", func(t *testing.T) {
 		cs := newCallSet()
-		var receiver interface{} = "TestReceiver"
+		var receiver any = "TestReceiver"
 		method := "TestMethod"
-		args := []interface{}{}
+		args := []any{}
 
 		c1 := newCall(t, receiver, method, reflect.TypeOf(receiverType{}.Func))
 		cs.exhausted = map[callSetKey][]*Call{

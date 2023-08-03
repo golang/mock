@@ -25,8 +25,8 @@ import (
 // A TestReporter is something that can be used to report test failures.  It
 // is satisfied by the standard library's *testing.T.
 type TestReporter interface {
-	Errorf(format string, args ...interface{})
-	Fatalf(format string, args ...interface{})
+	Errorf(format string, args ...any)
+	Fatalf(format string, args ...any)
 }
 
 // TestHelper is a TestReporter that has the Helper method.  It is satisfied
@@ -130,10 +130,10 @@ type cancelReporter struct {
 	cancel func()
 }
 
-func (r *cancelReporter) Errorf(format string, args ...interface{}) {
+func (r *cancelReporter) Errorf(format string, args ...any) {
 	r.t.Errorf(format, args...)
 }
-func (r *cancelReporter) Fatalf(format string, args ...interface{}) {
+func (r *cancelReporter) Fatalf(format string, args ...any) {
 	defer r.cancel()
 	r.t.Fatalf(format, args...)
 }
@@ -158,17 +158,17 @@ type nopTestHelper struct {
 	t TestReporter
 }
 
-func (h *nopTestHelper) Errorf(format string, args ...interface{}) {
+func (h *nopTestHelper) Errorf(format string, args ...any) {
 	h.t.Errorf(format, args...)
 }
-func (h *nopTestHelper) Fatalf(format string, args ...interface{}) {
+func (h *nopTestHelper) Fatalf(format string, args ...any) {
 	h.t.Fatalf(format, args...)
 }
 
 func (h nopTestHelper) Helper() {}
 
 // RecordCall is called by a mock. It should not be called by user code.
-func (ctrl *Controller) RecordCall(receiver interface{}, method string, args ...interface{}) *Call {
+func (ctrl *Controller) RecordCall(receiver any, method string, args ...any) *Call {
 	ctrl.T.Helper()
 
 	recv := reflect.ValueOf(receiver)
@@ -182,7 +182,7 @@ func (ctrl *Controller) RecordCall(receiver interface{}, method string, args ...
 }
 
 // RecordCallWithMethodType is called by a mock. It should not be called by user code.
-func (ctrl *Controller) RecordCallWithMethodType(receiver interface{}, method string, methodType reflect.Type, args ...interface{}) *Call {
+func (ctrl *Controller) RecordCallWithMethodType(receiver any, method string, methodType reflect.Type, args ...any) *Call {
 	ctrl.T.Helper()
 
 	call := newCall(ctrl.T, receiver, method, methodType, args...)
@@ -195,11 +195,11 @@ func (ctrl *Controller) RecordCallWithMethodType(receiver interface{}, method st
 }
 
 // Call is called by a mock. It should not be called by user code.
-func (ctrl *Controller) Call(receiver interface{}, method string, args ...interface{}) []interface{} {
+func (ctrl *Controller) Call(receiver any, method string, args ...any) []any {
 	ctrl.T.Helper()
 
 	// Nest this code so we can use defer to make sure the lock is released.
-	actions := func() []func([]interface{}) []interface{} {
+	actions := func() []func([]any) []any {
 		ctrl.T.Helper()
 		ctrl.mu.Lock()
 		defer ctrl.mu.Unlock()
@@ -228,7 +228,7 @@ func (ctrl *Controller) Call(receiver interface{}, method string, args ...interf
 		return actions
 	}()
 
-	var rets []interface{}
+	var rets []any
 	for _, action := range actions {
 		if r := action(args); r != nil {
 			rets = r
@@ -257,7 +257,7 @@ func (ctrl *Controller) Satisfied() bool {
 	return ctrl.expectedCalls.Satisfied()
 }
 
-func (ctrl *Controller) finish(cleanup bool, panicErr interface{}) {
+func (ctrl *Controller) finish(cleanup bool, panicErr any) {
 	ctrl.T.Helper()
 
 	ctrl.mu.Lock()

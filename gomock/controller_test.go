@@ -107,20 +107,20 @@ func (e *ErrorReporter) recoverUnexpectedFatal() {
 	}
 }
 
-func (e *ErrorReporter) Log(args ...interface{}) {
+func (e *ErrorReporter) Log(args ...any) {
 	e.log = append(e.log, fmt.Sprint(args...))
 }
 
-func (e *ErrorReporter) Logf(format string, args ...interface{}) {
+func (e *ErrorReporter) Logf(format string, args ...any) {
 	e.log = append(e.log, fmt.Sprintf(format, args...))
 }
 
-func (e *ErrorReporter) Errorf(format string, args ...interface{}) {
+func (e *ErrorReporter) Errorf(format string, args ...any) {
 	e.Logf(format, args...)
 	e.failed = true
 }
 
-func (e *ErrorReporter) Fatalf(format string, args ...interface{}) {
+func (e *ErrorReporter) Fatalf(format string, args ...any) {
 	e.Logf(format, args...)
 	e.failed = true
 	panic(&e.fatalToken)
@@ -158,10 +158,10 @@ func (s *Subject) ActOnTestStructMethod(arg TestStruct, arg1 int) int {
 	return 0
 }
 
-func (s *Subject) SetArgMethod(sliceArg []byte, ptrArg *int, mapArg map[interface{}]interface{}) {}
-func (s *Subject) SetArgMethodInterface(sliceArg, ptrArg, mapArg interface{})                    {}
+func (s *Subject) SetArgMethod(sliceArg []byte, ptrArg *int, mapArg map[any]any) {}
+func (s *Subject) SetArgMethodInterface(sliceArg, ptrArg, mapArg any)            {}
 
-func assertEqual(t *testing.T, expected interface{}, actual interface{}) {
+func assertEqual(t *testing.T, expected any, actual any) {
 	if !reflect.DeepEqual(expected, actual) {
 		t.Errorf("Expected %+v, but got %+v", expected, actual)
 	}
@@ -360,7 +360,7 @@ func TestUnexpectedArgValue_GotFormatter(t *testing.T) {
 		"ActOnTestStructMethod",
 		expectedArg0,
 		gomock.GotFormatterAdapter(
-			gomock.GotFormatterFunc(func(i interface{}) string {
+			gomock.GotFormatterFunc(func(i any) string {
 				// Leading 0s
 				return fmt.Sprintf("%02d", i)
 			}),
@@ -572,7 +572,7 @@ func TestSetArgSlice(t *testing.T) {
 	ctrl.Call(subject, "SetArgMethodInterface", in, nil, nil)
 
 	if !reflect.DeepEqual(in, set) {
-		t.Error("Expected SetArg() to modify input slice argument as interface{}")
+		t.Error("Expected SetArg() to modify input slice argument as any")
 	}
 
 	ctrl.Finish()
@@ -582,8 +582,8 @@ func TestSetArgMap(t *testing.T) {
 	_, ctrl := createFixtures(t)
 	subject := new(Subject)
 
-	var in = map[interface{}]interface{}{"int": 1, "string": "random string", 1: "1", 0: 0}
-	var set = map[interface{}]interface{}{"int": 2, 1: "2", 2: 100}
+	var in = map[any]any{"int": 1, "string": "random string", 1: "1", 0: 0}
+	var set = map[any]any{"int": 2, 1: "2", 2: 100}
 	ctrl.RecordCall(subject, "SetArgMethod", nil, nil, in).SetArg(2, set)
 	ctrl.Call(subject, "SetArgMethod", nil, nil, in)
 
@@ -595,7 +595,7 @@ func TestSetArgMap(t *testing.T) {
 	ctrl.Call(subject, "SetArgMethodInterface", nil, nil, in)
 
 	if !reflect.DeepEqual(in, set) {
-		t.Error("Expected SetArg() to modify input map argument as interface{}")
+		t.Error("Expected SetArg() to modify input map argument as any")
 	}
 
 	ctrl.Finish()
@@ -618,7 +618,7 @@ func TestSetArgPtr(t *testing.T) {
 	ctrl.Call(subject, "SetArgMethodInterface", nil, &in, nil)
 
 	if in != set {
-		t.Error("Expected SetArg() to modify value pointed to by argument as interface{}")
+		t.Error("Expected SetArg() to modify value pointed to by argument as any")
 	}
 	ctrl.Finish()
 }
@@ -633,12 +633,12 @@ func TestReturn(t *testing.T) {
 
 	assertEqual(
 		t,
-		[]interface{}{0},
+		[]any{0},
 		ctrl.Call(subject, "FooMethod", "zero"))
 
 	assertEqual(
 		t,
-		[]interface{}{5},
+		[]any{5},
 		ctrl.Call(subject, "FooMethod", "five"))
 	ctrl.Finish()
 }
@@ -765,7 +765,7 @@ func TestVariadicMatchingWithSlice(t *testing.T) {
 
 			s := new(Subject)
 			ctrl.RecordCall(s, "VariadicMethod", 1, tc)
-			args := make([]interface{}, len(tc)+1)
+			args := make([]any, len(tc)+1)
 			args[0] = 1
 			for i, arg := range tc {
 				args[i+1] = arg
@@ -786,7 +786,7 @@ func TestVariadicArgumentsGotFormatter(t *testing.T) {
 		s,
 		"VariadicMethod",
 		gomock.GotFormatterAdapter(
-			gomock.GotFormatterFunc(func(i interface{}) string {
+			gomock.GotFormatterFunc(func(i any) string {
 				return fmt.Sprintf("test{%v}", i)
 			}),
 			gomock.Eq(0),
@@ -811,7 +811,7 @@ func TestVariadicArgumentsGotFormatterTooManyArgsFailure(t *testing.T) {
 		"VariadicMethod",
 		0,
 		gomock.GotFormatterAdapter(
-			gomock.GotFormatterFunc(func(i interface{}) string {
+			gomock.GotFormatterFunc(func(i any) string {
 				return fmt.Sprintf("test{%v}", i)
 			}),
 			gomock.Eq("1"),

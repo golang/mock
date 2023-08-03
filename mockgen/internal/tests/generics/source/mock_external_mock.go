@@ -46,7 +46,7 @@ func (m *MockExternalConstraint[I, F]) Eight(arg0 F) other.Two[I, F] {
 }
 
 // Eight indicates an expected call of Eight.
-func (mr *MockExternalConstraintMockRecorder[I, F]) Eight(arg0 interface{}) *gomock.Call {
+func (mr *MockExternalConstraintMockRecorder[I, F]) Eight(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Eight", reflect.TypeOf((*MockExternalConstraint[I, F])(nil).Eight), arg0)
 }
@@ -74,7 +74,7 @@ func (m *MockExternalConstraint[I, F]) Five(arg0 I) generics.Baz[F] {
 }
 
 // Five indicates an expected call of Five.
-func (mr *MockExternalConstraintMockRecorder[I, F]) Five(arg0 interface{}) *gomock.Call {
+func (mr *MockExternalConstraintMockRecorder[I, F]) Five(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Five", reflect.TypeOf((*MockExternalConstraint[I, F])(nil).Five), arg0)
 }
@@ -88,7 +88,7 @@ func (m *MockExternalConstraint[I, F]) Four(arg0 I) generics.Foo[I, F] {
 }
 
 // Four indicates an expected call of Four.
-func (mr *MockExternalConstraintMockRecorder[I, F]) Four(arg0 interface{}) *gomock.Call {
+func (mr *MockExternalConstraintMockRecorder[I, F]) Four(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Four", reflect.TypeOf((*MockExternalConstraint[I, F])(nil).Four), arg0)
 }
@@ -100,7 +100,7 @@ func (m *MockExternalConstraint[I, F]) Nine(arg0 generics.Iface[I]) {
 }
 
 // Nine indicates an expected call of Nine.
-func (mr *MockExternalConstraintMockRecorder[I, F]) Nine(arg0 interface{}) *gomock.Call {
+func (mr *MockExternalConstraintMockRecorder[I, F]) Nine(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Nine", reflect.TypeOf((*MockExternalConstraint[I, F])(nil).Nine), arg0)
 }
@@ -114,7 +114,7 @@ func (m *MockExternalConstraint[I, F]) One(arg0 string) string {
 }
 
 // One indicates an expected call of One.
-func (mr *MockExternalConstraintMockRecorder[I, F]) One(arg0 interface{}) *gomock.Call {
+func (mr *MockExternalConstraintMockRecorder[I, F]) One(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "One", reflect.TypeOf((*MockExternalConstraint[I, F])(nil).One), arg0)
 }
@@ -128,7 +128,7 @@ func (m *MockExternalConstraint[I, F]) Seven(arg0 I) other.One[I] {
 }
 
 // Seven indicates an expected call of Seven.
-func (mr *MockExternalConstraintMockRecorder[I, F]) Seven(arg0 interface{}) *gomock.Call {
+func (mr *MockExternalConstraintMockRecorder[I, F]) Seven(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Seven", reflect.TypeOf((*MockExternalConstraint[I, F])(nil).Seven), arg0)
 }
@@ -142,7 +142,7 @@ func (m *MockExternalConstraint[I, F]) Six(arg0 I) *generics.Baz[F] {
 }
 
 // Six indicates an expected call of Six.
-func (mr *MockExternalConstraintMockRecorder[I, F]) Six(arg0 interface{}) *gomock.Call {
+func (mr *MockExternalConstraintMockRecorder[I, F]) Six(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Six", reflect.TypeOf((*MockExternalConstraint[I, F])(nil).Six), arg0)
 }
@@ -154,7 +154,7 @@ func (m *MockExternalConstraint[I, F]) Ten(arg0 *I) {
 }
 
 // Ten indicates an expected call of Ten.
-func (mr *MockExternalConstraintMockRecorder[I, F]) Ten(arg0 interface{}) *gomock.Call {
+func (mr *MockExternalConstraintMockRecorder[I, F]) Ten(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Ten", reflect.TypeOf((*MockExternalConstraint[I, F])(nil).Ten), arg0)
 }
@@ -162,7 +162,7 @@ func (mr *MockExternalConstraintMockRecorder[I, F]) Ten(arg0 interface{}) *gomoc
 // Thirteen mocks base method.
 func (m *MockExternalConstraint[I, F]) Thirteen(arg0 ...I) *F {
 	m.ctrl.T.Helper()
-	varargs := []interface{}{}
+	varargs := []any{}
 	for _, a := range arg0 {
 		varargs = append(varargs, a)
 	}
@@ -172,7 +172,7 @@ func (m *MockExternalConstraint[I, F]) Thirteen(arg0 ...I) *F {
 }
 
 // Thirteen indicates an expected call of Thirteen.
-func (mr *MockExternalConstraintMockRecorder[I, F]) Thirteen(arg0 ...interface{}) *gomock.Call {
+func (mr *MockExternalConstraintMockRecorder[I, F]) Thirteen(arg0 ...any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Thirteen", reflect.TypeOf((*MockExternalConstraint[I, F])(nil).Thirteen), arg0...)
 }
@@ -186,7 +186,7 @@ func (m *MockExternalConstraint[I, F]) Three(arg0 I) F {
 }
 
 // Three indicates an expected call of Three.
-func (mr *MockExternalConstraintMockRecorder[I, F]) Three(arg0 interface{}) *gomock.Call {
+func (mr *MockExternalConstraintMockRecorder[I, F]) Three(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Three", reflect.TypeOf((*MockExternalConstraint[I, F])(nil).Three), arg0)
 }
@@ -200,7 +200,7 @@ func (m *MockExternalConstraint[I, F]) Twelve(ctx context.Context) <-chan []I {
 }
 
 // Twelve indicates an expected call of Twelve.
-func (mr *MockExternalConstraintMockRecorder[I, F]) Twelve(ctx interface{}) *gomock.Call {
+func (mr *MockExternalConstraintMockRecorder[I, F]) Twelve(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Twelve", reflect.TypeOf((*MockExternalConstraint[I, F])(nil).Twelve), ctx)
 }
@@ -214,7 +214,7 @@ func (m *MockExternalConstraint[I, F]) Two(arg0 I) string {
 }
 
 // Two indicates an expected call of Two.
-func (mr *MockExternalConstraintMockRecorder[I, F]) Two(arg0 interface{}) *gomock.Call {
+func (mr *MockExternalConstraintMockRecorder[I, F]) Two(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Two", reflect.TypeOf((*MockExternalConstraint[I, F])(nil).Two), arg0)
 }
@@ -251,7 +251,7 @@ func (m *MockEmbeddingIface[T, R]) Eight(arg0 R) other.Two[T, R] {
 }
 
 // Eight indicates an expected call of Eight.
-func (mr *MockEmbeddingIfaceMockRecorder[T, R]) Eight(arg0 interface{}) *gomock.Call {
+func (mr *MockEmbeddingIfaceMockRecorder[T, R]) Eight(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Eight", reflect.TypeOf((*MockEmbeddingIface[T, R])(nil).Eight), arg0)
 }
@@ -293,7 +293,7 @@ func (m *MockEmbeddingIface[T, R]) Five(arg0 T) generics.Baz[R] {
 }
 
 // Five indicates an expected call of Five.
-func (mr *MockEmbeddingIfaceMockRecorder[T, R]) Five(arg0 interface{}) *gomock.Call {
+func (mr *MockEmbeddingIfaceMockRecorder[T, R]) Five(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Five", reflect.TypeOf((*MockEmbeddingIface[T, R])(nil).Five), arg0)
 }
@@ -307,7 +307,7 @@ func (m *MockEmbeddingIface[T, R]) Four(arg0 T) generics.Foo[T, R] {
 }
 
 // Four indicates an expected call of Four.
-func (mr *MockEmbeddingIfaceMockRecorder[T, R]) Four(arg0 interface{}) *gomock.Call {
+func (mr *MockEmbeddingIfaceMockRecorder[T, R]) Four(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Four", reflect.TypeOf((*MockEmbeddingIface[T, R])(nil).Four), arg0)
 }
@@ -347,7 +347,7 @@ func (m *MockEmbeddingIface[T, R]) Nine(arg0 generics.Iface[T]) {
 }
 
 // Nine indicates an expected call of Nine.
-func (mr *MockEmbeddingIfaceMockRecorder[T, R]) Nine(arg0 interface{}) *gomock.Call {
+func (mr *MockEmbeddingIfaceMockRecorder[T, R]) Nine(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Nine", reflect.TypeOf((*MockEmbeddingIface[T, R])(nil).Nine), arg0)
 }
@@ -361,7 +361,7 @@ func (m *MockEmbeddingIface[T, R]) One(arg0 string) string {
 }
 
 // One indicates an expected call of One.
-func (mr *MockEmbeddingIfaceMockRecorder[T, R]) One(arg0 interface{}) *gomock.Call {
+func (mr *MockEmbeddingIfaceMockRecorder[T, R]) One(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "One", reflect.TypeOf((*MockEmbeddingIface[T, R])(nil).One), arg0)
 }
@@ -376,7 +376,7 @@ func (m *MockEmbeddingIface[T, R]) Read(p []byte) (int, error) {
 }
 
 // Read indicates an expected call of Read.
-func (mr *MockEmbeddingIfaceMockRecorder[T, R]) Read(p interface{}) *gomock.Call {
+func (mr *MockEmbeddingIfaceMockRecorder[T, R]) Read(p any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Read", reflect.TypeOf((*MockEmbeddingIface[T, R])(nil).Read), p)
 }
@@ -404,7 +404,7 @@ func (m *MockEmbeddingIface[T, R]) Seven(arg0 T) other.One[T] {
 }
 
 // Seven indicates an expected call of Seven.
-func (mr *MockEmbeddingIfaceMockRecorder[T, R]) Seven(arg0 interface{}) *gomock.Call {
+func (mr *MockEmbeddingIfaceMockRecorder[T, R]) Seven(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Seven", reflect.TypeOf((*MockEmbeddingIface[T, R])(nil).Seven), arg0)
 }
@@ -418,7 +418,7 @@ func (m *MockEmbeddingIface[T, R]) Six(arg0 T) *generics.Baz[R] {
 }
 
 // Six indicates an expected call of Six.
-func (mr *MockEmbeddingIfaceMockRecorder[T, R]) Six(arg0 interface{}) *gomock.Call {
+func (mr *MockEmbeddingIfaceMockRecorder[T, R]) Six(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Six", reflect.TypeOf((*MockEmbeddingIface[T, R])(nil).Six), arg0)
 }
@@ -430,7 +430,7 @@ func (m *MockEmbeddingIface[T, R]) Ten(arg0 *T) {
 }
 
 // Ten indicates an expected call of Ten.
-func (mr *MockEmbeddingIfaceMockRecorder[T, R]) Ten(arg0 interface{}) *gomock.Call {
+func (mr *MockEmbeddingIfaceMockRecorder[T, R]) Ten(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Ten", reflect.TypeOf((*MockEmbeddingIface[T, R])(nil).Ten), arg0)
 }
@@ -452,7 +452,7 @@ func (mr *MockEmbeddingIfaceMockRecorder[T, R]) Third() *gomock.Call {
 // Thirteen mocks base method.
 func (m *MockEmbeddingIface[T, R]) Thirteen(arg0 ...T) *R {
 	m.ctrl.T.Helper()
-	varargs := []interface{}{}
+	varargs := []any{}
 	for _, a := range arg0 {
 		varargs = append(varargs, a)
 	}
@@ -462,7 +462,7 @@ func (m *MockEmbeddingIface[T, R]) Thirteen(arg0 ...T) *R {
 }
 
 // Thirteen indicates an expected call of Thirteen.
-func (mr *MockEmbeddingIfaceMockRecorder[T, R]) Thirteen(arg0 ...interface{}) *gomock.Call {
+func (mr *MockEmbeddingIfaceMockRecorder[T, R]) Thirteen(arg0 ...any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Thirteen", reflect.TypeOf((*MockEmbeddingIface[T, R])(nil).Thirteen), arg0...)
 }
@@ -476,7 +476,7 @@ func (m *MockEmbeddingIface[T, R]) Three(arg0 T) R {
 }
 
 // Three indicates an expected call of Three.
-func (mr *MockEmbeddingIfaceMockRecorder[T, R]) Three(arg0 interface{}) *gomock.Call {
+func (mr *MockEmbeddingIfaceMockRecorder[T, R]) Three(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Three", reflect.TypeOf((*MockEmbeddingIface[T, R])(nil).Three), arg0)
 }
@@ -490,7 +490,7 @@ func (m *MockEmbeddingIface[T, R]) Twelve(ctx context.Context) <-chan []T {
 }
 
 // Twelve indicates an expected call of Twelve.
-func (mr *MockEmbeddingIfaceMockRecorder[T, R]) Twelve(ctx interface{}) *gomock.Call {
+func (mr *MockEmbeddingIfaceMockRecorder[T, R]) Twelve(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Twelve", reflect.TypeOf((*MockEmbeddingIface[T, R])(nil).Twelve), ctx)
 }
@@ -504,7 +504,7 @@ func (m *MockEmbeddingIface[T, R]) Two(arg0 T) string {
 }
 
 // Two indicates an expected call of Two.
-func (mr *MockEmbeddingIfaceMockRecorder[T, R]) Two(arg0 interface{}) *gomock.Call {
+func (mr *MockEmbeddingIfaceMockRecorder[T, R]) Two(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Two", reflect.TypeOf((*MockEmbeddingIface[T, R])(nil).Two), arg0)
 }
@@ -518,7 +518,7 @@ func (m *MockEmbeddingIface[T, R]) Water(arg0 generics.Generator[T]) []generics.
 }
 
 // Water indicates an expected call of Water.
-func (mr *MockEmbeddingIfaceMockRecorder[T, R]) Water(arg0 interface{}) *gomock.Call {
+func (mr *MockEmbeddingIfaceMockRecorder[T, R]) Water(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Water", reflect.TypeOf((*MockEmbeddingIface[T, R])(nil).Water), arg0)
 }
@@ -592,7 +592,7 @@ func (m *MockGroup[T]) Join(ctx context.Context) []T {
 }
 
 // Join indicates an expected call of Join.
-func (mr *MockGroupMockRecorder[T]) Join(ctx interface{}) *gomock.Call {
+func (mr *MockGroupMockRecorder[T]) Join(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Join", reflect.TypeOf((*MockGroup[T])(nil).Join), ctx)
 }

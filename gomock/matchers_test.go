@@ -29,7 +29,7 @@ import (
 type A []string
 
 func TestMatchers(t *testing.T) {
-	type e interface{}
+	type e any
 	tests := []struct {
 		name    string
 		matcher gomock.Matcher
@@ -148,8 +148,8 @@ func TestAssignableToTypeOfMatcher(t *testing.T) {
 func TestInAnyOrder(t *testing.T) {
 	tests := []struct {
 		name      string
-		wanted    interface{}
-		given     interface{}
+		wanted    any
+		given     any
 		wantMatch bool
 	}{
 		{

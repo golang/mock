@@ -35,9 +35,9 @@ import (
 // This would normally be in its own file or package,
 // separate from the user of it (e.g. io.Reader).
 type Index interface {
-	Get(key string) interface{}
-	GetTwo(key1, key2 string) (v1, v2 interface{})
-	Put(key string, value interface{})
+	Get(key string) any
+	GetTwo(key1, key2 string) (v1, v2 any)
+	Put(key string, value any)
 
 	// Check that imports are handled correctly.
 	Summary(buf *btz.Buffer, w io.Writer)
@@ -59,7 +59,7 @@ type Index interface {
 	ConcreteRet() chan<- bool
 
 	// Methods with an ellipsis argument.
-	Ellip(fmt string, args ...interface{})
+	Ellip(fmt string, args ...any)
 	EllipOnly(...string)
 
 	// A method with a pointer argument that we will set.
@@ -98,7 +98,7 @@ var _ net.Addr
 
 // A function that we will test that uses the above interface.
 // It takes a list of keys and values, and puts them in the index.
-func Remember(index Index, keys []string, values []interface{}) {
+func Remember(index Index, keys []string, values []any) {
 	for i, k := range keys {
 		index.Put(k, values[i])
 	}

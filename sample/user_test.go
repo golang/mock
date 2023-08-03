@@ -28,11 +28,11 @@ func TestRemember(t *testing.T) {
 
 	// Should be able to place expectations on variadic methods.
 	mockIndex.EXPECT().Ellip("%d", 0, 1, 1, 2, 3) // direct args
-	tri := []interface{}{1, 3, 6, 10, 15}
+	tri := []any{1, 3, 6, 10, 15}
 	mockIndex.EXPECT().Ellip("%d", tri...) // args from slice
 	mockIndex.EXPECT().EllipOnly(gomock.Eq("arg"))
 
-	user.Remember(mockIndex, []string{"a", "b"}, []interface{}{1, 2})
+	user.Remember(mockIndex, []string{"a", "b"}, []any{1, 2})
 	// Check the ConcreteRet calls.
 	if c := mockIndex.ConcreteRet(); c != boolc {
 		t.Errorf("ConcreteRet: got %v, want %v", c, boolc)
@@ -43,23 +43,23 @@ func TestRemember(t *testing.T) {
 
 	// Try one with an action.
 	calledString := ""
-	mockIndex.EXPECT().Put(gomock.Any(), gomock.Any()).Do(func(key string, _ interface{}) {
+	mockIndex.EXPECT().Put(gomock.Any(), gomock.Any()).Do(func(key string, _ any) {
 		calledString = key
 	})
 	mockIndex.EXPECT().NillableRet()
-	user.Remember(mockIndex, []string{"blah"}, []interface{}{7})
+	user.Remember(mockIndex, []string{"blah"}, []any{7})
 	if calledString != "blah" {
 		t.Fatalf(`Uh oh. %q != "blah"`, calledString)
 	}
 
 	// Use Do with a nil arg.
-	mockIndex.EXPECT().Put("nil-key", gomock.Any()).Do(func(key string, value interface{}) {
+	mockIndex.EXPECT().Put("nil-key", gomock.Any()).Do(func(key string, value any) {
 		if value != nil {
 			t.Errorf("Put did not pass through nil; got %v", value)
 		}
 	})
 	mockIndex.EXPECT().NillableRet()
-	user.Remember(mockIndex, []string{"nil-key"}, []interface{}{nil})
+	user.Remember(mockIndex, []string{"nil-key"}, []any{nil})
 }
 
 func TestVariadicFunction(t *testing.T) {
@@ -155,7 +155,7 @@ func TestExpectTrueNil(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockIndex := NewMockIndex(ctrl)
-	mockIndex.EXPECT().Ptr(nil) // this nil is a nil interface{}
+	mockIndex.EXPECT().Ptr(nil) // this nil is a nil any
 	mockIndex.Ptr(nil)          // this nil is a nil *int
 }
 

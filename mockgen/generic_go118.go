@@ -65,7 +65,7 @@ func (p *fileParser) parseGenericType(pkg string, typ ast.Expr, tps map[string]m
 	return nil, nil
 }
 
-func getIdentTypeParams(decl interface{}) string {
+func getIdentTypeParams(decl any) string {
 	if decl == nil {
 		return ""
 	}

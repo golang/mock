@@ -38,7 +38,7 @@ func ExampleCall_DoAndReturn_captureArguments() {
 	var s string
 
 	mockIndex.EXPECT().Bar(gomock.AssignableToTypeOf(s)).DoAndReturn(
-		func(arg string) interface{} {
+		func(arg string) any {
 			s = arg
 			return "I'm sleepy"
 		},
@@ -56,7 +56,7 @@ func ExampleCall_DoAndReturn_withOverridableExpectations() {
 	var s string
 
 	mockIndex.EXPECT().Bar(gomock.AssignableToTypeOf(s)).DoAndReturn(
-		func(arg string) interface{} {
+		func(arg string) any {
 			s = arg
 			return "I'm sleepy"
 		},

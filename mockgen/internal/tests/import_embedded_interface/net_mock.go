@@ -62,7 +62,7 @@ func (m *MockNet) Write(arg0 []byte) (int, error) {
 }
 
 // Write indicates an expected call of Write.
-func (mr *MockNetMockRecorder) Write(arg0 interface{}) *gomock.Call {
+func (mr *MockNetMockRecorder) Write(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Write", reflect.TypeOf((*MockNet)(nil).Write), arg0)
 }
@@ -74,7 +74,7 @@ func (m *MockNet) WriteHeader(statusCode int) {
 }
 
 // WriteHeader indicates an expected call of WriteHeader.
-func (mr *MockNetMockRecorder) WriteHeader(statusCode interface{}) *gomock.Call {
+func (mr *MockNetMockRecorder) WriteHeader(statusCode any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WriteHeader", reflect.TypeOf((*MockNet)(nil).WriteHeader), statusCode)
 }

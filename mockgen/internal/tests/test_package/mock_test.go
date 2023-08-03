@@ -44,7 +44,7 @@ func (m *MockFinder) Add(u User) {
 }
 
 // Add indicates an expected call of Add.
-func (mr *MockFinderMockRecorder) Add(u interface{}) *gomock.Call {
+func (mr *MockFinderMockRecorder) Add(u any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockFinder)(nil).Add), u)
 }
@@ -58,7 +58,7 @@ func (m *MockFinder) FindUser(name string) User {
 }
 
 // FindUser indicates an expected call of FindUser.
-func (mr *MockFinderMockRecorder) FindUser(name interface{}) *gomock.Call {
+func (mr *MockFinderMockRecorder) FindUser(name any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindUser", reflect.TypeOf((*MockFinder)(nil).FindUser), name)
 }

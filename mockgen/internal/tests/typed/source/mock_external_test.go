@@ -45,7 +45,7 @@ func (m *MockExternalConstraint[I, F]) Eight(arg0 F) other.Two[I, F] {
 }
 
 // Eight indicates an expected call of Eight.
-func (mr *MockExternalConstraintMockRecorder[I, F]) Eight(arg0 interface{}) *ExternalConstraintEightCall[I, F] {
+func (mr *MockExternalConstraintMockRecorder[I, F]) Eight(arg0 any) *ExternalConstraintEightCall[I, F] {
 	mr.mock.ctrl.T.Helper()
 	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Eight", reflect.TypeOf((*MockExternalConstraint[I, F])(nil).Eight), arg0)
 	return &ExternalConstraintEightCall[I, F]{Call: call}
@@ -83,7 +83,7 @@ func (m *MockExternalConstraint[I, F]) Five(arg0 I) typed.Baz[F] {
 }
 
 // Five indicates an expected call of Five.
-func (mr *MockExternalConstraintMockRecorder[I, F]) Five(arg0 interface{}) *ExternalConstraintFiveCall[I, F] {
+func (mr *MockExternalConstraintMockRecorder[I, F]) Five(arg0 any) *ExternalConstraintFiveCall[I, F] {
 	mr.mock.ctrl.T.Helper()
 	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Five", reflect.TypeOf((*MockExternalConstraint[I, F])(nil).Five), arg0)
 	return &ExternalConstraintFiveCall[I, F]{Call: call}
@@ -121,7 +121,7 @@ func (m *MockExternalConstraint[I, F]) Four(arg0 I) typed.Foo[I, F] {
 }
 
 // Four indicates an expected call of Four.
-func (mr *MockExternalConstraintMockRecorder[I, F]) Four(arg0 interface{}) *ExternalConstraintFourCall[I, F] {
+func (mr *MockExternalConstraintMockRecorder[I, F]) Four(arg0 any) *ExternalConstraintFourCall[I, F] {
 	mr.mock.ctrl.T.Helper()
 	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Four", reflect.TypeOf((*MockExternalConstraint[I, F])(nil).Four), arg0)
 	return &ExternalConstraintFourCall[I, F]{Call: call}
@@ -157,7 +157,7 @@ func (m *MockExternalConstraint[I, F]) Nine(arg0 typed.Iface[I]) {
 }
 
 // Nine indicates an expected call of Nine.
-func (mr *MockExternalConstraintMockRecorder[I, F]) Nine(arg0 interface{}) *ExternalConstraintNineCall[I, F] {
+func (mr *MockExternalConstraintMockRecorder[I, F]) Nine(arg0 any) *ExternalConstraintNineCall[I, F] {
 	mr.mock.ctrl.T.Helper()
 	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Nine", reflect.TypeOf((*MockExternalConstraint[I, F])(nil).Nine), arg0)
 	return &ExternalConstraintNineCall[I, F]{Call: call}
@@ -195,7 +195,7 @@ func (m *MockExternalConstraint[I, F]) One(arg0 string) string {
 }
 
 // One indicates an expected call of One.
-func (mr *MockExternalConstraintMockRecorder[I, F]) One(arg0 interface{}) *ExternalConstraintOneCall[I, F] {
+func (mr *MockExternalConstraintMockRecorder[I, F]) One(arg0 any) *ExternalConstraintOneCall[I, F] {
 	mr.mock.ctrl.T.Helper()
 	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "One", reflect.TypeOf((*MockExternalConstraint[I, F])(nil).One), arg0)
 	return &ExternalConstraintOneCall[I, F]{Call: call}
@@ -233,7 +233,7 @@ func (m *MockExternalConstraint[I, F]) Seven(arg0 I) other.One[I] {
 }
 
 // Seven indicates an expected call of Seven.
-func (mr *MockExternalConstraintMockRecorder[I, F]) Seven(arg0 interface{}) *ExternalConstraintSevenCall[I, F] {
+func (mr *MockExternalConstraintMockRecorder[I, F]) Seven(arg0 any) *ExternalConstraintSevenCall[I, F] {
 	mr.mock.ctrl.T.Helper()
 	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Seven", reflect.TypeOf((*MockExternalConstraint[I, F])(nil).Seven), arg0)
 	return &ExternalConstraintSevenCall[I, F]{Call: call}
@@ -271,7 +271,7 @@ func (m *MockExternalConstraint[I, F]) Six(arg0 I) *typed.Baz[F] {
 }
 
 // Six indicates an expected call of Six.
-func (mr *MockExternalConstraintMockRecorder[I, F]) Six(arg0 interface{}) *ExternalConstraintSixCall[I, F] {
+func (mr *MockExternalConstraintMockRecorder[I, F]) Six(arg0 any) *ExternalConstraintSixCall[I, F] {
 	mr.mock.ctrl.T.Helper()
 	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Six", reflect.TypeOf((*MockExternalConstraint[I, F])(nil).Six), arg0)
 	return &ExternalConstraintSixCall[I, F]{Call: call}
@@ -307,7 +307,7 @@ func (m *MockExternalConstraint[I, F]) Ten(arg0 *I) {
 }
 
 // Ten indicates an expected call of Ten.
-func (mr *MockExternalConstraintMockRecorder[I, F]) Ten(arg0 interface{}) *ExternalConstraintTenCall[I, F] {
+func (mr *MockExternalConstraintMockRecorder[I, F]) Ten(arg0 any) *ExternalConstraintTenCall[I, F] {
 	mr.mock.ctrl.T.Helper()
 	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Ten", reflect.TypeOf((*MockExternalConstraint[I, F])(nil).Ten), arg0)
 	return &ExternalConstraintTenCall[I, F]{Call: call}
@@ -345,7 +345,7 @@ func (m *MockExternalConstraint[I, F]) Three(arg0 I) F {
 }
 
 // Three indicates an expected call of Three.
-func (mr *MockExternalConstraintMockRecorder[I, F]) Three(arg0 interface{}) *ExternalConstraintThreeCall[I, F] {
+func (mr *MockExternalConstraintMockRecorder[I, F]) Three(arg0 any) *ExternalConstraintThreeCall[I, F] {
 	mr.mock.ctrl.T.Helper()
 	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Three", reflect.TypeOf((*MockExternalConstraint[I, F])(nil).Three), arg0)
 	return &ExternalConstraintThreeCall[I, F]{Call: call}
@@ -383,7 +383,7 @@ func (m *MockExternalConstraint[I, F]) Two(arg0 I) string {
 }
 
 // Two indicates an expected call of Two.
-func (mr *MockExternalConstraintMockRecorder[I, F]) Two(arg0 interface{}) *ExternalConstraintTwoCall[I, F] {
+func (mr *MockExternalConstraintMockRecorder[I, F]) Two(arg0 any) *ExternalConstraintTwoCall[I, F] {
 	mr.mock.ctrl.T.Helper()
 	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Two", reflect.TypeOf((*MockExternalConstraint[I, F])(nil).Two), arg0)
 	return &ExternalConstraintTwoCall[I, F]{Call: call}

@@ -467,7 +467,7 @@ func typeFromType(t reflect.Type) (Type, error) {
 	case reflect.Interface:
 		// Two special interfaces.
 		if t.NumMethod() == 0 {
-			return PredeclaredType("interface{}"), nil
+			return PredeclaredType("any"), nil
 		}
 		if t == errorType {
 			return PredeclaredType("error"), nil

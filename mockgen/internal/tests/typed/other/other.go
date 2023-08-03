@@ -8,4 +8,4 @@ type Three struct{}
 
 type Four struct{}
 
-type Five interface{}
+type Five any

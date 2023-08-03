@@ -231,7 +231,7 @@ type generator struct {
 	packageMap map[string]string // map from import path to package name
 }
 
-func (g *generator) p(format string, args ...interface{}) {
+func (g *generator) p(format string, args ...any) {
 	fmt.Fprintf(&g.buf, g.indent+format+"\n", args...)
 }
 
@@ -520,11 +520,11 @@ func (g *generator) GenerateMockMethod(mockType string, m *model.Method, pkgOver
 			callArgs = ", " + strings.Join(argNames, ", ")
 		}
 	} else {
-		// Non-trivial. The generated code must build a []interface{},
+		// Non-trivial. The generated code must build a []any,
 		// but the variadic argument may be any type.
 		idVarArgs := ia.allocateIdentifier("varargs")
 		idVArg := ia.allocateIdentifier("a")
-		g.p("%s := []interface{}{%s}", idVarArgs, strings.Join(argNames[:len(argNames)-1], ", "))
+		g.p("%s := []any{%s}", idVarArgs, strings.Join(argNames[:len(argNames)-1], ", "))
 		g.p("for _, %s := range %s {", idVArg, argNames[len(argNames)-1])
 		g.in()
 		g.p("%s = append(%s, %s)", idVarArgs, idVarArgs, idVArg)
@@ -564,14 +564,14 @@ func (g *generator) GenerateMockRecorderMethod(intf *model.Interface, mockType s
 		argString = strings.Join(argNames[:len(argNames)-1], ", ")
 	}
 	if argString != "" {
-		argString += " interface{}"
+		argString += " any"
 	}
 
 	if m.Variadic != nil {
 		if argString != "" {
 			argString += ", "
 		}
-		argString += fmt.Sprintf("%s ...interface{}", argNames[len(argNames)-1])
+		argString += fmt.Sprintf("%s ...any", argNames[len(argNames)-1])
 	}
 
 	ia := newIdentifierAllocator(argNames)
@@ -599,7 +599,7 @@ func (g *generator) GenerateMockRecorderMethod(intf *model.Interface, mockType s
 		} else {
 			// Hard: create a temporary slice.
 			idVarArgs := ia.allocateIdentifier("varargs")
-			g.p("%s := append([]interface{}{%s}, %s...)",
+			g.p("%s := append([]any{%s}, %s...)",
 				idVarArgs,
 				strings.Join(argNames[:len(argNames)-1], ", "),
 				argNames[len(argNames)-1])

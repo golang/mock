@@ -237,7 +237,7 @@ modifies how the `Got` value is formatted:
 
 ```go
 gomock.GotFormatterAdapter(
-  gomock.GotFormatterFunc(func(i interface{}) string {
+  gomock.GotFormatterFunc(func(i any) string {
     // Leading 0s
     return fmt.Sprintf("%02d", i)
   }),

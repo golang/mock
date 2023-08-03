@@ -3,4 +3,4 @@ package bugreport
 type Foo interface {
 	Bar() Baz
 }
-type Baz interface{}
+type Baz any
