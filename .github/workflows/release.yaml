@@ -12,23 +12,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Setup Go
-      uses: actions/setup-go@v4
-      with:
-        go-version: 1.20.x
-
     - name: Checkout
       uses: actions/checkout@v3
       with:
         fetch-depth: 0
 
-    - name: Load cached dependencies
-      uses: actions/cache@v3
+    - name: Setup Go
+      uses: actions/setup-go@v4
       with:
-        path: ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-        restore-keys: |
-          ${{ runner.os }}-go-
+        go-version: 1.20.x
 
     - name: Prepare release
       run: |
