@@ -6,11 +6,11 @@ gomock is a mocking framework for the [Go programming language][golang]. It
 integrates well with Go's built-in `testing` package, but can be used in other
 contexts too.
 
-This project originates from Google's `golang/mock` repo. Unfortunately Google
+This project originates from Google's `golang/mock` repo. Unfortunately, Google
 no longer maintains this project, and given the heavy usage of gomock project
 within Uber, we've decided to fork and maintain this going forward at Uber.
 
-Contributions are welcome in the form of GitHub issue or PR!
+[Contributions](./CONTRIBUTING.md) are welcome in the form of GitHub issue or PR!
 
 ## Supported Go Versions
 
@@ -247,9 +247,9 @@ gomock.GotFormatterAdapter(
 
 If the received value is `3`, then it will be printed as `03`.
 
-[golang]:              http://golang.org/
-[golang-install]:      http://golang.org/doc/install.html#releases
-[ci-badge]:            https://github.com/uber/mock/actions/workflows/test.yaml/badge.svg
-[ci-runs]:             https://github.com/uber/mock/actions
+[golang]:              http://go.dev/
+[golang-install]:      http://go.dev/doc/install.html#releases
+[ci-badge]:            https://github.com/uber-go/mock/actions/workflows/test.yaml/badge.svg
+[ci-runs]:             https://github.com/uber-go/mock/actions
 [reference-badge]:     https://pkg.go.dev/badge/go.uber.org/mock.svg
 [reference]:           https://pkg.go.dev/go.uber.org/mock
