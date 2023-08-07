@@ -18,7 +18,6 @@ package main
 
 import (
 	"errors"
-	"flag"
 	"fmt"
 	"go/ast"
 	"go/build"
@@ -34,11 +33,6 @@ import (
 	"strings"
 
 	"go.uber.org/mock/mockgen/model"
-)
-
-var (
-	imports  = flag.String("imports", "", "(source mode) Comma-separated name=path pairs of explicit imports to use.")
-	auxFiles = flag.String("aux_files", "", "(source mode) Comma-separated pkg=path pairs of auxiliary Go source files.")
 )
 
 // sourceMode generates mocks via source file.
