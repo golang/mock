@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -10,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/golang/mock/mockgen/model"
+	"go.uber.org/mock/mockgen/model"
 )
 
 func TestMakeArgString(t *testing.T) {
@@ -332,7 +331,7 @@ func TestGetArgNames(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			g := generator{}
 
-			result := g.getArgNames(testCase.method)
+			result := g.getArgNames(testCase.method, true)
 			if !reflect.DeepEqual(result, testCase.expected) {
 				t.Fatalf("expected %s, got %s", result, testCase.expected)
 			}
@@ -369,17 +368,9 @@ func Test_createPackageMap(t *testing.T) {
 }
 
 func TestParsePackageImport_FallbackGoPath(t *testing.T) {
-	goPath, err := ioutil.TempDir("", "gopath")
-	if err != nil {
-		t.Error(err)
-	}
-	defer func() {
-		if err = os.RemoveAll(goPath); err != nil {
-			t.Error(err)
-		}
-	}()
+	goPath := t.TempDir()
 	srcDir := filepath.Join(goPath, "src/example.com/foo")
-	err = os.MkdirAll(srcDir, 0755)
+	err := os.MkdirAll(srcDir, 0755)
 	if err != nil {
 		t.Error(err)
 	}
@@ -404,33 +395,17 @@ func TestParsePackageImport_FallbackMultiGoPath(t *testing.T) {
 	var goPathList []string
 
 	// first gopath
-	goPath, err := ioutil.TempDir("", "gopath1")
-	if err != nil {
-		t.Error(err)
-	}
+	goPath := t.TempDir()
 	goPathList = append(goPathList, goPath)
-	defer func() {
-		if err = os.RemoveAll(goPath); err != nil {
-			t.Error(err)
-		}
-	}()
 	srcDir := filepath.Join(goPath, "src/example.com/foo")
-	err = os.MkdirAll(srcDir, 0755)
+	err := os.MkdirAll(srcDir, 0755)
 	if err != nil {
 		t.Error(err)
 	}
 
 	// second gopath
-	goPath, err = ioutil.TempDir("", "gopath2")
-	if err != nil {
-		t.Error(err)
-	}
+	goPath = t.TempDir()
 	goPathList = append(goPathList, goPath)
-	defer func() {
-		if err = os.RemoveAll(goPath); err != nil {
-			t.Error(err)
-		}
-	}()
 
 	goPaths := strings.Join(goPathList, string(os.PathListSeparator))
 	key := "GOPATH"

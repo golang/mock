@@ -11,10 +11,11 @@
 package main
 
 import (
+	"fmt"
 	"go/ast"
 	"strings"
 
-	"github.com/golang/mock/mockgen/model"
+	"go.uber.org/mock/mockgen/model"
 )
 
 func getTypeSpecTypeParams(ts *ast.TypeSpec) []*ast.Field {
@@ -24,7 +25,7 @@ func getTypeSpecTypeParams(ts *ast.TypeSpec) []*ast.Field {
 	return ts.TypeParams.List
 }
 
-func (p *fileParser) parseGenericType(pkg string, typ ast.Expr, tps map[string]bool) (model.Type, error) {
+func (p *fileParser) parseGenericType(pkg string, typ ast.Expr, tps map[string]model.Type) (model.Type, error) {
 	switch v := typ.(type) {
 	case *ast.IndexExpr:
 		m, err := p.parseType(pkg, v.X, tps)
@@ -64,7 +65,7 @@ func (p *fileParser) parseGenericType(pkg string, typ ast.Expr, tps map[string]b
 	return nil, nil
 }
 
-func getIdentTypeParams(decl interface{}) string {
+func getIdentTypeParams(decl any) string {
 	if decl == nil {
 		return ""
 	}
@@ -85,4 +86,31 @@ func getIdentTypeParams(decl interface{}) string {
 	}
 	sb.WriteString("]")
 	return sb.String()
+}
+
+func (p *fileParser) parseGenericMethod(field *ast.Field, it *namedInterface, iface *model.Interface, pkg string, tps map[string]model.Type) ([]*model.Method, error) {
+	var indices []ast.Expr
+	var typ ast.Expr
+	switch v := field.Type.(type) {
+	case *ast.IndexExpr:
+		indices = []ast.Expr{v.Index}
+		typ = v.X
+	case *ast.IndexListExpr:
+		indices = v.Indices
+		typ = v.X
+	default:
+		return nil, fmt.Errorf("don't know how to mock method of type %T", field.Type)
+	}
+
+	nf := &ast.Field{
+		Doc:     field.Comment,
+		Names:   field.Names,
+		Type:    typ,
+		Tag:     field.Tag,
+		Comment: field.Comment,
+	}
+
+	it.embeddedInstTypeParams = indices
+
+	return p.parseMethod(nf, it, iface, pkg, tps)
 }

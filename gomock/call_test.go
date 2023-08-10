@@ -47,11 +47,11 @@ type mockTestReporter struct {
 	fatalCalls int
 }
 
-func (o *mockTestReporter) Errorf(format string, args ...interface{}) {
+func (o *mockTestReporter) Errorf(format string, args ...any) {
 	o.errorCalls++
 }
 
-func (o *mockTestReporter) Fatalf(format string, args ...interface{}) {
+func (o *mockTestReporter) Fatalf(format string, args ...any) {
 	o.fatalCalls++
 }
 
@@ -88,7 +88,7 @@ func TestCall_After(t *testing.T) {
 	})
 }
 
-func prepareDoCall(doFunc, callFunc interface{}) *Call {
+func prepareDoCall(doFunc, callFunc any) *Call {
 	tr := &mockTestReporter{}
 
 	c := &Call{
@@ -101,7 +101,7 @@ func prepareDoCall(doFunc, callFunc interface{}) *Call {
 	return c
 }
 
-func prepareDoAndReturnCall(doFunc, callFunc interface{}) *Call {
+func prepareDoAndReturnCall(doFunc, callFunc any) *Call {
 	tr := &mockTestReporter{}
 
 	c := &Call{
@@ -116,9 +116,9 @@ func prepareDoAndReturnCall(doFunc, callFunc interface{}) *Call {
 
 type testCase struct {
 	description string
-	doFunc      interface{}
-	callFunc    interface{}
-	args        []interface{}
+	doFunc      any
+	callFunc    any
+	args        []any
 	expectPanic bool
 }
 
@@ -127,7 +127,7 @@ var testCases []testCase = []testCase{
 		description: "argument to Do is not a function",
 		doFunc:      "meow",
 		callFunc:    func(x int, y int) {},
-		args:        []interface{}{0, 1},
+		args:        []any{0, 1},
 		expectPanic: true,
 	}, {
 		description: "argument to Do is not a function",
@@ -135,13 +135,13 @@ var testCases []testCase = []testCase{
 		callFunc: func(x int, y int) bool {
 			return true
 		},
-		args:        []interface{}{0, 1},
+		args:        []any{0, 1},
 		expectPanic: true,
 	}, {
 		description: "number of args for Do func don't match Call func",
 		doFunc:      func(x int) {},
 		callFunc:    func(x int, y int) {},
-		args:        []interface{}{0, 1},
+		args:        []any{0, 1},
 		expectPanic: false,
 	}, {
 		description: "number of args for Do func don't match Call func",
@@ -151,13 +151,13 @@ var testCases []testCase = []testCase{
 		callFunc: func(x int, y int) bool {
 			return true
 		},
-		args:        []interface{}{0, 1},
+		args:        []any{0, 1},
 		expectPanic: false,
 	}, {
 		description: "arg type for Do func incompatible with Call func",
 		doFunc:      func(x int) {},
 		callFunc:    func(x string) {},
-		args:        []interface{}{"meow"},
+		args:        []any{"meow"},
 		expectPanic: true,
 	}, {
 		description: "arg type for Do func incompatible with Call func",
@@ -167,18 +167,18 @@ var testCases []testCase = []testCase{
 		callFunc: func(x string) bool {
 			return true
 		},
-		args:        []interface{}{"meow"},
+		args:        []any{"meow"},
 		expectPanic: true,
 	}, {
 		description: "Do func(int) Call func(int)",
 		doFunc:      func(x int) {},
 		callFunc:    func(x int) {},
-		args:        []interface{}{0},
+		args:        []any{0},
 	}, {
-		description: "Do func(int) Call func(interface{})",
+		description: "Do func(int) Call func(any)",
 		doFunc:      func(x int) {},
-		callFunc:    func(x interface{}) {},
-		args:        []interface{}{0},
+		callFunc:    func(x any) {},
+		args:        []any{0},
 	}, {
 		description: "Do func(int) bool Call func(int) bool",
 		doFunc: func(x int) bool {
@@ -187,21 +187,21 @@ var testCases []testCase = []testCase{
 		callFunc: func(x int) bool {
 			return true
 		},
-		args: []interface{}{0},
+		args: []any{0},
 	}, {
-		description: "Do func(int) bool Call func(interface{}) bool",
+		description: "Do func(int) bool Call func(any) bool",
 		doFunc: func(x int) bool {
 			return true
 		},
-		callFunc: func(x interface{}) bool {
+		callFunc: func(x any) bool {
 			return true
 		},
-		args: []interface{}{0},
+		args: []any{0},
 	}, {
 		description: "Do func(string) Call func([]byte)",
 		doFunc:      func(x string) {},
 		callFunc:    func(x []byte) {},
-		args:        []interface{}{[]byte("meow")},
+		args:        []any{[]byte("meow")},
 		expectPanic: true,
 	}, {
 		description: "Do func(string) bool Call func([]byte) bool",
@@ -211,84 +211,84 @@ var testCases []testCase = []testCase{
 		callFunc: func(x []byte) bool {
 			return true
 		},
-		args:        []interface{}{[]byte("meow")},
+		args:        []any{[]byte("meow")},
 		expectPanic: true,
 	}, {
-		description: "Do func(map[int]string) Call func(map[interface{}]int)",
+		description: "Do func(map[int]string) Call func(map[any]int)",
 		doFunc:      func(x map[int]string) {},
-		callFunc:    func(x map[interface{}]int) {},
-		args:        []interface{}{map[interface{}]int{"meow": 0}},
+		callFunc:    func(x map[any]int) {},
+		args:        []any{map[any]int{"meow": 0}},
 		expectPanic: true,
 	}, {
-		description: "Do func(map[int]string) Call func(map[interface{}]interface{})",
+		description: "Do func(map[int]string) Call func(map[any]any)",
 		doFunc:      func(x map[int]string) {},
-		callFunc:    func(x map[interface{}]interface{}) {},
-		args:        []interface{}{map[interface{}]interface{}{"meow": "meow"}},
+		callFunc:    func(x map[any]any) {},
+		args:        []any{map[any]any{"meow": "meow"}},
 		expectPanic: true,
 	}, {
-		description: "Do func(map[int]string) bool Call func(map[interface{}]int) bool",
+		description: "Do func(map[int]string) bool Call func(map[any]int) bool",
 		doFunc: func(x map[int]string) bool {
 			return true
 		},
-		callFunc: func(x map[interface{}]int) bool {
+		callFunc: func(x map[any]int) bool {
 			return true
 		},
-		args:        []interface{}{map[interface{}]int{"meow": 0}},
+		args:        []any{map[any]int{"meow": 0}},
 		expectPanic: true,
 	}, {
-		description: "Do func(map[int]string) bool Call func(map[interface{}]interface{}) bool",
+		description: "Do func(map[int]string) bool Call func(map[any]any) bool",
 		doFunc: func(x map[int]string) bool {
 			return true
 		},
-		callFunc: func(x map[interface{}]interface{}) bool {
+		callFunc: func(x map[any]any) bool {
 			return true
 		},
-		args:        []interface{}{map[interface{}]interface{}{"meow": "meow"}},
+		args:        []any{map[any]any{"meow": "meow"}},
 		expectPanic: true,
 	}, {
-		description: "Do func([]string) Call func([]interface{})",
+		description: "Do func([]string) Call func([]any)",
 		doFunc:      func(x []string) {},
-		callFunc:    func(x []interface{}) {},
-		args:        []interface{}{[]interface{}{0}},
+		callFunc:    func(x []any) {},
+		args:        []any{[]any{0}},
 		expectPanic: true,
 	}, {
 		description: "Do func([]string) Call func([]int)",
 		doFunc:      func(x []string) {},
 		callFunc:    func(x []int) {},
-		args:        []interface{}{[]int{0, 1}},
+		args:        []any{[]int{0, 1}},
 		expectPanic: true,
 	}, {
 		description: "Do func([]int) Call func([]int)",
 		doFunc:      func(x []int) {},
 		callFunc:    func(x []int) {},
-		args:        []interface{}{[]int{0, 1}},
+		args:        []any{[]int{0, 1}},
 	}, {
-		description: "Do func([]int) Call func([]interface{})",
+		description: "Do func([]int) Call func([]any)",
 		doFunc:      func(x []int) {},
-		callFunc:    func(x []interface{}) {},
-		args:        []interface{}{[]interface{}{0}},
+		callFunc:    func(x []any) {},
+		args:        []any{[]any{0}},
 		expectPanic: true,
 	}, {
-		description: "Do func([]int) Call func(...interface{})",
+		description: "Do func([]int) Call func(...any)",
 		doFunc:      func(x []int) {},
-		callFunc:    func(x ...interface{}) {},
-		args:        []interface{}{0, 1},
+		callFunc:    func(x ...any) {},
+		args:        []any{0, 1},
 		expectPanic: true,
 	}, {
 		description: "Do func([]int) Call func(...int)",
 		doFunc:      func(x []int) {},
 		callFunc:    func(x ...int) {},
-		args:        []interface{}{0, 1},
+		args:        []any{0, 1},
 		expectPanic: true,
 	}, {
-		description: "Do func([]string) bool Call func([]interface{}) bool",
+		description: "Do func([]string) bool Call func([]any) bool",
 		doFunc: func(x []string) bool {
 			return true
 		},
-		callFunc: func(x []interface{}) bool {
+		callFunc: func(x []any) bool {
 			return true
 		},
-		args:        []interface{}{[]interface{}{0}},
+		args:        []any{[]any{0}},
 		expectPanic: true,
 	}, {
 		description: "Do func([]string) bool Call func([]int) bool",
@@ -298,7 +298,7 @@ var testCases []testCase = []testCase{
 		callFunc: func(x []int) bool {
 			return true
 		},
-		args:        []interface{}{[]int{0, 1}},
+		args:        []any{[]int{0, 1}},
 		expectPanic: true,
 	}, {
 		description: "Do func([]int) bool Call func([]int) bool",
@@ -308,26 +308,26 @@ var testCases []testCase = []testCase{
 		callFunc: func(x []int) bool {
 			return true
 		},
-		args: []interface{}{[]int{0, 1}},
+		args: []any{[]int{0, 1}},
 	}, {
-		description: "Do func([]int) bool Call func([]interface{}) bool",
+		description: "Do func([]int) bool Call func([]any) bool",
 		doFunc: func(x []int) bool {
 			return true
 		},
-		callFunc: func(x []interface{}) bool {
+		callFunc: func(x []any) bool {
 			return true
 		},
-		args:        []interface{}{[]interface{}{0}},
+		args:        []any{[]any{0}},
 		expectPanic: true,
 	}, {
-		description: "Do func([]int) bool Call func(...interface{}) bool",
+		description: "Do func([]int) bool Call func(...any) bool",
 		doFunc: func(x []int) bool {
 			return true
 		},
-		callFunc: func(x ...interface{}) bool {
+		callFunc: func(x ...any) bool {
 			return true
 		},
-		args:        []interface{}{0, 1},
+		args:        []any{0, 1},
 		expectPanic: true,
 	}, {
 		description: "Do func([]int) bool Call func(...int) bool",
@@ -337,25 +337,25 @@ var testCases []testCase = []testCase{
 		callFunc: func(x ...int) bool {
 			return true
 		},
-		args:        []interface{}{0, 1},
+		args:        []any{0, 1},
 		expectPanic: true,
 	}, {
 		description: "Do func(...int) Call func([]int)",
 		doFunc:      func(x ...int) {},
 		callFunc:    func(x []int) {},
-		args:        []interface{}{[]int{0, 1}},
+		args:        []any{[]int{0, 1}},
 		expectPanic: true,
 	}, {
-		description: "Do func(...int) Call func([]interface{})",
+		description: "Do func(...int) Call func([]any)",
 		doFunc:      func(x ...int) {},
-		callFunc:    func(x []interface{}) {},
-		args:        []interface{}{[]interface{}{0, 1}},
+		callFunc:    func(x []any) {},
+		args:        []any{[]any{0, 1}},
 		expectPanic: true,
 	}, {
-		description: "Do func(...int) Call func(...interface{})",
+		description: "Do func(...int) Call func(...any)",
 		doFunc:      func(x ...int) {},
-		callFunc:    func(x ...interface{}) {},
-		args:        []interface{}{0, 1},
+		callFunc:    func(x ...any) {},
+		args:        []any{0, 1},
 	}, {
 		description: "Do func(...int) bool Call func(...int) bool",
 		doFunc: func(x ...int) bool {
@@ -364,7 +364,7 @@ var testCases []testCase = []testCase{
 		callFunc: func(x ...int) bool {
 			return true
 		},
-		args: []interface{}{0, 1},
+		args: []any{0, 1},
 	}, {
 		description: "Do func(...int) bool Call func([]int) bool",
 		doFunc: func(x ...int) bool {
@@ -373,48 +373,48 @@ var testCases []testCase = []testCase{
 		callFunc: func(x []int) bool {
 			return true
 		},
-		args:        []interface{}{[]int{0, 1}},
+		args:        []any{[]int{0, 1}},
 		expectPanic: true,
 	}, {
-		description: "Do func(...int) bool Call func([]interface{}) bool",
+		description: "Do func(...int) bool Call func([]any) bool",
 		doFunc: func(x ...int) bool {
 			return true
 		},
-		callFunc: func(x []interface{}) bool {
+		callFunc: func(x []any) bool {
 			return true
 		},
-		args:        []interface{}{[]interface{}{0, 1}},
+		args:        []any{[]any{0, 1}},
 		expectPanic: true,
 	}, {
-		description: "Do func(...int) bool Call func(...interface{}) bool",
+		description: "Do func(...int) bool Call func(...any) bool",
 		doFunc: func(x ...int) bool {
 			return true
 		},
-		callFunc: func(x ...interface{}) bool {
+		callFunc: func(x ...any) bool {
 			return true
 		},
-		args: []interface{}{0, 1},
+		args: []any{0, 1},
 	}, {
 		description: "Do func(...int) Call func(...int)",
 		doFunc:      func(x ...int) {},
 		callFunc:    func(x ...int) {},
-		args:        []interface{}{0, 1},
+		args:        []any{0, 1},
 	}, {
 		description: "Do func(foo); foo implements interface X Call func(interface X)",
 		doFunc:      func(x foo) {},
 		callFunc:    func(x fmt.Stringer) {},
-		args:        []interface{}{foo{}},
+		args:        []any{foo{}},
 	}, {
 		description: "Do func(b); b does not implement interface X Call func(interface X)",
 		doFunc:      func(x b) {},
 		callFunc:    func(x fmt.Stringer) {},
-		args:        []interface{}{foo{}},
+		args:        []any{foo{}},
 		expectPanic: true,
 	}, {
 		description: "Do func(b) Call func(a); a and b are not aliases",
 		doFunc:      func(x b) {},
 		callFunc:    func(x a) {},
-		args:        []interface{}{a{}},
+		args:        []any{a{}},
 		expectPanic: true,
 	}, {
 		description: "Do func(foo) bool; foo implements interface X Call func(interface X) bool",
@@ -424,7 +424,7 @@ var testCases []testCase = []testCase{
 		callFunc: func(x fmt.Stringer) bool {
 			return true
 		},
-		args: []interface{}{foo{}},
+		args: []any{foo{}},
 	}, {
 		description: "Do func(b) bool; b does not implement interface X Call func(interface X) bool",
 		doFunc: func(x b) bool {
@@ -433,7 +433,7 @@ var testCases []testCase = []testCase{
 		callFunc: func(x fmt.Stringer) bool {
 			return true
 		},
-		args:        []interface{}{foo{}},
+		args:        []any{foo{}},
 		expectPanic: true,
 	}, {
 		description: "Do func(b) bool Call func(a) bool; a and b are not aliases",
@@ -443,7 +443,7 @@ var testCases []testCase = []testCase{
 		callFunc: func(x a) bool {
 			return true
 		},
-		args:        []interface{}{a{}},
+		args:        []any{a{}},
 		expectPanic: true,
 	}, {
 		description: "Do func(bool) b Call func(bool) a; a and b are not aliases",
@@ -453,7 +453,7 @@ var testCases []testCase = []testCase{
 		callFunc: func(x bool) a {
 			return a{}
 		},
-		args: []interface{}{true},
+		args: []any{true},
 	},
 }
 
@@ -485,36 +485,36 @@ func TestCall_Do_NumArgValidation(t *testing.T) {
 	tests := []struct {
 		name       string
 		methodType reflect.Type
-		doFn       interface{}
-		args       []interface{}
+		doFn       any
+		args       []any
 		wantErr    bool
 	}{
 		{
 			name:       "too few",
 			methodType: reflect.TypeOf(func(one, two string) {}),
 			doFn:       func(one string) {},
-			args:       []interface{}{"too", "few"},
+			args:       []any{"too", "few"},
 			wantErr:    true,
 		},
 		{
 			name:       "too many",
 			methodType: reflect.TypeOf(func(one, two string) {}),
 			doFn:       func(one, two, three string) {},
-			args:       []interface{}{"too", "few"},
+			args:       []any{"too", "few"},
 			wantErr:    true,
 		},
 		{
 			name:       "just right",
 			methodType: reflect.TypeOf(func(one, two string) {}),
 			doFn:       func(one string, two string) {},
-			args:       []interface{}{"just", "right"},
+			args:       []any{"just", "right"},
 			wantErr:    false,
 		},
 		{
 			name:       "variadic",
 			methodType: reflect.TypeOf(func(one, two string) {}),
-			doFn:       func(args ...interface{}) {},
-			args:       []interface{}{"just", "right"},
+			doFn:       func(args ...any) {},
+			args:       []any{"just", "right"},
 			wantErr:    true,
 		},
 	}
@@ -541,36 +541,36 @@ func TestCall_DoAndReturn_NumArgValidation(t *testing.T) {
 	tests := []struct {
 		name       string
 		methodType reflect.Type
-		doFn       interface{}
-		args       []interface{}
+		doFn       any
+		args       []any
 		wantErr    bool
 	}{
 		{
 			name:       "too few",
 			methodType: reflect.TypeOf(func(one, two string) string { return "" }),
 			doFn:       func(one string) {},
-			args:       []interface{}{"too", "few"},
+			args:       []any{"too", "few"},
 			wantErr:    true,
 		},
 		{
 			name:       "too many",
 			methodType: reflect.TypeOf(func(one, two string) string { return "" }),
 			doFn:       func(one, two, three string) string { return "" },
-			args:       []interface{}{"too", "few"},
+			args:       []any{"too", "few"},
 			wantErr:    true,
 		},
 		{
 			name:       "just right",
 			methodType: reflect.TypeOf(func(one, two string) string { return "" }),
 			doFn:       func(one string, two string) string { return "" },
-			args:       []interface{}{"just", "right"},
+			args:       []any{"just", "right"},
 			wantErr:    false,
 		},
 		{
 			name:       "variadic",
 			methodType: reflect.TypeOf(func(one, two string) {}),
-			doFn:       func(args ...interface{}) string { return "" },
-			args:       []interface{}{"just", "right"},
+			doFn:       func(args ...any) string { return "" },
+			args:       []any{"just", "right"},
 			wantErr:    true,
 		},
 	}
