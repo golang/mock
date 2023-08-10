@@ -1,27 +1,33 @@
 name: Run tests
 on:
   push:
-    branches: [main]
+    branches: ['*']
   pull_request:
-    branches: [main]
+    branches: ['*']
+
+permissions:
+  contents: read
+
 env:
   GO111MODULE: on
+
 jobs:
   test:
     strategy:
       matrix:
-        go-version: [1.15.x, 1.18.x]
+        go-version: [1.19.x, 1.20.x]
         os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
     steps:
 
+    - name: Checkout code
+      uses: actions/checkout@v3
+
     - name: Install Go
-      uses: actions/setup-go@v2
+      uses: actions/setup-go@v4
       with:
         go-version: ${{ matrix.go-version }}
-
-    - name: Checkout code
-      uses: actions/checkout@v2
+        cache-dependency-path: '**/go.sum'
 
     - name: Vet and build
       run: |
@@ -30,23 +36,17 @@ jobs:
 
     - name: Install mockgen
       run: |
-        go install github.com/golang/mock/mockgen
+        go install go.uber.org/mock/mockgen
 
     - name: Run test script
       run: |
         ./ci/test.sh
         ./ci/check_panic_handling.sh
 
-    - name: Run Go tests all
-      if: ${{ startsWith(matrix.go-version, '1.18') }}
+    - name: Run Tests
       run: |
         for i in $(find $PWD -name go.mod); do
           pushd $(dirname $i)
           go test ./...
           popd
         done 
-
-    - name: Run Go tests some
-      if: ${{ startsWith(matrix.go-version, '1.18') == false }}
-      run: |
-          go test ./...

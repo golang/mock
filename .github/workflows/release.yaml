@@ -1,0 +1,53 @@
+name: release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+
+    - name: Setup Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: 1.20.x
+
+    - name: Prepare release
+      run: |
+        set -eou pipefail
+        make bin/extract-changelog
+
+        # Extract target version number from the git tag and post it to
+        # GITHUB_ENV to make it accessible via env.VERSION in other steps.
+        VERSION=${{ github.ref }}
+        VERSION="${VERSION#refs/tags/}"  # refs/tags/v1.2.3 => v1.2.3
+        echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+        echo "Releasing $VERSION"
+
+        # Place the release notes in changes.v1.2.3.txt to grab them in the
+        # release step.
+        echo "Release notes:"
+        echo "----"
+        bin/extract-changelog $VERSION | tee changes.$VERSION.txt
+        echo "----"
+
+    - name: Release
+      uses: goreleaser/goreleaser-action@v4
+      with:
+        distribution: goreleaser
+        version: latest
+        args: release --clean --release-notes changes.${{ env.VERSION }}.txt
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GORELEASER_CURRENT_TAG: ${{ env.VERSION }}

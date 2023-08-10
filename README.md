@@ -6,30 +6,25 @@ gomock is a mocking framework for the [Go programming language][golang]. It
 integrates well with Go's built-in `testing` package, but can be used in other
 contexts too.
 
+This project originates from Google's `golang/mock` repo. Unfortunately, Google
+no longer maintains this project, and given the heavy usage of gomock project
+within Uber, we've decided to fork and maintain this going forward at Uber.
+
+[Contributions](./CONTRIBUTING.md) are welcome in the form of GitHub issue or PR!
+
+## Supported Go Versions
+
+go.uber.org/mock supports all Go versions supported by the official
+[Go Release Policy](https://go.dev/doc/devel/release#policy). That is,
+the two most recent releases of Go.
+
 ## Installation
 
-Once you have [installed Go][golang-install], install the `mockgen` tool.
+Install the `mockgen` tool.
 
-**Note**: If you have not done so already be sure to add `$GOPATH/bin` to your
-`PATH`.
-
-To get the latest released version use:
-
-### Go version < 1.16
-
-```bash
-GO111MODULE=on go get github.com/golang/mock/mockgen@v1.6.0
 ```
-
-### Go 1.16+
-
-```bash
-go install github.com/golang/mock/mockgen@v1.6.0
+go install go.uber.org/mock/mockgen@latest
 ```
-
-If you use `mockgen` in your CI pipeline, it may be more appropriate to fixate
-on a specific mockgen version. You should try to keep the library in sync with
-the version of mockgen used to generate your mocks.
 
 ## Running mockgen
 
@@ -117,6 +112,10 @@ It supports the following flags:
 - `-prog_only`: (reflect mode) Only generate the reflection program; write it to stdout and exit.
 
 - `-write_package_comment`: Writes package documentation comment (godoc) if true. (default true)
+
+- `-write_source_comment`: Writes original file (source mode) or interface names (reflect mode) comment if true. (default true)
+
+- `-typed`: Generate Type-safe 'Return', 'Do', 'DoAndReturn' function. (default false)
 
 For an example of the use of `mockgen`, see the `sample/` directory. In simple
 cases, you will need only the `-source` flag.
@@ -238,7 +237,7 @@ modifies how the `Got` value is formatted:
 
 ```go
 gomock.GotFormatterAdapter(
-  gomock.GotFormatterFunc(func(i interface{}) string {
+  gomock.GotFormatterFunc(func(i any) string {
     // Leading 0s
     return fmt.Sprintf("%02d", i)
   }),
@@ -248,30 +247,9 @@ gomock.GotFormatterAdapter(
 
 If the received value is `3`, then it will be printed as `03`.
 
-[golang]:              http://golang.org/
-[golang-install]:      http://golang.org/doc/install.html#releases
-[gomock-reference]:    https://pkg.go.dev/github.com/golang/mock/gomock
-[ci-badge]:            https://github.com/golang/mock/actions/workflows/test.yaml/badge.svg
-[ci-runs]:             https://github.com/golang/mock/actions
-[reference-badge]:     https://pkg.go.dev/badge/github.com/golang/mock.svg
-[reference]:           https://pkg.go.dev/github.com/golang/mock
-
-## Debugging Errors
-
-### reflect vendoring error
-
-```text
-cannot find package "."
-... github.com/golang/mock/mockgen/model
-```
-
-If you come across this error while using reflect mode and vendoring
-dependencies there are three workarounds you can choose from:
-
-1. Use source mode.
-2. Include an empty import `import _ "github.com/golang/mock/mockgen/model"`.
-3. Add `--build_flags=--mod=mod` to your mockgen command.
-
-This error is due to changes in default behavior of the `go` command in more
-recent versions. More details can be found in
-[#494](https://github.com/golang/mock/issues/494).
+[golang]:              http://go.dev/
+[golang-install]:      http://go.dev/doc/install.html#releases
+[ci-badge]:            https://github.com/uber-go/mock/actions/workflows/test.yaml/badge.svg
+[ci-runs]:             https://github.com/uber-go/mock/actions
+[reference-badge]:     https://pkg.go.dev/badge/go.uber.org/mock.svg
+[reference]:           https://pkg.go.dev/go.uber.org/mock

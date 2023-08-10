@@ -8,4 +8,11 @@ type Three struct{}
 
 type Four struct{}
 
-type Five interface{}
+type Five any
+
+type Either[T, R, K, V any] interface {
+	First() T
+	Second() R
+	Third() K
+	Fourth() V
+}

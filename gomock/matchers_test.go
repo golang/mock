@@ -14,7 +14,7 @@
 
 package gomock_test
 
-//go:generate mockgen -destination internal/mock_gomock/mock_matcher.go github.com/golang/mock/gomock Matcher
+//go:generate mockgen -destination internal/mock_gomock/mock_matcher.go go.uber.org/mock/gomock Matcher
 
 import (
 	"context"
@@ -22,14 +22,14 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/golang/mock/gomock"
-	"github.com/golang/mock/gomock/internal/mock_gomock"
+	"go.uber.org/mock/gomock"
+	"go.uber.org/mock/gomock/internal/mock_gomock"
 )
 
 type A []string
 
 func TestMatchers(t *testing.T) {
-	type e interface{}
+	type e any
 	tests := []struct {
 		name    string
 		matcher gomock.Matcher
@@ -148,8 +148,8 @@ func TestAssignableToTypeOfMatcher(t *testing.T) {
 func TestInAnyOrder(t *testing.T) {
 	tests := []struct {
 		name      string
-		wanted    interface{}
-		given     interface{}
+		wanted    any
+		given     any
 		wantMatch bool
 	}{
 		{

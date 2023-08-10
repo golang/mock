@@ -5,7 +5,7 @@
 package parenthesized_parameter_type
 
 import (
-	gomock "github.com/golang/mock/gomock"
+	gomock "go.uber.org/mock/gomock"
 	reflect "reflect"
 )
 
@@ -39,7 +39,7 @@ func (m *MockExample) ParenthesizedParameterType(param *int) {
 }
 
 // ParenthesizedParameterType indicates an expected call of ParenthesizedParameterType.
-func (mr *MockExampleMockRecorder) ParenthesizedParameterType(param interface{}) *gomock.Call {
+func (mr *MockExampleMockRecorder) ParenthesizedParameterType(param any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ParenthesizedParameterType", reflect.TypeOf((*MockExample)(nil).ParenthesizedParameterType), param)
 }

@@ -1,7 +1,7 @@
 // Package user is an example package with an interface.
 package user
 
-//go:generate mockgen -destination mock_user_test.go -package user_test github.com/golang/mock/sample Index,Embed,Embedded
+//go:generate mockgen -destination mock_user_test.go -package user_test go.uber.org/mock/sample Index,Embed,Embedded
 
 // Random bunch of imports to test mockgen.
 import (
@@ -18,15 +18,15 @@ import (
 
 	t2 "text/template"
 
-	"github.com/golang/mock/sample/imp1"
+	"go.uber.org/mock/sample/imp1"
 
 	// Dependencies outside the standard library.
 
-	renamed2 "github.com/golang/mock/sample/imp2"
+	renamed2 "go.uber.org/mock/sample/imp2"
 
-	. "github.com/golang/mock/sample/imp3"
+	. "go.uber.org/mock/sample/imp3"
 
-	imp_four "github.com/golang/mock/sample/imp4"
+	imp_four "go.uber.org/mock/sample/imp4"
 )
 
 // calls itself "imp_four"
@@ -35,9 +35,9 @@ import (
 // This would normally be in its own file or package,
 // separate from the user of it (e.g. io.Reader).
 type Index interface {
-	Get(key string) interface{}
-	GetTwo(key1, key2 string) (v1, v2 interface{})
-	Put(key string, value interface{})
+	Get(key string) any
+	GetTwo(key1, key2 string) (v1, v2 any)
+	Put(key string, value any)
 
 	// Check that imports are handled correctly.
 	Summary(buf *btz.Buffer, w io.Writer)
@@ -59,7 +59,7 @@ type Index interface {
 	ConcreteRet() chan<- bool
 
 	// Methods with an ellipsis argument.
-	Ellip(fmt string, args ...interface{})
+	Ellip(fmt string, args ...any)
 	EllipOnly(...string)
 
 	// A method with a pointer argument that we will set.
@@ -98,7 +98,7 @@ var _ net.Addr
 
 // A function that we will test that uses the above interface.
 // It takes a list of keys and values, and puts them in the index.
-func Remember(index Index, keys []string, values []interface{}) {
+func Remember(index Index, keys []string, values []any) {
 	for i, k := range keys {
 		index.Put(k, values[i])
 	}
