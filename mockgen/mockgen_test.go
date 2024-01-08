@@ -332,7 +332,7 @@ func TestGetArgNames(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			g := generator{}
 
-			result := g.getArgNames(testCase.method)
+			result := g.getArgNames(testCase.method, true)
 			if !reflect.DeepEqual(result, testCase.expected) {
 				t.Fatalf("expected %s, got %s", result, testCase.expected)
 			}
